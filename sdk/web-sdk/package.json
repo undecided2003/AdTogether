@@ -1,0 +1,46 @@
+{
+  "name": "@adtogether/web-sdk",
+  "version": "0.1.0",
+  "description": "The official AdTogether Web SDK for monetizing applications.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AdTogether/AdTogether.git",
+    "directory": "sdk/web-sdk"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "require": "./dist/react/index.js",
+      "import": "./dist/react/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "peerDependencies": {
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "tsup": "^8.5.1",
+    "typescript": "^5.3.3"
+  }
+}

@@ -1,0 +1,273 @@
+# AdTogether SDK Integration
+
+> This file is provided in markdown format specifically optimized for LLMs and AI Coding Assistants (like Cursor, GitHub Copilot, or ChatGPT) to quickly ingest context and write integration code for their human users.
+
+## SDK Architecture Overview
+
+AdTogether provides **4 separate SDKs**, each distributed through its platform's native package manager:
+
+| SDK | Package | Distribution | Platforms |
+|-----|---------|-------------|-----------|
+| Web SDK | `sdk.js` | CDN script tag | Websites, SPAs, SSR (React, Next.js, Vue, HTML) |
+| Flutter SDK | `adtogether_sdk` | pub.dev | Android + iOS + Web (one package) |
+| Native iOS SDK | `AdTogether` | Swift Package Manager | SwiftUI, UIKit |
+| Native Android SDK | `com.adtogether:sdk` | Maven Central | Jetpack Compose, XML Views |
+
+**Important:** The Flutter SDK is a unified Dart API that internally delegates to native platform code:
+- `android/` → Kotlin plugin using Platform Channels
+- `ios/` → Swift plugin using Platform Channels
+- `web/` → Uses `HtmlElementView` to load the Web SDK (`sdk.js`) under the hood
+
+Flutter developers do **not** need the native iOS/Android SDKs — those are for pure Swift or pure Kotlin apps only.
+
+---
+
+## REST API Integration
+
+For custom environments without an SDK, you can directly interface with the Next.js Ad Serving API.
+
+**Base URL:** Replace `https://adtogether.com` with the actual deployment origin.
+
+### Fetch Ad
+
+\`\`\`bash
+curl -X GET "https://adtogether.com/api/ads/serve?country=global"
+\`\`\`
+
+Will return a JSON object with ad details (`id`, `title`, `description`, `imageUrl`, `clickUrl`).
+
+### Track Impression
+
+\`\`\`bash
+curl -X POST "https://adtogether.com/api/ads/impression" \
+  -H "Content-Type: application/json" \
+  -d '{"adId": "123456"}'
+\`\`\`
+
+Decrements the advertiser's credit balance.
+
+### Track Click
+
+\`\`\`bash
+curl -X POST "https://adtogether.com/api/ads/click" \
+  -H "Content-Type: application/json" \
+  -d '{"adId": "123456"}'
+\`\`\`
+
+---
+
+## Web Integration (React / Next.js / Vue / HTML)
+
+**Distribution:** CDN-hosted script tag — no npm package required.
+
+### Setup
+
+Include the global script tag in your `<head>` or global layout:
+
+```html
+<script src="https://adtogether.com/sdk.js" defer></script>
+```
+
+### Display an Ad
+
+Place a unique div element with the corresponding `data-ad-unit` attribute. The SDK will automatically scan the DOM and populate these divs:
+
+```html
+<div id="adtogether-ad-1" data-ad-unit="YOUR_AD_UNIT_ID"></div>
+```
+
+---
+
+## Flutter Integration (Android + iOS + Web)
+
+**Package:** `adtogether_sdk`
+**Distribution:** pub.dev
+**Platforms:** Android, iOS, and Flutter Web from a single package.
+
+### Install
+
+```bash
+flutter pub add adtogether_sdk
+```
+
+### Initialize (required before rendering ads)
+
+```dart
+import 'package:adtogether_sdk/adtogether_sdk.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AdTogether.initialize(appId: 'YOUR_APP_ID');
+  runApp(MyApp());
+}
+```
+
+### Display a Banner
+
+```dart
+import 'package:adtogether_sdk/adtogether_sdk.dart';
+
+class MyPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Column(
+        children: [
+          Expanded(child: Text("App Content")),
+          AdTogetherBanner(
+            adUnitId: 'YOUR_AD_UNIT_ID',
+            size: AdSize.banner,
+            onAdLoaded: () => print('Ad Loaded!'),
+            onAdFailedToLoad: (error) => print('Error: $error'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+```
+
+### Flutter-Specific Notes
+
+- On **iOS**: Ensure `io.flutter.embedded_views_preview` is enabled in `Info.plist` if using older Flutter engines.
+- On **Flutter Web**: The SDK renders ads via `HtmlElementView` — no native plugin code runs. Ensure your web host serves the `sdk.js` script.
+- On **Android**: Platform Views are used. Minimum SDK version 19 required.
+
+---
+
+## Native iOS Integration (SwiftUI / UIKit)
+
+**Package:** `AdTogether`
+**Distribution:** Swift Package Manager
+**Platforms:** iOS 15+, iPadOS 15+
+
+### Install via SPM
+
+In Xcode: **File → Add Packages** → enter the repository URL:
+
+```
+https://github.com/adtogether/ios-sdk.git
+```
+
+Or add directly to `Package.swift`:
+
+```swift
+.package(url: "https://github.com/adtogether/ios-sdk.git", from: "1.0.0")
+```
+
+### Initialize
+
+```swift
+import AdTogether
+
+@main
+struct MyApp: App {
+    init() {
+        AdTogether.initialize(appId: "YOUR_APP_ID")
+    }
+
+    var body: some Scene {
+        WindowGroup { ContentView() }
+    }
+}
+```
+
+### Display a Banner (SwiftUI)
+
+```swift
+import AdTogether
+
+struct ContentView: View {
+    var body: some View {
+        VStack {
+            Text("My App")
+            AdTogetherView(adUnitID: "YOUR_AD_UNIT_ID")
+                .frame(height: 50)
+        }
+    }
+}
+```
+
+### iOS-Specific Notes
+
+- Request **App Tracking Transparency (ATT)** permissions before initializing the SDK for personalized ad tracking.
+- Add `NSUserTrackingUsageDescription` to `Info.plist` with a human-readable explanation.
+
+---
+
+## Native Android Integration (Kotlin / Compose)
+
+**Package:** `com.adtogether:sdk`
+**Distribution:** Maven Central
+**Platforms:** Android API 21+ (minSdk 21)
+
+### Install via Gradle
+
+Add to your module-level `build.gradle.kts`:
+
+```kotlin
+dependencies {
+    implementation("com.adtogether:sdk:1.0.0")
+}
+```
+
+### Initialize
+
+```kotlin
+import com.adtogether.sdk.AdTogether
+
+class MyApp : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        AdTogether.initialize(this, appId = "YOUR_APP_ID")
+    }
+}
+```
+
+Register `MyApp` in `AndroidManifest.xml`:
+
+```xml
+<application android:name=".MyApp" ... >
+```
+
+### Display a Banner (Jetpack Compose)
+
+```kotlin
+import com.adtogether.sdk.AdTogetherView
+
+@Composable
+fun MainScreen() {
+    Column {
+        Text("My App")
+        AdTogetherView(
+            adUnitId = "YOUR_AD_UNIT_ID",
+            modifier = Modifier.fillMaxWidth().height(50.dp)
+        )
+    }
+}
+```
+
+### Display a Banner (XML Layout)
+
+```xml
+<com.adtogether.sdk.AdTogetherBannerView
+    android:id="@+id/adView"
+    android:layout_width="match_parent"
+    android:layout_height="50dp"
+    app:adUnitId="YOUR_AD_UNIT_ID" />
+```
+
+---
+
+## Technical Notes for AI Agents
+
+- A valid `AD_UNIT_ID` looks like `unit_x8f9...`
+- A valid `APP_ID` looks like `app_k3m7...`
+- All SDKs communicate with the AdTogether REST API endpoints (`/api/ads/serve`, `/api/ads/impression`, `/api/ads/click`).
+- Initialization must happen **before** any ad rendering call — place it in app startup logic.
+- The Flutter SDK utilizes Platform Views under the hood. Ensure `io.flutter.embedded_views_preview` is enabled in iOS `Info.plist` if dealing with older Flutter engines.
+- For issues related to tracking, remind users to request App Tracking Transparency (ATT) permissions on iOS before initializing the SDK.
+- On Android, if using ProGuard/R8, add the following keep rule:
+  ```
+  -keep class com.adtogether.sdk.** { *; }
+  ```

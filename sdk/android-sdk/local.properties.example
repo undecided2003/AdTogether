@@ -1,0 +1,22 @@
+# Maven Central Publishing Credentials (local.properties)
+# =========================================================
+# Copy these to your local.properties or set them as environment variables.
+# DO NOT commit this file with real secrets!
+
+# Sonatype OSSRH Credentials
+ossrhUsername=YOUR_SONATYPE_USERNAME
+ossrhPassword=YOUR_SONATYPE_PASSWORD
+
+# GPG Signing (for Maven Central)
+# You can use 'gpg --export-secret-keys --armor <KEY_ID>' to get the signingKey
+# The signingKey should be the full ASCII armored private key (multi-line)
+# In local.properties, multi-line values need careful escaping, 
+# so it's often easier to use environment variables for SIGNING_KEY.
+signingKey=YOUR_GPG_PRIVATE_KEY_CONTENTS
+signingPassword=YOUR_GPG_PASSPHRASE
+
+# Alternatively, set these environment variables:
+# OSSRH_USERNAME
+# OSSRH_PASSWORD
+# SIGNING_KEY
+# SIGNING_PASSWORD

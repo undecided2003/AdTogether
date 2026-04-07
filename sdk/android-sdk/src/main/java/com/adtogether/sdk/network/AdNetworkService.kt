@@ -1,0 +1,77 @@
+package com.adtogether.sdk.network
+
+import android.util.Log
+import com.adtogether.sdk.AdTogether
+import com.adtogether.sdk.models.AdModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
+import java.io.OutputStreamWriter
+import java.net.HttpURLConnection
+import java.net.URL
+
+internal object AdNetworkService {
+    private const val TAG = "AdTogetherSDK"
+
+    suspend fun fetchAd(): AdModel? = withContext(Dispatchers.IO) {
+        try {
+            val url = URL("${AdTogether.baseUrl}/api/ads/serve?country=global")
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.connectTimeout = 5000
+            connection.readTimeout = 5000
+
+            if (connection.responseCode == HttpURLConnection.HTTP_OK) {
+                val responseString = connection.inputStream.bufferedReader().use { it.readText() }
+                val json = JSONObject(responseString)
+                
+                return@withContext AdModel(
+                    id = json.getString("id"),
+                    title = json.getString("title"),
+                    description = json.getString("description"),
+                    clickUrl = json.optString("clickUrl", null).takeIf { it.isNotEmpty() },
+                    imageUrl = json.optString("imageUrl", null).takeIf { it.isNotEmpty() }
+                )
+            } else {
+                Log.e(TAG, "Failed to fetch ad. Code: ${connection.responseCode}")
+                return@withContext null
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Network error fetching ad", e)
+            return@withContext null
+        }
+    }
+
+    suspend fun trackImpression(adId: String) {
+        trackEvent("/api/ads/impression", adId)
+    }
+
+    suspend fun trackClick(adId: String) {
+        trackEvent("/api/ads/click", adId)
+    }
+
+    private suspend fun trackEvent(endpoint: String, adId: String) = withContext(Dispatchers.IO) {
+        try {
+            val url = URL("${AdTogether.baseUrl}$endpoint")
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "POST"
+            connection.setRequestProperty("Content-Type", "application/json")
+            connection.doOutput = true
+            connection.connectTimeout = 5000
+            
+            val jsonParams = JSONObject().apply { put("adId", adId) }
+            
+            OutputStreamWriter(connection.outputStream).use { writer ->
+                writer.write(jsonParams.toString())
+                writer.flush()
+            }
+            
+            val code = connection.responseCode
+            if (code != HttpURLConnection.HTTP_OK) {
+                Log.e(TAG, "Failed to track $endpoint. Code: $code")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Network error tracking $endpoint", e)
+        }
+    }
+}
