@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🚀 AdTogether
 
-## Getting Started
+**AdTogether** is a universal ad exchange and monetization platform designed to provide developers with a seamless, high-performance way to integrate advertising into any application—on the web, mobile, or via cross-platform frameworks.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 📦 SDKs & Platforms
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+AdTogether provides native SDKs for the most popular platforms, all managed within this monorepo.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 🌐 [Web SDK](./sdk/web-sdk)
+Modern, lightweight TypeScript SDK for React and Vanilla JS.
+- **npm**: `@adtogether/web-sdk`
+- **Features**: Native ads, Banners, and Hooks for React.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 🤖 [Android SDK](./sdk/android-sdk)
+Native Android SDK written in Kotlin with Jetpack Compose support.
+- **Maven**: `com.adtogether:sdk`
+- **Features**: Seamless UI integration, Lifecycle-aware ad loading.
 
-## Learn More
+### 🍎 [iOS SDK](./sdk/ios-sdk)
+Swift-native SDK with Swift Package Manager (SPM) support.
+- **Platform**: iOS 15.0+
+- **Features**: High-performance rendering, CocoaPods & SPM support.
 
-To learn more about Next.js, take a look at the following resources:
+### 💙 [Flutter SDK](./sdk/adtogether_sdk)
+Cross-platform SDK for beautiful, performant ad integration in Flutter.
+- **Pub**: `adtogether_sdk`
+- **Features**: Widget-based integration, Universal platform support.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🛠️ Getting Started with the Platform
 
-## Deploy on Vercel
+The core AdTogether platform is built with **Next.js 15** and **Firebase**.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Development
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Set up your environment variables (`.env.local`).
+3. Run the development server:
+   ```bash
+   npm run dev
+   ```
+4. Open [http://localhost:3000](http://localhost:3000) to see the dashboard.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## 🚀 Automated Publishing
+
+This repository is configured with **GitHub Actions** for automated multi-platform releases.
+When you push a Git tag (e.g. `v1.0.0`), the system automatically:
+- Publishes the Web SDK to **npm**.
+- Signs and publishes the Android SDK to **Maven Central**.
+- Validates the iOS Swift Package.
+- Prepares the Flutter package for **pub.dev**.
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License**. See the [LICENSE](./LICENSE) file for details.
+
+---
+
+Built with ❤️ by the AdTogether Team.
