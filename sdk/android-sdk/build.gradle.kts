@@ -1,8 +1,7 @@
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
-    id("maven-publish")
-    id("signing")
+    id("com.vanniktech.maven.publish") version "0.28.0"
 }
 
 android {
@@ -50,69 +49,49 @@ dependencies {
     
     // Network & Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-    implementation("org.json:json:20231013") // Or use org.json provided by Android
-    // Coil for image loading in compose
+    implementation("org.json:json:20231013") 
     implementation("io.coil-kt:coil-compose:2.5.0")
 }
 
-afterEvaluate {
-    publishing {
-        publications {
-            create<MavenPublication>("release") {
-                groupId = "com.adtogether"
-                artifactId = "sdk"
-                version = "0.1.0"
-                
-                // For Android library, use the release component
-                from(components["release"])
-                
-                pom {
-                    name.set("AdTogether Android SDK")
-                    description.set("The official AdTogether Android SDK for monetizing applications.")
-                    url.set("https://adtogether.com")
-                    licenses {
-                        license {
-                            name.set("MIT License")
-                            url.set("https://opensource.org/licenses/MIT")
-                        }
-                    }
-                    developers {
-                        developer {
-                            id.set("adtogether")
-                            name.set("AdTogether Team")
-                            email.set("support@adtogether.com")
-                        }
-                    }
-                    scm {
-                        connection.set("scm:git:github.com/AdTogether/AdTogether.git")
-                        developerConnection.set("scm:git:ssh://github.com/AdTogether/AdTogether.git")
-                        url.set("https://github.com/AdTogether/AdTogether/tree/main/sdk/android-sdk")
-                    }
-                }
+import com.vanniktech.maven.publish.SonatypeHost
+import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
+
+mavenPublishing {
+    // Defines the coordinates
+    coordinates("com.adtogether", "sdk", "0.1.0")
+    
+    // Configures the POM
+    pom {
+        name.set("AdTogether Android SDK")
+        description.set("The official AdTogether Android SDK for monetizing applications.")
+        url.set("https://adtogether.relaxsoftwareapps.com")
+        licenses {
+            license {
+                name.set("MIT License")
+                url.set("https://opensource.org/licenses/MIT")
             }
         }
-        
-        repositories {
-            maven {
-                name = "Sonatype"
-                val releaseRepoUrl = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
-                val snapshotRepoUrl = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
-                url = uri(if (version.toString().endsWith("SNAPSHOT")) snapshotRepoUrl else releaseRepoUrl)
-                
-                credentials {
-                    username = project.findProperty("ossrhUsername")?.toString() ?: System.getenv("OSSRH_USERNAME")
-                    password = project.findProperty("ossrhPassword")?.toString() ?: System.getenv("OSSRH_PASSWORD")
-                }
+        developers {
+            developer {
+                id.set("adtogether")
+                name.set("AdTogether Team")
+                email.set("info1@relaxsoftwareapps.com")
             }
+        }
+        scm {
+            connection.set("scm:git:github.com/AdTogether/AdTogether.git")
+            developerConnection.set("scm:git:ssh://github.com/AdTogether/AdTogether.git")
+            url.set("https://github.com/AdTogether/AdTogether/tree/main/sdk/android-sdk")
         }
     }
+
+    // Configures the publishing to Central Portal
+    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+    
+    // Automatic signing
+    signAllPublications()
+    
+    // Configure the Android Library variant
+    configure(AndroidSingleVariantLibrary("release"))
 }
 
-signing {
-    val signingKey = project.findProperty("signingKey")?.toString() ?: System.getenv("SIGNING_KEY")
-    val signingPassword = project.findProperty("signingPassword")?.toString() ?: System.getenv("SIGNING_PASSWORD")
-    if (signingKey != null && signingPassword != null) {
-        useInMemoryPgpKeys(signingKey, signingPassword)
-        sign(publishing.publications["release"])
-    }
-}

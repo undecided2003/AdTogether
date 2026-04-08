@@ -6,9 +6,9 @@ Pod::Spec.new do |spec|
     AdTogether is an ad exchange platform. "Shown an ad, get ad shown." 
     This SDK allows you to easily monetize your iOS applications by displaying native ads.
   DESC
-  spec.homepage     = "https://adtogether.com"
+  spec.homepage     = "https://adtogether.relaxsoftwareapps.com"
   spec.license      = { :type => "MIT", :file => "LICENSE" }
-  spec.author       = { "AdTogether" => "team@adtogether.com" }
+  spec.author       = { "AdTogether" => "info1@relaxsoftwareapps.com" }
   
   spec.platform     = :ios, "15.0"
   spec.swift_version = "5.0"

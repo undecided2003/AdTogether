@@ -47,13 +47,14 @@ jobs:
           # Import if needed, but our Gradle uses in-memory PGP
         working-directory: sdk/android-sdk
 
-      - name: Publish to Sonatype
+      - name: Publish to Maven Central
         run: |
-          ./gradlew publishReleasePublicationToSonatypeRepository \
-            -PossrhUsername="${{ secrets.OSSRH_USERNAME }}" \
-            -PossrhPassword="${{ secrets.OSSRH_PASSWORD }}" \
-            -PsigningKey="${{ secrets.SIGNING_KEY }}" \
-            -PsigningPassword="${{ secrets.SIGNING_PASSWORD }}"
+          gradle publishAllPublicationsToMavenCentralRepository \
+            -PmavenCentralUsername="${{ secrets.MAVEN_CENTRAL_USERNAME }}" \
+            -PmavenCentralPassword="${{ secrets.MAVEN_CENTRAL_PASSWORD }}" \
+            -Psigning.keyId="${{ secrets.SIGNING_KEY_ID }}" \
+            -Psigning.password="${{ secrets.SIGNING_PASSWORD }}" \
+            -Psigning.secretKeyRingFile="gpg_key.asc"
         working-directory: sdk/android-sdk
 
   # --- Flutter SDK (pub.dev) ---

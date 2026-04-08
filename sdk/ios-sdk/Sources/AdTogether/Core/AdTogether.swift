@@ -7,7 +7,7 @@ public final class AdTogether {
     static let shared = AdTogether()
     
     private(set) var appId: String?
-    private(set) var baseUrl: String = "https://adtogether.com"
+    private(set) var baseUrl: String = "https://adtogether.relaxsoftwareapps.com"
     
     let logger = Logger(subsystem: "com.adtogether.sdk", category: "Core")
     

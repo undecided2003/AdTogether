@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class AdTogether {
   static String? _appId;
-  static String _baseUrl = 'https://adtogether.com';
+  static String _baseUrl = 'https://adtogether.relaxsoftwareapps.com';
 
   /// Initialize the AdTogether SDK
   /// [appId] is your registered application ID.

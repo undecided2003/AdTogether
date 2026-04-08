@@ -26,12 +26,12 @@ Flutter developers do **not** need the native iOS/Android SDKs — those are for
 
 For custom environments without an SDK, you can directly interface with the Next.js Ad Serving API.
 
-**Base URL:** Replace `https://adtogether.com` with the actual deployment origin.
+**Base URL:** Replace `https://adtogether.relaxsoftwareapps.com` with the actual deployment origin.
 
 ### Fetch Ad
 
 \`\`\`bash
-curl -X GET "https://adtogether.com/api/ads/serve?country=global"
+curl -X GET "https://adtogether.relaxsoftwareapps.com/api/ads/serve?country=global"
 \`\`\`
 
 Will return a JSON object with ad details (`id`, `title`, `description`, `imageUrl`, `clickUrl`).
@@ -39,7 +39,7 @@ Will return a JSON object with ad details (`id`, `title`, `description`, `imageU
 ### Track Impression
 
 \`\`\`bash
-curl -X POST "https://adtogether.com/api/ads/impression" \
+curl -X POST "https://adtogether.relaxsoftwareapps.com/api/ads/impression" \
   -H "Content-Type: application/json" \
   -d '{"adId": "123456"}'
 \`\`\`
@@ -49,7 +49,7 @@ Decrements the advertiser's credit balance.
 ### Track Click
 
 \`\`\`bash
-curl -X POST "https://adtogether.com/api/ads/click" \
+curl -X POST "https://adtogether.relaxsoftwareapps.com/api/ads/click" \
   -H "Content-Type: application/json" \
   -d '{"adId": "123456"}'
 \`\`\`
@@ -65,7 +65,7 @@ curl -X POST "https://adtogether.com/api/ads/click" \
 Include the global script tag in your `<head>` or global layout:
 
 ```html
-<script src="https://adtogether.com/sdk.js" defer></script>
+<script src="https://adtogether.relaxsoftwareapps.com/sdk.js" defer></script>
 ```
 
 ### Display an Ad

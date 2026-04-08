@@ -243,7 +243,7 @@ export default function DocsPage() {
                     Fetch Ad
                   </p>
                   <CodeBlock language="bash" title="GET /api/ads/serve">
-{`curl -X GET "https://adtogether.com/api/ads/serve?country=global"`}
+{`curl -X GET "https://adtogether.relaxsoftwareapps.com/api/ads/serve?country=global"`}
                   </CodeBlock>
                 </div>
                 
@@ -252,7 +252,7 @@ export default function DocsPage() {
                     Track Impression
                   </p>
                   <CodeBlock language="bash" title="POST /api/ads/impression">
-{`curl -X POST "https://adtogether.com/api/ads/impression" \\
+{`curl -X POST "https://adtogether.relaxsoftwareapps.com/api/ads/impression" \\
   -H "Content-Type: application/json" \\
   -d '{"adId": "123456"}'`}
                   </CodeBlock>
@@ -290,7 +290,7 @@ export default function DocsPage() {
                 1. Add Script
               </p>
               <CodeBlock language="html" title="index.html">
-                {`<script src="https://adtogether.com/sdk.js" defer></script>`}
+                {`<script src="https://adtogether.relaxsoftwareapps.com/sdk.js" defer></script>`}
               </CodeBlock>
 
               <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3 mt-6">

@@ -3,7 +3,7 @@ import { AdModel, AdTogetherOptions } from './types';
 export class AdTogether {
   private static instance: AdTogether;
   private appId?: string;
-  public baseUrl: string = 'https://adtogether.com';
+  public baseUrl: string = 'https://adtogether.relaxsoftwareapps.com';
 
   private constructor() {}
 
