@@ -13,7 +13,7 @@ Pod::Spec.new do |spec|
   spec.platform     = :ios, "15.0"
   spec.swift_version = "5.0"
 
-  spec.source       = { :git => "https://github.com/AdTogether/AdTogether.git", :tag => "#{spec.version}" }
+  spec.source       = { :git => "https://github.com/undecided2003/AdTogether.git", :tag => "#{spec.version}" }
   spec.source_files  = "Sources/AdTogether/**/*.{h,m,swift}"
 
   # Add dependencies if required in the future

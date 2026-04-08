@@ -58,7 +58,7 @@ The backend and developer dashboard are built using **Next.js 15** and **Firebas
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-org/AdTogether.git
+git clone https://github.com/undecided2003/AdTogether.git
 cd AdTogether
 
 # 2. Install core dependencies
