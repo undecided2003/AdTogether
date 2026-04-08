@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { doc, updateDoc, increment } from 'firebase/firestore';
+import { adminDb as db } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
+import crypto from 'crypto';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,15 +15,27 @@ export async function OPTIONS() {
 
 export async function POST(request: Request) {
   try {
-    const { adId } = await request.json();
+    const { adId, token } = await request.json();
 
     if (!adId) {
       return NextResponse.json({ error: 'adId is required' }, { status: 400, headers: corsHeaders });
     }
+    
+    if (!token) {
+      return NextResponse.json({ error: 'Auth token is required' }, { status: 401, headers: corsHeaders });
+    }
+
+    const hmac = crypto.createHmac('sha256', process.env.API_SECRET || 'default_secret_key');
+    hmac.update(adId);
+    const expectedToken = hmac.digest('hex');
+
+    if (token !== expectedToken) {
+      return NextResponse.json({ error: 'Invalid auth token' }, { status: 403, headers: corsHeaders });
+    }
 
     // Increment click count on the ad document for analytics
-    const adRef = doc(db, 'ads', adId);
-    await updateDoc(adRef, { clicks: increment(1) }).catch(console.error);
+    const adRef = db.collection('ads').doc(adId);
+    await adRef.update({ clicks: FieldValue.increment(1) }).catch(console.error);
 
     return NextResponse.json({ success: true }, { status: 200, headers: corsHeaders });
   } catch (error: any) {

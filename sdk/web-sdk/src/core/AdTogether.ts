@@ -43,15 +43,15 @@ export class AdTogether {
     return response.json();
   }
 
-  static trackImpression(adId: string) {
-    this.trackEvent('/api/ads/impression', adId);
+  static trackImpression(adId: string, token?: string) {
+    this.trackEvent('/api/ads/impression', adId, token);
   }
 
-  static trackClick(adId: string) {
-    this.trackEvent('/api/ads/click', adId);
+  static trackClick(adId: string, token?: string) {
+    this.trackEvent('/api/ads/click', adId, token);
   }
 
-  private static trackEvent(endpoint: string, adId: string) {
+  private static trackEvent(endpoint: string, adId: string, token?: string) {
     if (!AdTogether.shared.assertInitialized()) return;
     
     fetch(`${AdTogether.shared.baseUrl}${endpoint}`, {
@@ -59,7 +59,7 @@ export class AdTogether {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ adId }),
+      body: JSON.stringify({ adId, token }),
     }).catch(console.error);
   }
 }

@@ -30,7 +30,8 @@ internal object AdNetworkService {
                     title = json.getString("title"),
                     description = json.getString("description"),
                     clickUrl = json.optString("clickUrl", null).takeIf { it.isNotEmpty() },
-                    imageUrl = json.optString("imageUrl", null).takeIf { it.isNotEmpty() }
+                    imageUrl = json.optString("imageUrl", null).takeIf { it.isNotEmpty() },
+                    token = json.optString("token", null).takeIf { it.isNotEmpty() }
                 )
             } else {
                 Log.e(TAG, "Failed to fetch ad. Code: ${connection.responseCode}")
@@ -42,15 +43,15 @@ internal object AdNetworkService {
         }
     }
 
-    suspend fun trackImpression(adId: String) {
-        trackEvent("/api/ads/impression", adId)
+    suspend fun trackImpression(adId: String, token: String?) {
+        trackEvent("/api/ads/impression", adId, token)
     }
 
-    suspend fun trackClick(adId: String) {
-        trackEvent("/api/ads/click", adId)
+    suspend fun trackClick(adId: String, token: String?) {
+        trackEvent("/api/ads/click", adId, token)
     }
 
-    private suspend fun trackEvent(endpoint: String, adId: String) = withContext(Dispatchers.IO) {
+    private suspend fun trackEvent(endpoint: String, adId: String, token: String?) = withContext(Dispatchers.IO) {
         try {
             val url = URL("${AdTogether.baseUrl}$endpoint")
             val connection = url.openConnection() as HttpURLConnection
@@ -59,7 +60,10 @@ internal object AdNetworkService {
             connection.doOutput = true
             connection.connectTimeout = 5000
             
-            val jsonParams = JSONObject().apply { put("adId", adId) }
+            val jsonParams = JSONObject().apply { 
+                put("adId", adId)
+                if (token != null) put("token", token)
+            }
             
             OutputStreamWriter(connection.outputStream).use { writer ->
                 writer.write(jsonParams.toString())

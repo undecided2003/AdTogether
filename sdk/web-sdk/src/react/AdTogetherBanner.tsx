@@ -82,7 +82,7 @@ export const AdTogetherBanner: React.FC<AdTogetherBannerProps> = ({
       (entries) => {
         if (entries[0].isIntersecting && entries[0].intersectionRatio >= 0.5 && !impressionTrackedRef.current) {
           impressionTrackedRef.current = true;
-          AdTogether.trackImpression(adData.id);
+          AdTogether.trackImpression(adData.id, adData.token);
           observer.disconnect();
         }
       },
@@ -98,7 +98,7 @@ export const AdTogetherBanner: React.FC<AdTogetherBannerProps> = ({
 
   const handleContainerClick = () => {
     if (!adData) return;
-    AdTogether.trackClick(adData.id);
+    AdTogether.trackClick(adData.id, adData.token);
     if (adData.clickUrl) {
       window.open(adData.clickUrl, '_blank', 'noopener,noreferrer');
     }

@@ -85,7 +85,7 @@ fun AdTogetherView(
     LaunchedEffect(ad.id) {
         if (!impressionTracked) {
             impressionTracked = true
-            AdNetworkService.trackImpression(ad.id)
+            AdNetworkService.trackImpression(ad.id, ad.token)
         }
     }
 
@@ -100,7 +100,7 @@ fun AdTogetherView(
             .clickable {
                 // Track click and open URL
                 coroutineScope.launch {
-                    AdNetworkService.trackClick(ad.id)
+                    AdNetworkService.trackClick(ad.id, ad.token)
                 }
                 ad.clickUrl?.let { url ->
                     try {

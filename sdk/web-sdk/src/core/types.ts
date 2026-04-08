@@ -4,6 +4,7 @@ export interface AdModel {
   description: string;
   clickUrl?: string;
   imageUrl?: string;
+  token?: string;
 }
 
 export interface AdTogetherOptions {

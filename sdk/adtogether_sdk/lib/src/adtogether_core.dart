@@ -28,12 +28,15 @@ class AdTogether {
   static String get baseUrl => _baseUrl;
 
   /// Internal method to track an impression
-  static Future<void> trackImpression(String adId) async {
+  static Future<void> trackImpression(String adId, {String? token}) async {
     try {
       await http.post(
         Uri.parse('$_baseUrl/api/ads/impression'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'adId': adId}),
+        body: jsonEncode({
+          'adId': adId,
+          if (token != null) 'token': token,
+        }),
       );
     } catch (e) {
       print('AdTogether Error: Failed to track impression - $e');
@@ -41,12 +44,15 @@ class AdTogether {
   }
 
   /// Internal method to track a click
-  static Future<void> trackClick(String adId) async {
+  static Future<void> trackClick(String adId, {String? token}) async {
     try {
       await http.post(
         Uri.parse('$_baseUrl/api/ads/click'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'adId': adId}),
+        body: jsonEncode({
+          'adId': adId,
+          if (token != null) 'token': token,
+        }),
       );
     } catch (e) {
       print('AdTogether Error: Failed to track click - $e');

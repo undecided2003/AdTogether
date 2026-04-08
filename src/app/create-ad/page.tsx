@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { ArrowLeft, UploadCloud, Link as LinkIcon, Type, MapPin } from "lucide-react";
 import Link from "next/link";
-
+import { COUNTRIES } from "@/lib/countries";
 export default function CreateAdPage() {
   const [user, setUser] = useState<User | null>(null);
   const [title, setTitle] = useState("");
@@ -19,6 +19,7 @@ export default function CreateAdPage() {
   
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
 
@@ -45,6 +46,12 @@ export default function CreateAdPage() {
       setError("Please upload an image for the ad.");
       return;
     }
+    
+    // Validate URL
+    if (!clickUrl.startsWith('http://') && !clickUrl.startsWith('https://')) {
+      setError("Destination URL must start with http:// or https://");
+      return;
+    }
 
     setLoading(true);
     setError("");
@@ -67,12 +74,17 @@ export default function CreateAdPage() {
         createdAt: new Date().toISOString(),
       });
 
-      router.push("/dashboard");
+      setSuccess(true);
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 1500);
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Failed to create ad.");
     } finally {
-      setLoading(false);
+      if (!success) {
+        setLoading(false);
+      }
     }
   };
 
@@ -149,13 +161,10 @@ export default function CreateAdPage() {
                   onChange={(e) => setTargetCountry(e.target.value)}
                   className="w-full bg-black/50 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
                 >
-                  <option value="US">United States (Tier 1)</option>
-                  <option value="GB">United Kingdom (Tier 1)</option>
-                  <option value="CA">Canada (Tier 1)</option>
-                  <option value="DE">Germany (Tier 2)</option>
-                  <option value="IN">India (Tier 3)</option>
-                  <option value="BR">Brazil (Tier 3)</option>
-                  <option value="ALL">Global (Worldwide)</option>
+                  <option value="global">Global (Worldwide)</option>
+                  {COUNTRIES.map(c => (
+                    <option key={c.code} value={c.code}>{c.name}</option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -219,10 +228,23 @@ export default function CreateAdPage() {
           <div className="pt-6 border-t border-white/10 flex justify-end">
             <button
               type="submit"
-              disabled={loading}
-              className="bg-blue-600 hover:bg-blue-500 text-white font-medium px-8 py-3 rounded-xl transition-all shadow-[0_0_15px_rgba(37,99,235,0.3)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-w-[200px]"
+              disabled={loading || success}
+              className={`font-medium px-8 py-3 rounded-xl transition-all shadow-[0_0_15px_rgba(37,99,235,0.3)] disabled:cursor-not-allowed flex items-center justify-center gap-2 min-w-[200px] ${
+                success 
+                  ? "bg-green-500 text-white hover:bg-green-500" 
+                  : "bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-50"
+              }`}
             >
-              {loading ? <span className="animate-pulse">Uploading...</span> : "Launch Campaign"}
+              {success ? (
+                <>
+                  <span className="animate-in zoom-in duration-300">✓</span>
+                  Campaign Launched!
+                </>
+              ) : loading ? (
+                <span className="animate-pulse">Uploading...</span>
+              ) : (
+                "Launch Campaign"
+              )}
             </button>
           </div>
         </form>

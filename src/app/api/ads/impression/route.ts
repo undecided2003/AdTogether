@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { doc, updateDoc, increment, getDoc } from 'firebase/firestore';
+import { adminDb as db } from '@/lib/firebase-admin';
+import crypto from 'crypto';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,37 +14,80 @@ export async function OPTIONS() {
 
 export async function POST(request: Request) {
   try {
-    const { adId } = await request.json();
+    const { adId, token } = await request.json();
 
     if (!adId) {
       return NextResponse.json({ error: 'adId is required' }, { status: 400, headers: corsHeaders });
     }
-
-    // 1. Get the ad to find the owner
-    const adRef = doc(db, 'ads', adId);
-    const adSnap = await getDoc(adRef);
-
-    if (!adSnap.exists()) {
-      return NextResponse.json({ error: 'Ad not found' }, { status: 404, headers: corsHeaders });
+    
+    if (!token) {
+      return NextResponse.json({ error: 'Auth token is required' }, { status: 401, headers: corsHeaders });
     }
 
-    const adData = adSnap.data();
-    const ownerUid = adData.ownerUid;
+    const hmac = crypto.createHmac('sha256', process.env.API_SECRET || 'default_secret_key');
+    hmac.update(adId);
+    const expectedToken = hmac.digest('hex');
 
-    // 2. Increment impression count on the ad (optional, but good for stats)
-    await updateDoc(adRef, { impressions: increment(1) }).catch(console.error);
+    if (token !== expectedToken) {
+      return NextResponse.json({ error: 'Invalid auth token' }, { status: 403, headers: corsHeaders });
+    }
 
-    // 3. Decrement credit from the owner (skip if owner doesn't exist)
-    if (ownerUid) {
-      const userRef = doc(db, 'users', ownerUid);
-      // We assume each impression costs 1 credit
-      // Note: We are using the Client SDK here. In a true production environment, 
-      // this should be protected by Firebase Admin SDK to prevent abuse without Auth.
-      await updateDoc(userRef, { credits: increment(-1) }).catch(console.error);
+    const adRef = db.collection('ads').doc(adId);
+    let outOfCredits = false;
+
+    // Use runTransaction to safely process impression and deduct credits
+    await db.runTransaction(async (transaction) => {
+      const adSnap = await transaction.get(adRef);
+      if (!adSnap.exists) {
+        throw new Error('Ad not found');
+      }
+
+      const adData = adSnap.data();
+      if (!adData) throw new Error('Ad data missing');
+      
+      const ownerUid = adData.ownerUid;
+      
+      // Increment ad impressions
+      const currentImpressions = adData.impressions || 0;
+      transaction.update(adRef, { impressions: currentImpressions + 1 });
+
+      if (ownerUid) {
+        const userRef = db.collection('users').doc(ownerUid);
+        const userSnap = await transaction.get(userRef);
+
+        if (userSnap.exists) {
+          const userData = userSnap.data();
+          if (!userData) return;
+          
+          const currentCredits = userData.credits || 0;
+
+          if (currentCredits <= -5) {
+            // No credits left (and hit the negative limit), deactivate ad and don't deduct
+            transaction.update(adRef, { active: false });
+            outOfCredits = true;
+          } else {
+            // Deduct safely
+            transaction.update(userRef, { credits: currentCredits - 1 });
+            if (currentCredits - 1 <= -5) {
+              transaction.update(adRef, { active: false });
+            }
+          }
+        }
+      }
+    });
+
+    if (outOfCredits) {
+      return NextResponse.json(
+        { error: 'Ad owner has insufficient credits' },
+        { status: 402, headers: corsHeaders }
+      );
     }
 
     return NextResponse.json({ success: true }, { status: 200, headers: corsHeaders });
   } catch (error: any) {
+    if (error.message === 'Ad not found') {
+      return NextResponse.json({ error: 'Ad not found' }, { status: 404, headers: corsHeaders });
+    }
     console.error('Error tracking impression:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500, headers: corsHeaders });
   }

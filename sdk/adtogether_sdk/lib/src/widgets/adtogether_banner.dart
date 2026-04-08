@@ -83,7 +83,7 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
   void _onVisibilityChanged(VisibilityInfo info) {
     if (!_impressionTracked && info.visibleFraction >= 0.5 && _adData != null) {
       _impressionTracked = true;
-      AdTogether.trackImpression(_adData!['id']);
+      AdTogether.trackImpression(_adData!['id'], token: _adData!['token']);
     }
   }
 
@@ -94,7 +94,7 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
       try {
         final uri = Uri.parse(clickUrl);
         await launchUrl(uri, mode: LaunchMode.externalApplication);
-        await AdTogether.trackClick(_adData!['id']);
+        await AdTogether.trackClick(_adData!['id'], token: _adData!['token']);
       } catch (e) {
         print('AdTogether Error: Could not launch URL - $e');
       }

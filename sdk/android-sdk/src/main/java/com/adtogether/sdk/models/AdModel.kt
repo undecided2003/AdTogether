@@ -5,5 +5,6 @@ data class AdModel(
     val title: String,
     val description: String,
     val clickUrl: String?,
-    val imageUrl: String?
+    val imageUrl: String?,
+    val token: String? = null
 )

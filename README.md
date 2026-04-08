@@ -4,7 +4,7 @@
 
 <p align="center">
   <strong>"Shown an ad, get ad shown"</strong><br>
-  The Universal Ad Exchange & Monetization Platform
+  The Universal Ad Exchange & Reciprocal Marketing Platform
 </p>
 
 <p align="center">
@@ -19,7 +19,7 @@
 
 ## 📖 About AdTogether
 
-**AdTogether** is a state-of-the-art ad exchange platform designed to empower developers and creators. By participating in our network, you can monetize your own applications while simultaneously driving traffic to your products. Our core philosophy is simple: **"Shown an ad, get ad shown"**.
+**AdTogether** is a state-of-the-art ad exchange platform designed to empower developers and creators. By participating in our network, you can engage in reciprocal marketing for your own applications while simultaneously driving traffic to your products. Our core philosophy is simple: **"Shown an ad, get ad shown"**.
 
 We provide a seamless, high-performance API and a suite of native SDKs across web, mobile, and cross-platform ecosystems, enabling you to integrate native advertising into any environment.
 
@@ -58,7 +58,7 @@ The backend and developer dashboard are built using **Next.js 15** and **Firebas
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/undecided2003/AdTogether.git
+git clone https://github.com/AdTogether/AdTogether.git
 cd AdTogether
 
 # 2. Install core dependencies

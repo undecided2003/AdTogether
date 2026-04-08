@@ -1,4 +1,4 @@
-import Navbar from '@/components/Navbar';
+
 import Link from 'next/link';
 import {
   LucideTerminal,
@@ -53,10 +53,8 @@ function CodeBlock({
 
 export default function DocsPage() {
   return (
-    <main className="min-h-screen bg-[#0a0a0a] text-white selection:bg-blue-500/30">
-      <Navbar />
-
-      <div className="max-w-5xl mx-auto px-6 pt-32 pb-24">
+    <div className="min-h-screen text-white">
+      <div className="max-w-5xl mx-auto pb-24">
         {/* Header Section */}
         <header className="mb-16">
           <div className="inline-block px-3 py-1 mb-6 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-sm font-medium">
@@ -489,6 +487,6 @@ fun MainScreen() {
           </div>
         </section>
       </div>
-    </main>
+    </div>
   );
 }

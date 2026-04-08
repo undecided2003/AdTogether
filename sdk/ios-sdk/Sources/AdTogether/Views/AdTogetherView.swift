@@ -122,11 +122,11 @@ public struct AdTogetherView: View {
     private func handleImpression(ad: AdModel) {
         guard !impressionTracked else { return }
         impressionTracked = true
-        AdNetworkService.trackImpression(adId: ad.id)
+        AdNetworkService.trackImpression(adId: ad.id, token: ad.token)
     }
     
     private func handleAdClick(ad: AdModel) {
-        AdNetworkService.trackClick(adId: ad.id)
+        AdNetworkService.trackClick(adId: ad.id, token: ad.token)
         if let clickStr = ad.clickUrl, let clickUrl = URL(string: clickStr) {
             openURL(clickUrl)
         }

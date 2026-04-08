@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { adminDb as db } from '@/lib/firebase-admin';
+import crypto from 'crypto';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,17 +18,17 @@ export async function GET(request: Request) {
     const targetCountry = searchParams.get('country') || 'global';
 
     // 1. Fetch active ads
-    const adsRef = collection(db, 'ads');
+    const adsRef = db.collection('ads');
     // Using a simpler query to ensure it works without complex composite indexes initially
-    const q = query(adsRef, where('active', '==', true));
+    const q = adsRef.where('active', '==', true);
     
-    const querySnapshot = await getDocs(q);
+    const querySnapshot = await q.get();
     const ads: any[] = [];
     
     querySnapshot.forEach((doc) => {
       const data = doc.data();
       // Filter by target country if specified, fallback to global or matching logic
-      if (data.targetCountry === 'globally' || data.targetCountry === targetCountry || targetCountry === 'global') {
+      if (data.targetCountry === 'global' || data.targetCountry === targetCountry || targetCountry === 'global') {
         ads.push({ id: doc.id, ...data });
       }
     });
@@ -40,7 +40,12 @@ export async function GET(request: Request) {
     // 2. Select a random ad
     const randomAd = ads[Math.floor(Math.random() * ads.length)];
 
-    // 3. Return the selected ad
+    // 3. Create auth token for impressions/clicks
+    const hmac = crypto.createHmac('sha256', process.env.API_SECRET || 'default_secret_key');
+    hmac.update(randomAd.id);
+    const token = hmac.digest('hex');
+
+    // 4. Return the selected ad
     return NextResponse.json(
       {
         id: randomAd.id,
@@ -48,6 +53,7 @@ export async function GET(request: Request) {
         description: randomAd.description,
         imageUrl: randomAd.imageUrl,
         clickUrl: randomAd.clickUrl,
+        token,
       },
       { status: 200, headers: corsHeaders }
     );
