@@ -16,22 +16,41 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const targetCountry = searchParams.get('country') || 'global';
+    const adUnitId = searchParams.get('adUnitId');
 
-    // 1. Fetch active ads
-    const adsRef = db.collection('ads');
-    // Using a simpler query to ensure it works without complex composite indexes initially
-    const q = adsRef.where('active', '==', true);
-    
-    const querySnapshot = await q.get();
     const ads: any[] = [];
     
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      // Filter by target country if specified, fallback to global or matching logic
-      if (data.targetCountry === 'global' || data.targetCountry === targetCountry || targetCountry === 'global') {
-        ads.push({ id: doc.id, ...data });
-      }
-    });
+    try {
+      // 1. Fetch active ads
+      const adsRef = db.collection('ads');
+      const q = adsRef.where('active', '==', true);
+      const querySnapshot = await q.get();
+      
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data.targetCountry === 'global' || data.targetCountry === targetCountry || targetCountry === 'global') {
+          ads.push({ id: doc.id, ...data });
+        }
+      });
+    } catch (dbError) {
+      console.error('Database fetch failed:', dbError);
+      // Continue to fallback logic below
+    }
+
+    // Fallback for demo purposes if no ads in DB or query failed
+    if (ads.length === 0 && adUnitId === 'example_banner') {
+      return NextResponse.json(
+        {
+          id: 'ajF9OqQSlyzsK5oEXhLA',
+          title: 'Relax Software: Custom Apps',
+          description: 'Discover fun, useful apps for Android, iOS, and web. AI-powered tools for life & business.',
+          imageUrl: 'https://firebasestorage.googleapis.com/v0/b/adtogether-15453.firebasestorage.app/o/ads%2FBFkKpwekuTa5avhO5bxTN4qTXZG2%2F1775935883993_scraped-image.jpeg?alt=media&token=0b8310e7-3660-4b99-b233-354e6894e2be',
+          clickUrl: 'https://relaxsoftwareapps.com',
+          token: 'demo_token_relax_software',
+        },
+        { status: 200, headers: corsHeaders }
+      );
+    }
 
     if (ads.length === 0) {
       return NextResponse.json({ error: 'No ads available' }, { status: 404, headers: corsHeaders });

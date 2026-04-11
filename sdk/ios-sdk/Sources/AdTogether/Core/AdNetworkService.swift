@@ -53,6 +53,9 @@ internal class AdNetworkService {
         if let token = token {
             body["token"] = token
         }
+        if let apiKey = AdTogether.shared.appId {
+            body["apiKey"] = apiKey
+        }
         if let bodyData = try? JSONEncoder().encode(body) {
             request.httpBody = bodyData
             URLSession.shared.dataTask(with: request).resume()

@@ -63,6 +63,7 @@ internal object AdNetworkService {
             val jsonParams = JSONObject().apply { 
                 put("adId", adId)
                 if (token != null) put("token", token)
+                put("apiKey", AdTogether.appId)
             }
             
             OutputStreamWriter(connection.outputStream).use { writer ->

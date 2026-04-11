@@ -11,84 +11,13 @@ import { AdTogether } from '@adtogether/web-sdk';
 import { AdTogetherBanner } from '@adtogether/web-sdk/react';
 
 function ExampleAdPreview() {
-  const [adData, setAdData] = useState<{
-    id: string;
-    title: string;
-    description: string;
-    imageUrl?: string;
-    clickUrl?: string;
-  } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
-
-  useEffect(() => {
-    // Try the live SDK first
-    AdTogether.fetchAd('example_banner')
-      .then((ad) => {
-        setAdData(ad);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        // Fallback: fetch directly from the local API
-        fetch('/api/ads/serve?country=global&adUnitId=example_banner')
-          .then(res => {
-            if (!res.ok) throw new Error('No ads');
-            return res.json();
-          })
-          .then((ad) => {
-            setAdData(ad);
-            setIsLoading(false);
-          })
-          .catch(() => {
-            setHasError(true);
-            setIsLoading(false);
-          });
-      });
-  }, []);
-
-  if (isLoading) {
-    return (
-      <div className="animate-pulse flex gap-3 rounded-xl overflow-hidden">
-        <div className="w-[100px] h-[80px] bg-zinc-200 dark:bg-zinc-700 rounded-lg shrink-0" />
-        <div className="flex-1 space-y-2 py-2">
-          <div className="h-3 bg-zinc-200 dark:bg-zinc-700 rounded w-3/4" />
-          <div className="h-2 bg-zinc-200 dark:bg-zinc-700 rounded w-full" />
-          <div className="h-2 bg-zinc-200 dark:bg-zinc-700 rounded w-2/3" />
-        </div>
-      </div>
-    );
-  }
-
-  if (hasError || !adData) {
-    return (
-      <div className="text-center py-4">
-        <p className="text-zinc-400 text-xs">No ads available at the moment.</p>
-        <p className="text-zinc-500 dark:text-zinc-400 text-[11px] mt-1">Create an ad in the dashboard to see it here!</p>
-      </div>
-    );
-  }
-
   return (
-    <a
-      href={adData.clickUrl || '#'}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex gap-3 rounded-xl overflow-hidden border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-800 hover:scale-[1.02] transition-transform duration-200 cursor-pointer no-underline"
-    >
-      {adData.imageUrl && (
-        <div className="w-[100px] h-[80px] shrink-0">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={adData.imageUrl} alt={adData.title} className="w-full h-full object-cover" />
-        </div>
-      )}
-      <div className="flex-1 py-2 pr-3 min-w-0">
-        <div className="flex items-start justify-between gap-2 mb-1">
-          <span className="text-sm font-bold text-zinc-900 dark:text-white truncate">{adData.title}</span>
-          <span className="text-[9px] font-bold bg-amber-400 text-black px-1.5 py-0.5 rounded shrink-0">AD</span>
-        </div>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2 leading-relaxed">{adData.description}</p>
-      </div>
-    </a>
+    <div className="py-2">
+      <AdTogetherBanner 
+        adUnitId="example_banner" 
+        className="w-full"
+      />
+    </div>
   );
 }
 

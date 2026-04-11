@@ -37,6 +37,7 @@ class AdTogether {
         body: jsonEncode({
           'adId': adId,
           if (token != null) 'token': token,
+          'apiKey': _appId,
         }),
       );
     } catch (e) {
@@ -53,6 +54,7 @@ class AdTogether {
         body: jsonEncode({
           'adId': adId,
           if (token != null) 'token': token,
+          'apiKey': _appId,
         }),
       );
     } catch (e) {

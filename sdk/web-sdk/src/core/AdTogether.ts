@@ -59,7 +59,11 @@ export class AdTogether {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ adId, token }),
+      body: JSON.stringify({ 
+        adId, 
+        token, 
+        apiKey: AdTogether.shared.appId 
+      }),
     }).catch(console.error);
   }
 }
