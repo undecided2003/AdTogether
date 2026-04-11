@@ -1,5 +1,7 @@
 {
   "projects": {
     "default": "adtogether-15453"
-  }
+  },
+  "targets": {},
+  "etags": {}
 }

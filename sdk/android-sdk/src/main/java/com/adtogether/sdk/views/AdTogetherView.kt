@@ -40,7 +40,6 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.adtogether.sdk.AdTogether
 import com.adtogether.sdk.models.AdModel
-import com.adtogether.sdk.network.AdNetworkService
 import kotlinx.coroutines.launch
 
 @Composable
@@ -58,8 +57,8 @@ fun AdTogetherView(
     var hasError by remember { mutableStateOf(false) }
     var impressionTracked by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        val result = AdNetworkService.fetchAd()
+    LaunchedEffect(adUnitId) {
+        val result = AdTogether.fetchAd(adUnitId)
         if (result != null) {
             adData = result
         } else {
@@ -85,7 +84,7 @@ fun AdTogetherView(
     LaunchedEffect(ad.id) {
         if (!impressionTracked) {
             impressionTracked = true
-            AdNetworkService.trackImpression(ad.id, ad.token)
+            AdTogether.trackImpression(ad.id, ad.token)
         }
     }
 
@@ -100,7 +99,7 @@ fun AdTogetherView(
             .clickable {
                 // Track click and open URL
                 coroutineScope.launch {
-                    AdNetworkService.trackClick(ad.id, ad.token)
+                    AdTogether.trackClick(ad.id, ad.token)
                 }
                 ad.clickUrl?.let { url ->
                     try {

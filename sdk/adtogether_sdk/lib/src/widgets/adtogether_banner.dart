@@ -6,6 +6,7 @@ import 'package:visibility_detector/visibility_detector.dart';
 
 import '../adtogether_core.dart';
 import '../models/ad_size.dart';
+import '../models/ad_model.dart';
 
 class AdTogetherBanner extends StatefulWidget {
   final String adUnitId;
@@ -26,7 +27,7 @@ class AdTogetherBanner extends StatefulWidget {
 }
 
 class _AdTogetherBannerState extends State<AdTogetherBanner> {
-  Map<String, dynamic>? _adData;
+  AdModel? _adData;
   bool _isLoading = true;
   bool _hasError = false;
   bool _impressionTracked = false;
@@ -38,36 +39,14 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
   }
 
   Future<void> _fetchAd() async {
-    // Ensure SDK is initialized
     try {
-      final _ = AdTogether.appId;
-    } catch (e) {
-      widget.onAdFailedToLoad?.call(e.toString());
+      final ad = await AdTogether.fetchAd(widget.adUnitId);
       if (mounted) {
         setState(() {
+          _adData = ad;
           _isLoading = false;
-          _hasError = true;
         });
-      }
-      return;
-    }
-
-    try {
-      final response = await http.get(
-        Uri.parse('${AdTogether.baseUrl}/api/ads/serve?country=global'),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (mounted) {
-          setState(() {
-            _adData = data;
-            _isLoading = false;
-          });
-          widget.onAdLoaded?.call();
-        }
-      } else {
-        throw Exception('Server returned statusCode ${response.statusCode}');
+        widget.onAdLoaded?.call();
       }
     } catch (e) {
       if (mounted) {
@@ -83,18 +62,18 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
   void _onVisibilityChanged(VisibilityInfo info) {
     if (!_impressionTracked && info.visibleFraction >= 0.5 && _adData != null) {
       _impressionTracked = true;
-      AdTogether.trackImpression(_adData!['id'], token: _adData!['token']);
+      AdTogether.trackImpression(_adData!.id, token: _adData!.token);
     }
   }
 
   Future<void> _onAdClicked() async {
     if (_adData == null) return;
-    final clickUrl = _adData!['clickUrl'] as String?;
+    final clickUrl = _adData!.clickUrl;
     if (clickUrl != null && clickUrl.isNotEmpty) {
       try {
         final uri = Uri.parse(clickUrl);
         await launchUrl(uri, mode: LaunchMode.externalApplication);
-        await AdTogether.trackClick(_adData!['id'], token: _adData!['token']);
+        await AdTogether.trackClick(_adData!.id, token: _adData!.token);
       } catch (e) {
         print('AdTogether Error: Could not launch URL - $e');
       }
@@ -122,7 +101,7 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
     final descColor = isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
 
     return VisibilityDetector(
-      key: Key('adtogether_banner_${widget.adUnitId}_${_adData!['id']}'),
+      key: Key('adtogether_banner_${widget.adUnitId}_${_adData!.id}'),
       onVisibilityChanged: _onVisibilityChanged,
       child: GestureDetector(
         onTap: _onAdClicked,
@@ -156,12 +135,12 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
   Widget _buildHorizontalLayout(Color textColor, Color descColor) {
     return Row(
       children: [
-        if (_adData!['imageUrl'] != null)
+        if (_adData!.imageUrl != null)
           SizedBox(
             width: widget.size.height, 
             height: widget.size.height,
             child: Image.network(
-              _adData!['imageUrl'],
+              _adData!.imageUrl!,
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported, color: Colors.grey),
             ),
@@ -178,7 +157,7 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
                   children: [
                     Expanded(
                       child: Text(
-                        _adData!['title'] ?? '',
+                        _adData!.title,
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: textColor),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -195,7 +174,7 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
                   ],
                 ),
                 Text(
-                  _adData!['description'] ?? '',
+                  _adData!.description,
                   style: TextStyle(fontSize: 12, color: descColor),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -217,9 +196,9 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
           children: [
             AspectRatio(
               aspectRatio: 16 / 9,
-              child: _adData!['imageUrl'] != null
+              child: _adData!.imageUrl != null
                   ? Image.network(
-                      _adData!['imageUrl'],
+                      _adData!.imageUrl!,
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported, color: Colors.grey),
                     )
@@ -248,14 +227,14 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                _adData!['title'] ?? '',
+                _adData!.title,
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 4),
               Text(
-                _adData!['description'] ?? '',
+                _adData!.description,
                 style: TextStyle(fontSize: 14, color: descColor),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,

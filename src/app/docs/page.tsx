@@ -33,18 +33,18 @@ function CodeBlock({
   title?: string;
 }) {
   return (
-    <div className="bg-black/60 border border-white/5 rounded-xl overflow-hidden">
+    <div className="bg-zinc-100 dark:bg-black/60 border border-zinc-200 dark:border-white/5 rounded-xl overflow-hidden">
       {title && (
-        <div className="flex items-center gap-2 px-4 py-2 border-b border-white/5 bg-white/[0.02]">
+        <div className="flex items-center gap-2 px-4 py-2 border-b border-zinc-200 dark:border-white/5 bg-zinc-200/50 dark:bg-white/[0.02]">
           <div className="flex gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
-            <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
-            <span className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
+            <span className="w-2.5 h-2.5 rounded-full bg-red-400 dark:bg-red-500/70" />
+            <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 dark:bg-yellow-500/70" />
+            <span className="w-2.5 h-2.5 rounded-full bg-green-400 dark:bg-green-500/70" />
           </div>
-          <span className="text-xs text-zinc-500 font-mono ml-2">{title}</span>
+          <span className="text-xs text-zinc-600 dark:text-zinc-500 font-mono ml-2">{title}</span>
         </div>
       )}
-      <pre className="p-4 overflow-x-auto text-sm font-mono leading-relaxed">
+      <pre className="p-4 overflow-x-auto text-sm font-mono leading-relaxed text-zinc-800 dark:text-zinc-300">
         <code>{children}</code>
       </pre>
     </div>
@@ -53,20 +53,20 @@ function CodeBlock({
 
 export default function DocsPage() {
   return (
-    <div className="min-h-screen text-white">
+    <div className="text-zinc-900 dark:text-white">
       <div className="max-w-5xl mx-auto pb-24">
         {/* Header Section */}
         <header className="mb-16">
-          <div className="inline-block px-3 py-1 mb-6 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-sm font-medium">
+          <div className="inline-block px-3 py-1 mb-6 rounded-full bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-500/20 text-sm font-medium">
             Developer Documentation
           </div>
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6">
             Integrate{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-600">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500">
               AdTogether
             </span>
           </h1>
-          <p className="text-xl text-gray-400 max-w-2xl leading-relaxed">
+          <p className="text-xl text-zinc-600 dark:text-gray-400 max-w-2xl leading-relaxed">
             The cross-platform advertising SDK designed for the next generation
             of apps. Instructions optimized for both human developers and AI
             coding agents.
@@ -74,20 +74,20 @@ export default function DocsPage() {
         </header>
 
         {/* AI Awareness Alert */}
-        <div className="bg-indigo-950/30 border border-indigo-500/30 rounded-2xl p-6 mb-16 flex items-start space-x-4">
-          <div className="p-3 bg-indigo-500/20 rounded-xl rounded-tl-none">
-            <LucideBot className="w-6 h-6 text-indigo-400" />
+        <div className="bg-amber-100/50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-500/30 rounded-2xl p-6 mb-16 flex items-start space-x-4">
+          <div className="p-3 bg-amber-500/20 rounded-xl rounded-tl-none">
+            <LucideBot className="w-6 h-6 text-amber-400" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-indigo-300 mb-2">
+            <h3 className="text-lg font-semibold text-amber-700 dark:text-amber-300 mb-2">
               Are you an AI Coding Assistant?
             </h3>
-            <p className="text-gray-400 leading-relaxed max-w-3xl">
+            <p className="text-zinc-600 dark:text-gray-400 leading-relaxed max-w-3xl">
               We have provided a machine-readable documentation file format
               perfectly tuned for LLMs. Read the{' '}
               <Link
                 href="/llms.txt"
-                className="text-blue-400 hover:text-blue-300 underline underline-offset-4"
+                className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 underline underline-offset-4"
               >
                 /llms.txt
               </Link>{' '}
@@ -100,22 +100,22 @@ export default function DocsPage() {
         {/* ── Architecture Overview ────────────────────────── */}
         <section className="mb-20">
           <div className="flex items-center gap-3 mb-8">
-            <div className="p-3 bg-gradient-to-br from-blue-600/20 to-indigo-600/20 rounded-xl">
-              <LucideLayers className="w-6 h-6 text-blue-400" />
+            <div className="p-3 bg-gradient-to-br from-amber-600/20 to-orange-600/20 rounded-xl">
+              <LucideLayers className="w-6 h-6 text-amber-400" />
             </div>
             <h2 className="text-3xl font-bold">SDK Architecture</h2>
           </div>
 
-          <p className="text-gray-400 max-w-3xl mb-8 leading-relaxed">
-            AdTogether is distributed as <strong className="text-white">four separate SDK packages</strong> — each
+          <p className="text-zinc-600 dark:text-gray-400 max-w-3xl mb-8 leading-relaxed">
+            AdTogether is distributed as <strong className="text-zinc-900 dark:text-white">four separate SDK packages</strong> — each
             optimized for its target platform. The Flutter SDK is special: it
             wraps the native Android and iOS cores under the hood, giving
             Flutter developers a single Dart API that works everywhere.
           </p>
 
           {/* Visual Architecture Diagram */}
-          <div className="bg-white/[0.03] border border-white/10 rounded-3xl p-8 md:p-10 overflow-hidden relative">
-            <div className="absolute top-0 left-0 w-80 h-80 bg-blue-600/5 blur-[120px] rounded-full pointer-events-none" />
+          <div className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 rounded-3xl p-8 md:p-10 overflow-hidden relative shadow-sm dark:shadow-none">
+            <div className="absolute top-0 left-0 w-80 h-80 bg-amber-600/5 blur-[120px] rounded-full pointer-events-none" />
 
             {/* Top Row: Entry Points */}
             <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-8 relative z-10">
@@ -127,10 +127,10 @@ export default function DocsPage() {
 
                 <div className="flex flex-wrap gap-3">
                   {[
-                    { label: 'Web (JS)', color: 'text-pink-400 bg-pink-500/10 border-pink-500/20' },
-                    { label: 'Flutter (Dart)', color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
-                    { label: 'Native iOS (Swift)', color: 'text-orange-400 bg-orange-500/10 border-orange-500/20' },
-                    { label: 'Native Android (Kotlin)', color: 'text-purple-400 bg-purple-500/10 border-purple-500/20' },
+                    { label: 'Web (JS)', color: 'text-pink-600 dark:text-pink-400 bg-pink-100 dark:bg-pink-500/10 border-pink-300 dark:border-pink-500/20' },
+                    { label: 'Flutter (Dart)', color: 'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-500/10 border-blue-300 dark:border-blue-500/20' },
+                    { label: 'Native iOS (Swift)', color: 'text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-500/10 border-orange-300 dark:border-orange-500/20' },
+                    { label: 'Native Android (Kotlin)', color: 'text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-500/10 border-purple-300 dark:border-purple-500/20' },
                   ].map(({ label, color }) => (
                     <span
                       key={label}
@@ -152,7 +152,7 @@ export default function DocsPage() {
                 <h4 className="text-sm uppercase tracking-widest text-zinc-500 font-semibold mb-4">
                   Platforms Served
                 </h4>
-                <div className="bg-black/40 border border-white/10 rounded-2xl p-5 space-y-3">
+                <div className="bg-zinc-100 dark:bg-black/40 border border-zinc-200 dark:border-white/10 rounded-2xl p-5 space-y-3">
                   {[
                     { sdk: 'Web SDK', platforms: 'Websites, SPAs, SSR apps' },
                     { sdk: 'Flutter SDK', platforms: 'Android + iOS + Web (one package)' },
@@ -160,10 +160,10 @@ export default function DocsPage() {
                     { sdk: 'Android SDK', platforms: 'Compose / View-based apps' },
                   ].map(({ sdk, platforms }) => (
                     <div key={sdk} className="flex items-start gap-3">
-                      <LucideCheck className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
+                      <LucideCheck className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
                       <div>
-                        <span className="text-white font-medium text-sm">{sdk}</span>
-                        <span className="text-zinc-500 text-sm"> → {platforms}</span>
+                        <span className="text-zinc-900 dark:text-white font-medium text-sm">{sdk}</span>
+                        <span className="text-zinc-600 dark:text-zinc-500 text-sm"> → {platforms}</span>
                       </div>
                     </div>
                   ))}
@@ -172,10 +172,10 @@ export default function DocsPage() {
             </div>
 
             {/* Flutter Internal Architecture */}
-            <div className="mt-10 border-t border-white/5 pt-8 relative z-10">
+            <div className="mt-10 border-t border-zinc-200 dark:border-white/5 pt-8 relative z-10">
               <div className="flex items-center gap-2 mb-4">
-                <LucideInfo className="w-4 h-4 text-blue-400" />
-                <h4 className="text-sm font-semibold text-blue-300">
+                <LucideInfo className="w-4 h-4 text-amber-400" />
+                <h4 className="text-sm font-semibold text-amber-700 dark:text-amber-300">
                   How the Flutter SDK works internally
                 </h4>
               </div>
@@ -184,7 +184,7 @@ export default function DocsPage() {
                   {
                     dir: 'lib/',
                     desc: 'Unified Dart API — AdTogetherBanner, AdTogetherInterstitial, initialization.',
-                    color: 'border-blue-500/20',
+                    color: 'border-amber-500/20',
                   },
                   {
                     dir: 'android/',
@@ -197,16 +197,16 @@ export default function DocsPage() {
                     color: 'border-orange-500/20',
                   },
                 ].map(({ dir, desc, color }) => (
-                  <div key={dir} className={`bg-black/30 rounded-xl border ${color} p-4`}>
-                    <code className="text-xs text-zinc-400 font-mono">{dir}</code>
-                    <p className="text-zinc-500 text-xs mt-2 leading-relaxed">{desc}</p>
+                  <div key={dir} className={`bg-zinc-100 dark:bg-black/30 rounded-xl border ${color} p-4`}>
+                    <code className="text-xs text-zinc-600 dark:text-zinc-400 font-mono">{dir}</code>
+                    <p className="text-zinc-600 dark:text-zinc-500 text-xs mt-2 leading-relaxed">{desc}</p>
                   </div>
                 ))}
               </div>
-              <p className="text-zinc-500 text-xs mt-4">
-                On <strong className="text-zinc-400">Flutter Web</strong>, the SDK renders
-                ads using an <code className="text-pink-400/80 bg-pink-500/10 px-1 rounded">HtmlElementView</code> that
-                loads the Web SDK (<code className="text-pink-400/80 bg-pink-500/10 px-1 rounded">sdk.js</code>) under
+              <p className="text-zinc-600 dark:text-zinc-500 text-xs mt-4">
+                On <strong className="text-zinc-900 dark:text-zinc-400">Flutter Web</strong>, the SDK renders
+                ads using an <code className="text-pink-600 dark:text-pink-400/80 bg-pink-100 dark:bg-pink-500/10 px-1 rounded">HtmlElementView</code> that
+                loads the Web SDK (<code className="text-pink-600 dark:text-pink-400/80 bg-pink-100 dark:bg-pink-500/10 px-1 rounded">sdk.js</code>) under
                 the hood — no native plugin required.
               </p>
             </div>
@@ -216,28 +216,28 @@ export default function DocsPage() {
         {/* ── Platform Integration Cards ──────────────────── */}
         <section className="mb-16">
           <div className="flex items-center gap-3 mb-8">
-            <div className="p-3 bg-gradient-to-br from-blue-600/20 to-indigo-600/20 rounded-xl">
-              <LucideBox className="w-6 h-6 text-blue-400" />
+            <div className="p-3 bg-gradient-to-br from-amber-600/20 to-orange-600/20 rounded-xl">
+              <LucideBox className="w-6 h-6 text-amber-400" />
             </div>
             <h2 className="text-3xl font-bold">Integration Guides</h2>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
             {/* ─── REST API ─── */}
-            <section className="bg-white/[0.03] border border-white/10 p-8 rounded-3xl hover:bg-white/[0.05] transition-colors md:col-span-2">
+            <section className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 p-8 rounded-3xl hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors md:col-span-2">
               <div className="flex items-center space-x-3 mb-3">
                 <div className="p-3 bg-red-500/20 rounded-xl text-red-400">
                   <LucideGlobe className="w-6 h-6" />
                 </div>
                 <h2 className="text-2xl font-semibold">REST API endpoints</h2>
               </div>
-              <p className="text-gray-400 mb-6 max-w-3xl">
+              <p className="text-zinc-600 dark:text-gray-400 mb-6 max-w-3xl">
                 For complete control, or if you are building an integration for a custom platform, you can directly interact with the AdTogether Ad Serving REST API.
               </p>
 
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">
+                  <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3">
                     Fetch Ad
                   </p>
                   <CodeBlock language="bash" title="GET /api/ads/serve">
@@ -246,7 +246,7 @@ export default function DocsPage() {
                 </div>
                 
                 <div>
-                  <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">
+                  <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3">
                     Track Impression
                   </p>
                   <CodeBlock language="bash" title="POST /api/ads/impression">
@@ -259,7 +259,7 @@ export default function DocsPage() {
             </section>
 
             {/* ─── Web Integration ─── */}
-            <section className="bg-white/[0.03] border border-white/10 p-8 rounded-3xl hover:bg-white/[0.05] transition-colors">
+            <section className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 p-8 rounded-3xl hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors">
               <div className="flex items-center space-x-3 mb-3">
                 <div className="p-3 bg-pink-500/20 rounded-xl text-pink-400">
                   <LucideGlobe className="w-6 h-6" />
@@ -267,31 +267,31 @@ export default function DocsPage() {
                 <h2 className="text-2xl font-semibold">Web SDK</h2>
               </div>
               <div className="flex flex-wrap gap-2 mb-6">
-                <PlatformBadge label="HTML" color="text-pink-400 border-pink-500/30" />
-                <PlatformBadge label="React" color="text-pink-400 border-pink-500/30" />
-                <PlatformBadge label="Next.js" color="text-pink-400 border-pink-500/30" />
-                <PlatformBadge label="Vue" color="text-pink-400 border-pink-500/30" />
+                <PlatformBadge label="HTML" color="text-pink-600 dark:text-pink-400 border-pink-300 dark:border-pink-500/30" />
+                <PlatformBadge label="React" color="text-pink-600 dark:text-pink-400 border-pink-300 dark:border-pink-500/30" />
+                <PlatformBadge label="Next.js" color="text-pink-600 dark:text-pink-400 border-pink-300 dark:border-pink-500/30" />
+                <PlatformBadge label="Vue" color="text-pink-600 dark:text-pink-400 border-pink-300 dark:border-pink-500/30" />
               </div>
-              <p className="text-gray-400 mb-6">
+              <p className="text-zinc-600 dark:text-gray-400 mb-6">
                 Embed ads into any webpage using our lightweight script. Zero
                 dependencies — works with any framework.
               </p>
 
-              <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">
+              <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3">
                 Distribution
               </p>
-              <p className="text-sm text-zinc-400 mb-6">
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
                 CDN-hosted script tag — no npm package required.
               </p>
 
-              <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">
+              <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3">
                 1. Add Script
               </p>
               <CodeBlock language="html" title="index.html">
                 {`<script src="https://adtogether.relaxsoftwareapps.com/sdk.js" defer></script>`}
               </CodeBlock>
 
-              <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3 mt-6">
+              <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3 mt-6">
                 2. Place Ad Anchor
               </p>
               <CodeBlock language="html" title="page.html">
@@ -300,43 +300,43 @@ export default function DocsPage() {
             </section>
 
             {/* ─── Flutter Integration ─── */}
-            <section className="bg-white/[0.03] border border-white/10 p-8 rounded-3xl hover:bg-white/[0.05] transition-colors relative overflow-hidden">
-              <div className="absolute top-3 right-3 px-2.5 py-1 bg-green-500/10 border border-green-500/20 rounded-full text-green-400 text-[10px] font-bold uppercase tracking-wider">
+            <section className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 p-8 rounded-3xl hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors relative overflow-hidden">
+              <div className="absolute top-3 right-3 px-2.5 py-1 bg-green-100 dark:bg-green-500/10 border border-green-300 dark:border-green-500/20 rounded-full text-green-700 dark:text-green-400 text-[10px] font-bold uppercase tracking-wider">
                 3-in-1
               </div>
 
               <div className="flex items-center space-x-3 mb-3">
-                <div className="p-3 bg-blue-500/20 rounded-xl text-blue-400">
+                <div className="p-3 bg-amber-500/20 rounded-xl text-amber-400">
                   <LucideSmartphone className="w-6 h-6" />
                 </div>
                 <h2 className="text-2xl font-semibold">Flutter SDK</h2>
               </div>
               <div className="flex flex-wrap gap-2 mb-6">
-                <PlatformBadge label="Android" color="text-green-400 border-green-500/30" />
-                <PlatformBadge label="iOS" color="text-green-400 border-green-500/30" />
-                <PlatformBadge label="Web" color="text-green-400 border-green-500/30" />
+                <PlatformBadge label="Android" color="text-green-600 dark:text-green-400 border-green-300 dark:border-green-500/30" />
+                <PlatformBadge label="iOS" color="text-green-600 dark:text-green-400 border-green-300 dark:border-green-500/30" />
+                <PlatformBadge label="Web" color="text-green-600 dark:text-green-400 border-green-300 dark:border-green-500/30" />
               </div>
-              <p className="text-gray-400 mb-6">
+              <p className="text-zinc-600 dark:text-gray-400 mb-6">
                 One Dart package — full cross-platform coverage. Uses native
                 platform channels on mobile and the Web SDK under the hood for
                 Flutter Web.
               </p>
 
-              <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">
+              <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3">
                 Distribution
               </p>
-              <p className="text-sm text-zinc-400 mb-6">
-                <code className="text-blue-300 bg-blue-500/10 px-1.5 py-0.5 rounded">pub.dev</code> package
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
+                <code className="text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-500/10 px-1.5 py-0.5 rounded">pub.dev</code> package
               </p>
 
-              <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">
+              <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3">
                 1. Install
               </p>
               <CodeBlock title="terminal">
                 {`flutter pub add adtogether_sdk`}
               </CodeBlock>
 
-              <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3 mt-6">
+              <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3 mt-6">
                 2. Initialize
               </p>
               <CodeBlock language="dart" title="main.dart">
@@ -349,7 +349,7 @@ void main() async {
 }`}
               </CodeBlock>
 
-              <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3 mt-6">
+              <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3 mt-6">
                 3. Show Banner
               </p>
               <CodeBlock language="dart" title="my_page.dart">
@@ -363,7 +363,7 @@ void main() async {
             </section>
 
             {/* ─── Native iOS ─── */}
-            <section className="bg-white/[0.03] border border-white/10 p-8 rounded-3xl hover:bg-white/[0.05] transition-colors">
+            <section className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 p-8 rounded-3xl hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors">
               <div className="flex items-center space-x-3 mb-3">
                 <div className="p-3 bg-orange-500/20 rounded-xl text-orange-400">
                   <LucideTerminal className="w-6 h-6" />
@@ -371,22 +371,22 @@ void main() async {
                 <h2 className="text-2xl font-semibold">Native iOS SDK</h2>
               </div>
               <div className="flex flex-wrap gap-2 mb-6">
-                <PlatformBadge label="SwiftUI" color="text-orange-400 border-orange-500/30" />
-                <PlatformBadge label="UIKit" color="text-orange-400 border-orange-500/30" />
+                <PlatformBadge label="SwiftUI" color="text-orange-600 dark:text-orange-400 border-orange-300 dark:border-orange-500/30" />
+                <PlatformBadge label="UIKit" color="text-orange-600 dark:text-orange-400 border-orange-300 dark:border-orange-500/30" />
               </div>
-              <p className="text-gray-400 mb-6">
+              <p className="text-zinc-600 dark:text-gray-400 mb-6">
                 Pure Swift SDK for native iOS and iPadOS apps. Distributed via
                 Swift Package Manager.
               </p>
 
-              <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">
+              <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3">
                 Distribution
               </p>
-              <p className="text-sm text-zinc-400 mb-6">
-                Swift Package Manager — add via Xcode or <code className="text-orange-300 bg-orange-500/10 px-1.5 py-0.5 rounded">Package.swift</code>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
+                Swift Package Manager — add via Xcode or <code className="text-orange-700 dark:text-orange-300 bg-orange-100 dark:bg-orange-500/10 px-1.5 py-0.5 rounded">Package.swift</code>
               </p>
 
-              <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">
+              <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3">
                 1. Add Package
               </p>
               <CodeBlock title="Package.swift">
@@ -396,7 +396,7 @@ void main() async {
 )`}
               </CodeBlock>
 
-              <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3 mt-6">
+              <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3 mt-6">
                 2. Initialize &amp; Display
               </p>
               <CodeBlock language="swift" title="ContentView.swift">
@@ -426,7 +426,7 @@ struct ContentView: View {
             </section>
 
             {/* ─── Native Android ─── */}
-            <section className="bg-white/[0.03] border border-white/10 p-8 rounded-3xl hover:bg-white/[0.05] transition-colors">
+            <section className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 p-8 rounded-3xl hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors">
               <div className="flex items-center space-x-3 mb-3">
                 <div className="p-3 bg-purple-500/20 rounded-xl text-purple-400">
                   <LucideTerminal className="w-6 h-6" />
@@ -434,22 +434,22 @@ struct ContentView: View {
                 <h2 className="text-2xl font-semibold">Native Android SDK</h2>
               </div>
               <div className="flex flex-wrap gap-2 mb-6">
-                <PlatformBadge label="Jetpack Compose" color="text-purple-400 border-purple-500/30" />
-                <PlatformBadge label="XML Views" color="text-purple-400 border-purple-500/30" />
+                <PlatformBadge label="Jetpack Compose" color="text-purple-600 dark:text-purple-400 border-purple-300 dark:border-purple-500/30" />
+                <PlatformBadge label="XML Views" color="text-purple-600 dark:text-purple-400 border-purple-300 dark:border-purple-500/30" />
               </div>
-              <p className="text-gray-400 mb-6">
+              <p className="text-zinc-600 dark:text-gray-400 mb-6">
                 Kotlin-first SDK for native Android apps. Distributed via Maven
                 Central.
               </p>
 
-              <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">
+              <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3">
                 Distribution
               </p>
-              <p className="text-sm text-zinc-400 mb-6">
-                Maven Central — add to <code className="text-purple-300 bg-purple-500/10 px-1.5 py-0.5 rounded">build.gradle.kts</code>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
+                Maven Central — add to <code className="text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-500/10 px-1.5 py-0.5 rounded">build.gradle.kts</code>
               </p>
 
-              <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">
+              <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3">
                 1. Add Dependency
               </p>
               <CodeBlock title="build.gradle.kts">
@@ -458,7 +458,7 @@ struct ContentView: View {
 }`}
               </CodeBlock>
 
-              <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3 mt-6">
+              <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3 mt-6">
                 2. Initialize &amp; Display
               </p>
               <CodeBlock language="kotlin" title="MainActivity.kt">

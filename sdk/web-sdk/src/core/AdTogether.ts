@@ -16,11 +16,11 @@ export class AdTogether {
 
   static initialize(options: AdTogetherOptions) {
     const sdk = AdTogether.shared;
-    sdk.appId = options.appId;
+    sdk.appId = options.apiKey || options.appId;
     if (options.baseUrl) {
       sdk.baseUrl = options.baseUrl;
     }
-    console.log(`AdTogether SDK Initialized with App ID: ${options.appId}`);
+    console.log(`AdTogether SDK Initialized with Key/ID: ${sdk.appId}`);
   }
 
   assertInitialized() {

@@ -27,7 +27,7 @@ module.exports = __toCommonJS(index_exports);
 // src/core/AdTogether.ts
 var AdTogether = class _AdTogether {
   constructor() {
-    this.baseUrl = "https://adtogether.com";
+    this.baseUrl = "https://adtogether.relaxsoftwareapps.com";
   }
   static get shared() {
     if (!_AdTogether.instance) {
@@ -37,11 +37,11 @@ var AdTogether = class _AdTogether {
   }
   static initialize(options) {
     const sdk = _AdTogether.shared;
-    sdk.appId = options.appId;
+    sdk.appId = options.apiKey || options.appId;
     if (options.baseUrl) {
       sdk.baseUrl = options.baseUrl;
     }
-    console.log(`AdTogether SDK Initialized with App ID: ${options.appId}`);
+    console.log(`AdTogether SDK Initialized with Key/ID: ${sdk.appId}`);
   }
   assertInitialized() {
     if (!this.appId) {
@@ -60,20 +60,20 @@ var AdTogether = class _AdTogether {
     }
     return response.json();
   }
-  static trackImpression(adId) {
-    this.trackEvent("/api/ads/impression", adId);
+  static trackImpression(adId, token) {
+    this.trackEvent("/api/ads/impression", adId, token);
   }
-  static trackClick(adId) {
-    this.trackEvent("/api/ads/click", adId);
+  static trackClick(adId, token) {
+    this.trackEvent("/api/ads/click", adId, token);
   }
-  static trackEvent(endpoint, adId) {
+  static trackEvent(endpoint, adId, token) {
     if (!_AdTogether.shared.assertInitialized()) return;
     fetch(`${_AdTogether.shared.baseUrl}${endpoint}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ adId })
+      body: JSON.stringify({ adId, token })
     }).catch(console.error);
   }
 };

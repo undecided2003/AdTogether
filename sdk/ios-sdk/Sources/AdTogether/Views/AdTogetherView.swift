@@ -105,7 +105,7 @@ public struct AdTogetherView: View {
             return
         }
         
-        AdNetworkService.fetchAd(adUnitId: adUnitID) { result in
+        AdTogether.fetchAd(adUnitId: adUnitID) { result in
             DispatchQueue.main.async {
                 self.isLoading = false
                 switch result {
@@ -122,11 +122,11 @@ public struct AdTogetherView: View {
     private func handleImpression(ad: AdModel) {
         guard !impressionTracked else { return }
         impressionTracked = true
-        AdNetworkService.trackImpression(adId: ad.id, token: ad.token)
+        AdTogether.trackImpression(adId: ad.id, token: ad.token)
     }
     
     private func handleAdClick(ad: AdModel) {
-        AdNetworkService.trackClick(adId: ad.id, token: ad.token)
+        AdTogether.trackClick(adId: ad.id, token: ad.token)
         if let clickStr = ad.clickUrl, let clickUrl = URL(string: clickStr) {
             openURL(clickUrl)
         }

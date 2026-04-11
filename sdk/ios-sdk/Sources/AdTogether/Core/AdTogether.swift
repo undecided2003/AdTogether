@@ -32,4 +32,28 @@ public final class AdTogether {
         }
         return true
     }
+    
+    /// Fetches an ad for a specific ad unit.
+    /// - Parameters:
+    ///   - adUnitId: The unique identifier for the ad placement.
+    ///   - completion: Completeness block with Result containing AdModel or Error.
+    public static func fetchAd(adUnitId: String, completion: @escaping (Result<AdModel, Error>) -> Void) {
+        guard shared.assertInitialized() else {
+            completion(.failure(NSError(domain: "AdTogether", code: -1, userInfo: [NSLocalizedDescriptionKey: "SDK not initialized"])))
+            return
+        }
+        AdNetworkService.fetchAd(adUnitId: adUnitId, completion: completion)
+    }
+    
+    /// Tracks an impression for a specific ad.
+    public static func trackImpression(adId: String, token: String?) {
+        guard shared.assertInitialized() else { return }
+        AdNetworkService.trackImpression(adId: adId, token: token)
+    }
+    
+    /// Tracks a click for a specific ad.
+    public static func trackClick(adId: String, token: String?) {
+        guard shared.assertInitialized() else { return }
+        AdNetworkService.trackClick(adId: adId, token: token)
+    }
 }

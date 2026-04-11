@@ -72,7 +72,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Visit [http://localhost:3000](http://localhost:3000) to view the AdTogether dashboard.
+Visit [https://adtogether.relaxsoftwareapps.com](https://adtogether.relaxsoftwareapps.com) to view the AdTogether dashboard.
 
 ---
 

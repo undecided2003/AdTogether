@@ -2,6 +2,8 @@ package com.adtogether.sdk
 
 import android.content.Context
 import android.util.Log
+import com.adtogether.sdk.models.AdModel
+import com.adtogether.sdk.network.AdNetworkService
 
 object AdTogether {
     private const val TAG = "AdTogetherSDK"
@@ -32,5 +34,29 @@ object AdTogether {
             return false
         }
         return true
+    }
+
+    /**
+     * Fetches an ad for a specific ad unit.
+     */
+    suspend fun fetchAd(adUnitId: String): AdModel? {
+        if (!assertInitialized()) return null
+        return AdNetworkService.fetchAd(adUnitId)
+    }
+
+    /**
+     * Tracks an impression for a specific ad.
+     */
+    suspend fun trackImpression(adId: String, token: String?) {
+        if (!assertInitialized()) return
+        AdNetworkService.trackImpression(adId, token)
+    }
+
+    /**
+     * Tracks a click for a specific ad.
+     */
+    suspend fun trackClick(adId: String, token: String?) {
+        if (!assertInitialized()) return
+        AdNetworkService.trackClick(adId, token)
     }
 }

@@ -13,9 +13,9 @@ import java.net.URL
 internal object AdNetworkService {
     private const val TAG = "AdTogetherSDK"
 
-    suspend fun fetchAd(): AdModel? = withContext(Dispatchers.IO) {
+    suspend fun fetchAd(adUnitId: String): AdModel? = withContext(Dispatchers.IO) {
         try {
-            val url = URL("${AdTogether.baseUrl}/api/ads/serve?country=global")
+            val url = URL("${AdTogether.baseUrl}/api/ads/serve?country=global&adUnitId=$adUnitId")
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
             connection.connectTimeout = 5000

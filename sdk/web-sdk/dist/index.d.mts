@@ -4,9 +4,11 @@ interface AdModel {
     description: string;
     clickUrl?: string;
     imageUrl?: string;
+    token?: string;
 }
 interface AdTogetherOptions {
-    appId: string;
+    appId?: string;
+    apiKey?: string;
     baseUrl?: string;
 }
 
@@ -19,8 +21,8 @@ declare class AdTogether {
     static initialize(options: AdTogetherOptions): void;
     assertInitialized(): boolean;
     static fetchAd(adUnitId: string): Promise<AdModel>;
-    static trackImpression(adId: string): void;
-    static trackClick(adId: string): void;
+    static trackImpression(adId: string, token?: string): void;
+    static trackClick(adId: string, token?: string): void;
     private static trackEvent;
 }
 

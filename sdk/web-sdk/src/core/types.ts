@@ -8,6 +8,7 @@ export interface AdModel {
 }
 
 export interface AdTogetherOptions {
-  appId: string;
+  appId?: string;
+  apiKey?: string;
   baseUrl?: string;
 }

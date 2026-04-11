@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'models/ad_model.dart';
 
 class AdTogether {
   static String? _appId;
@@ -56,6 +57,24 @@ class AdTogether {
       );
     } catch (e) {
       print('AdTogether Error: Failed to track click - $e');
+    }
+  }
+
+  /// Fetch an ad for a specific ad unit.
+  /// [adUnitId] is the unique identifier for the ad placement.
+  static Future<AdModel> fetchAd(String adUnitId) async {
+    // Ensure SDK is initialized
+    final _ = appId;
+
+    final response = await http.get(
+      Uri.parse('$_baseUrl/api/ads/serve?country=global&adUnitId=$adUnitId'),
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return AdModel.fromJson(data);
+    } else {
+      throw Exception('AdTogether Error: Failed to fetch ad. Status code: ${response.statusCode}');
     }
   }
 }

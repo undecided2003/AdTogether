@@ -14,7 +14,7 @@ export async function OPTIONS() {
 
 export async function POST(request: Request) {
   try {
-    const { adId, token } = await request.json();
+    const { adId, token, apiKey } = await request.json();
 
     if (!adId) {
       return NextResponse.json({ error: 'adId is required' }, { status: 400, headers: corsHeaders });
@@ -32,10 +32,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid auth token' }, { status: 403, headers: corsHeaders });
     }
 
+    let publisherRef: any = null;
+    if (apiKey) {
+      const pSnap = await db.collection('users').where('apiKey', '==', apiKey).limit(1).get();
+      if (!pSnap.empty) {
+        publisherRef = pSnap.docs[0].ref;
+      } else {
+        const pSnapArr = await db.collection('users').where('apiKeys', 'array-contains', apiKey).limit(1).get();
+        if (!pSnapArr.empty) {
+          publisherRef = pSnapArr.docs[0].ref;
+        }
+      }
+    }
+
     const adRef = db.collection('ads').doc(adId);
     let outOfCredits = false;
 
-    // Use runTransaction to safely process impression and deduct credits
+    // Use runTransaction to safely process impression and deduct/add credits
     await db.runTransaction(async (transaction) => {
       const adSnap = await transaction.get(adRef);
       if (!adSnap.exists) {
@@ -57,20 +70,31 @@ export async function POST(request: Request) {
 
         if (userSnap.exists) {
           const userData = userSnap.data();
-          if (!userData) return;
-          
-          const currentCredits = userData.credits || 0;
+          if (userData) {
+            const currentCredits = userData.credits || 0;
 
-          if (currentCredits <= -5) {
-            // No credits left (and hit the negative limit), deactivate ad and don't deduct
-            transaction.update(adRef, { active: false });
-            outOfCredits = true;
-          } else {
-            // Deduct safely
-            transaction.update(userRef, { credits: currentCredits - 1 });
-            if (currentCredits - 1 <= -5) {
+            if (currentCredits <= -5) {
+              // No credits left (and hit the negative limit), deactivate ad and don't deduct
               transaction.update(adRef, { active: false });
+              outOfCredits = true;
+            } else {
+              // Deduct safely
+              transaction.update(userRef, { credits: currentCredits - 1 });
+              if (currentCredits - 1 <= -5) {
+                transaction.update(adRef, { active: false });
+              }
             }
+          }
+        }
+      }
+
+      if (publisherRef) {
+        const pDoc = (await transaction.get(publisherRef)) as any;
+        if (pDoc.exists) {
+          const pData = pDoc.data();
+          if (pData) {
+             const pCredits = pData.credits || 0;
+             transaction.update(publisherRef, { credits: pCredits + 1 });
           }
         }
       }

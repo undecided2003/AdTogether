@@ -1,6 +1,6 @@
 import {
   AdTogether
-} from "../chunk-IDJUJZAL.mjs";
+} from "../chunk-U56ZPF4D.mjs";
 
 // src/react/AdTogetherBanner.tsx
 import { useEffect, useRef, useState } from "react";
@@ -58,7 +58,7 @@ var AdTogetherBanner = ({
       (entries) => {
         if (entries[0].isIntersecting && entries[0].intersectionRatio >= 0.5 && !impressionTrackedRef.current) {
           impressionTrackedRef.current = true;
-          AdTogether.trackImpression(adData.id);
+          AdTogether.trackImpression(adData.id, adData.token);
           observer.disconnect();
         }
       },
@@ -71,7 +71,7 @@ var AdTogetherBanner = ({
   }, [adData, isLoading, hasError]);
   const handleContainerClick = () => {
     if (!adData) return;
-    AdTogether.trackClick(adData.id);
+    AdTogether.trackClick(adData.id, adData.token);
     if (adData.clickUrl) {
       window.open(adData.clickUrl, "_blank", "noopener,noreferrer");
     }
