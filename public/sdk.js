@@ -1,6 +1,6 @@
 (function () {
   // 1. Detect base URL dynamically based on where the script is hosted
-  // This allows it to work on localhost:3000 during dev, and adtogether.relaxsoftwareapps.com in prod.
+  // This allows it to work on any origin where the SDK is hosted, defaulting to adtogether.relaxsoftwareapps.com in prod.
   const scriptElement = document.currentScript || document.querySelector('script[src*="sdk.js"]');
   const baseUrl = scriptElement ? new URL(scriptElement.src).origin : 'https://adtogether.relaxsoftwareapps.com';
 

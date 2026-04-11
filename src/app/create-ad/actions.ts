@@ -2,7 +2,7 @@
 
 import puppeteer from 'puppeteer';
 
-const DEEPSEEK_API_KEY = "REDACTED_API_KEY";
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 const DEEPSEEK_URL = "https://api.deepseek.com/chat/completions"; 
 
 // Helper function to extract website text using Puppeteer
