@@ -1,7 +1,8 @@
 ## 0.1.1
 
-* Update repository URLs to new organization.
-* Prepare for version 0.1.1 release.
+* Updated SDK documentation and optimized README.
+* Full release readiness for pub.dev.
+* Updated repository URLs and documentation dependencies.
 
 ## 0.1.0
 

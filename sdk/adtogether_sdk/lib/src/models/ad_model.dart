@@ -5,6 +5,7 @@ class AdModel {
   final String? clickUrl;
   final String? imageUrl;
   final String? token;
+  final String? adType;
 
   AdModel({
     required this.id,
@@ -13,6 +14,7 @@ class AdModel {
     this.clickUrl,
     this.imageUrl,
     this.token,
+    this.adType,
   });
 
   factory AdModel.fromJson(Map<String, dynamic> json) {
@@ -23,6 +25,7 @@ class AdModel {
       clickUrl: json['clickUrl'] as String?,
       imageUrl: json['imageUrl'] as String?,
       token: json['token'] as String?,
+      adType: json['adType'] as String?,
     );
   }
 
@@ -34,6 +37,8 @@ class AdModel {
       'clickUrl': clickUrl,
       'imageUrl': imageUrl,
       'token': token,
+      'adType': adType,
     };
   }
 }
+

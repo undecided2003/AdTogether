@@ -24,7 +24,7 @@ In your `pubspec.yaml` file, add the dependency:
 
 ```yaml
 dependencies:
-  adtogether_sdk: ^0.1.0
+  adtogether_sdk: ^0.1.1
 ```
 
 Run `flutter pub get` to install the package.

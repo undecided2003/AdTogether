@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
@@ -15,12 +13,12 @@ class AdTogetherBanner extends StatefulWidget {
   final Function(String)? onAdFailedToLoad;
 
   const AdTogetherBanner({
-    Key? key,
+    super.key,
     required this.adUnitId,
     this.size = AdSize.fluid,
     this.onAdLoaded,
     this.onAdFailedToLoad,
-  }) : super(key: key);
+  });
 
   @override
   State<AdTogetherBanner> createState() => _AdTogetherBannerState();
@@ -75,7 +73,7 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
         await AdTogether.trackClick(_adData!.id, token: _adData!.token);
       } catch (e) {
-        print('AdTogether Error: Could not launch URL - $e');
+        debugPrint('AdTogether Error: Could not launch URL - $e');
       }
     }
   }
@@ -142,7 +140,7 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
             child: Image.network(
               _adData!.imageUrl!,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported, color: Colors.grey),
+              errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported, color: Colors.grey),
             ),
           ),
         Expanded(
@@ -200,9 +198,9 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
                   ? Image.network(
                       _adData!.imageUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported, color: Colors.grey),
+                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported, color: Colors.grey),
                     )
-                  : Container(color: Colors.grey.withOpacity(0.2)),
+                  : Container(color: Colors.grey.withValues(alpha: 0.2)),
             ),
             Positioned(
               top: 8,
@@ -210,7 +208,7 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.6),
+                  color: Colors.black.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: const Text(
