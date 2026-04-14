@@ -68,3 +68,16 @@ next-env.d.ts
 
 # credentials
 .npmrc
+service-account.json
+*-credentials.json
+*.local.json
+
+# firebase
+.firebase/
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+
+# development scripts
+test-admin.js
+test-*.js

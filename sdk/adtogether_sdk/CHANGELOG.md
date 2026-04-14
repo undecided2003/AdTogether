@@ -1,8 +1,14 @@
-## 0.1.1
+## 0.1.3
 
-* Updated SDK documentation and optimized README.
-* Full release readiness for pub.dev.
-* Updated repository URLs and documentation dependencies.
+* **Fix**: Updated repository and issue tracker URLs to correct GitHub path (`undecided2003/AdTogether`).
+* **Maintenance**: Corrected documentation links that were resulting in 404 errors.
+
+## 0.1.2
+
+* **Documentation Hub**: Rewrote README to be a comprehensive documentation hub with detailed API tables and lifecycle guides.
+* **Example App**: Added a full-featured Flutter example app in `example/` demonstrating Banner and Interstitial integration.
+* **API Polish**: Optimized map literal performance using Dart 3 null-aware elements.
+* **Ready for Publish**: Final verification for pub.dev release, including all required fields and metadata.
 
 ## 0.1.0
 

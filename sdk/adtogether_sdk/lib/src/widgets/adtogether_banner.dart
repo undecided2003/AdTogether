@@ -83,7 +83,9 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
     if (_isLoading) {
       return SizedBox(
         width: widget.size.width == double.infinity ? null : widget.size.width,
-        height: widget.size.height == double.infinity ? null : widget.size.height,
+        height: widget.size.height == double.infinity
+            ? null
+            : widget.size.height,
         child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
       );
     }
@@ -95,8 +97,12 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDarkMode ? const Color(0xFF1F2937) : Colors.white;
     final borderColor = isDarkMode ? Colors.white10 : Colors.black12;
-    final textColor = isDarkMode ? const Color(0xFFF9FAFB) : const Color(0xFF111827);
-    final descColor = isDarkMode ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+    final textColor = isDarkMode
+        ? const Color(0xFFF9FAFB)
+        : const Color(0xFF111827);
+    final descColor = isDarkMode
+        ? const Color(0xFF9CA3AF)
+        : const Color(0xFF6B7280);
 
     return VisibilityDetector(
       key: Key('adtogether_banner_${widget.adUnitId}_${_adData!.id}'),
@@ -106,8 +112,12 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
         child: MouseRegion(
           cursor: SystemMouseCursors.click,
           child: Container(
-            width: widget.size.width == double.infinity ? double.infinity : widget.size.width,
-            height: widget.size.height == double.infinity ? null : widget.size.height,
+            width: widget.size.width == double.infinity
+                ? double.infinity
+                : widget.size.width,
+            height: widget.size.height == double.infinity
+                ? null
+                : widget.size.height,
             decoration: BoxDecoration(
               color: bgColor,
               border: Border.all(color: borderColor),
@@ -117,11 +127,14 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
                   color: Colors.black12,
                   blurRadius: 10,
                   offset: Offset(0, 4),
-                )
+                ),
               ],
             ),
             clipBehavior: Clip.antiAlias,
-            child: widget.size.height == 50 || widget.size.height == 60 || widget.size.height == 90
+            child:
+                widget.size.height == 50 ||
+                    widget.size.height == 60 ||
+                    widget.size.height == 90
                 ? _buildHorizontalLayout(textColor, descColor)
                 : _buildFluidVerticalLayout(textColor, descColor),
           ),
@@ -135,17 +148,21 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
       children: [
         if (_adData!.imageUrl != null)
           SizedBox(
-            width: widget.size.height, 
+            width: widget.size.height,
             height: widget.size.height,
             child: Image.network(
               _adData!.imageUrl!,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported, color: Colors.grey),
+              errorBuilder: (context, error, stackTrace) =>
+                  const Icon(Icons.image_not_supported, color: Colors.grey),
             ),
           ),
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 12.0,
+              vertical: 4.0,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
@@ -156,18 +173,32 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
                     Expanded(
                       child: Text(
                         _adData!.title,
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: textColor),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: textColor,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.amber,
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: const Text('AD', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.black)),
+                      child: const Text(
+                        'AD',
+                        style: TextStyle(
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -198,7 +229,10 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
                   ? Image.network(
                       _adData!.imageUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported, color: Colors.grey),
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.image_not_supported,
+                        color: Colors.grey,
+                      ),
                     )
                   : Container(color: Colors.grey.withValues(alpha: 0.2)),
             ),
@@ -213,7 +247,11 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
                 ),
                 child: const Text(
                   'AD',
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),
@@ -226,7 +264,11 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
             children: [
               Text(
                 _adData!.title,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: textColor,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

@@ -58,7 +58,7 @@ The backend and developer dashboard are built using **Next.js 15** and **Firebas
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/AdTogether/AdTogether.git
+git clone https://github.com/undecided2003/AdTogether.git
 cd AdTogether
 
 # 2. Install core dependencies
@@ -83,7 +83,7 @@ Detailed instructions are provided in each SDK's local `README.md`.
 - **Web integration:** `npm install @adtogether/web-sdk`
 - **Android integration:** Implement `com.adtogether:sdk:1.0.0` inside your `build.gradle.kts`.
 - **iOS integration:** Add the Swift Package through Xcode directly from this repository link.
-- **Flutter integration:** Run `flutter pub add adtogether_sdk`.
+- **Flutter integration:** Run `flutter pub add adtogether_sdk:^0.1.3`.
 
 ---
 

@@ -1,8 +1,8 @@
 "use server";
 
 import puppeteer from 'puppeteer';
+import { adminDb } from '@/lib/firebase-admin';
 
-const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 const DEEPSEEK_URL = "https://api.deepseek.com/chat/completions"; 
 
 // Helper function to extract website text using Puppeteer
@@ -160,6 +160,14 @@ async function scrapeWebsiteContent(url: string) {
 
 export async function generateAdContent(clickUrl: string) {
   try {
+    const configSnap = await adminDb.collection('config').doc('secrets').get();
+    const secretsData = configSnap.data() || {};
+    const DEEPSEEK_API_KEY = secretsData.DEEPSEEK_API_KEY || process.env.DEEPSEEK_API_KEY;
+
+    if (!DEEPSEEK_API_KEY) {
+      throw new Error("DeepSeek API Key is missing. Please configure it in your environment or Firestore config/secrets.");
+    }
+
     const scrapedData = await scrapeWebsiteContent(clickUrl);
     const plainText = scrapedData.text;
     const imageUrl = scrapedData.imageUrl;
@@ -264,3 +272,78 @@ export async function generateAdContent(clickUrl: string) {
     return { success: false, error: error.message || "Failed to generate ad content" };
   }
 }
+
+export async function screenAdContent(title: string, description: string, clickUrl: string) {
+  try {
+    const configSnap = await adminDb.collection('config').doc('secrets').get();
+    const secretsData = configSnap.data() || {};
+    const DEEPSEEK_API_KEY = secretsData.DEEPSEEK_API_KEY || process.env.DEEPSEEK_API_KEY;
+
+    if (!DEEPSEEK_API_KEY) {
+      throw new Error("DeepSeek API Key is missing. Please configure it in your environment or Firestore config/secrets.");
+    }
+
+    console.log('🤖 DeepSeek screening ad content...');
+
+    const messages = [
+      { 
+        role: "system", 
+        content: "You are an AI ad moderation assistant. Review the following ad title, description, and destination URL. Your job is to strictly enforce our content policy. Ads MUST be rejected if they contain or promote: 1. Sex, nudity, porn, or adult dating. 2. Violence, gore, or harm. 3. Drugs, illegal substances, or irresponsible use of regulated items. 4. Hate speech or discrimination. If the ad is safe, return {\"passed\": true, \"reason\": \"\"}. If it violates policy, return {\"passed\": false, \"reason\": \"<Specific reason for rejection>\"}. Response MUST be valid JSON, nothing else." 
+      },
+      { 
+        role: "user", 
+        content: `Title: ${title}\nDescription: ${description}\nDestination URL: ${clickUrl}\n\nPlease analyze and output JSON only.` 
+      }
+    ];
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000); 
+
+    const aiResponse = await fetch(DEEPSEEK_URL, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${DEEPSEEK_API_KEY}`
+        },
+        body: JSON.stringify({
+            model: "deepseek-chat",
+            messages: messages,
+            stream: false,
+            response_format: { type: "json_object" }
+        }),
+        signal: controller.signal
+    });
+    clearTimeout(timeout);
+
+    if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+      console.error('❌ DeepSeek API error during screening:', errorText);
+      throw new Error(`AI Api Error: ${aiResponse.status} ${errorText}`);
+    }
+
+    const data = await aiResponse.json();
+    const content = data.choices[0].message.content;
+    let jsonStr = content;
+    if (jsonStr.startsWith("```json")) {
+      jsonStr = jsonStr.replace(/^```json/, "").replace(/```$/, "").trim();
+    }
+    
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch (e) {
+      console.error("Failed to parse AI output:", jsonStr);
+      throw new Error("Failed to parse AI screening output");
+    }
+    
+    return { 
+      success: true, 
+      passed: parsed.passed, 
+      reason: parsed.reason
+    };
+  } catch (error: any) {
+    console.error("Ad Screening Error:", error.message);
+    return { success: false, error: error.message || "Failed to screen ad content" };
+  }
+}
+

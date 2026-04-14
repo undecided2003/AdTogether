@@ -1,4 +1,4 @@
-import { AdModel, AdTogetherOptions } from './types';
+import { AdModel, AdType, AdTogetherOptions } from './types';
 
 export class AdTogether {
   private static instance: AdTogether;
@@ -17,9 +17,14 @@ export class AdTogether {
   static initialize(options: AdTogetherOptions) {
     const sdk = AdTogether.shared;
     sdk.appId = options.apiKey || options.appId;
+    
     if (options.baseUrl) {
       sdk.baseUrl = options.baseUrl;
+    } else if (typeof window !== 'undefined') {
+      // In browser, default to relative paths if no base URL provided
+      sdk.baseUrl = '';
     }
+    
     console.log(`AdTogether SDK Initialized with Key/ID: ${sdk.appId}`);
   }
 
@@ -31,16 +36,34 @@ export class AdTogether {
     return true;
   }
 
-  static async fetchAd(adUnitId: string): Promise<AdModel> {
+  private lastAdId?: string;
+
+  static async fetchAd(adUnitId: string, adType?: AdType): Promise<AdModel> {
     if (!AdTogether.shared.assertInitialized()) {
       throw new Error('AdTogether not initialized');
     }
 
-    const response = await fetch(`${AdTogether.shared.baseUrl}/api/ads/serve?country=global&adUnitId=${adUnitId}`);
-    if (!response.ok) {
+    try {
+      const sdk = AdTogether.shared;
+      let url = `${sdk.baseUrl}/api/ads/serve?country=global&adUnitId=${adUnitId}&apiKey=${sdk.appId}`;
+      if (adType) {
+        url += `&adType=${adType}`;
+      }
+      if (sdk.lastAdId) {
+        url += `&exclude=${sdk.lastAdId}`;
+      }
+
+      const response = await fetch(url);
+      if (response.ok) {
+        const ad = await response.json();
+        sdk.lastAdId = ad.id;
+        return ad;
+      }
+
       throw new Error(`Failed to fetch ad. Status: ${response.status}`);
+    } catch (err) {
+      throw err;
     }
-    return response.json();
   }
 
   static trackImpression(adId: string, token?: string) {

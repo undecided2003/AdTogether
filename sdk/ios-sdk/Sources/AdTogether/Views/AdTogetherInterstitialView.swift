@@ -1,0 +1,193 @@
+import SwiftUI
+
+/// A full-screen interstitial ad view.
+///
+/// Usage:
+/// ```swift
+/// .fullScreenCover(isPresented: $showInterstitial) {
+///     AdTogetherInterstitialView(adUnitID: "my_interstitial") {
+///         showInterstitial = false
+///     }
+/// }
+/// ```
+public struct AdTogetherInterstitialView: View {
+    public let adUnitID: String
+    public let closeDelay: Int
+    public let onDismiss: () -> Void
+    
+    @State private var ad: AdModel?
+    @State private var isLoading = true
+    @State private var hasError = false
+    @State private var impressionTracked = false
+    @State private var canClose = false
+    @State private var countdown: Int
+    
+    @Environment(\.colorScheme) var colorScheme
+    @Environment(\.openURL) var openURL
+    
+    public init(adUnitID: String, closeDelay: Int = 3, onDismiss: @escaping () -> Void) {
+        self.adUnitID = adUnitID
+        self.closeDelay = closeDelay
+        self.onDismiss = onDismiss
+        self._countdown = State(initialValue: closeDelay)
+    }
+    
+    public var body: some View {
+        ZStack {
+            // Background overlay
+            Color.black.opacity(0.85)
+                .ignoresSafeArea()
+            
+            if isLoading {
+                ProgressView()
+                    .tint(.white)
+                    .scaleEffect(1.5)
+            } else if hasError || ad == nil {
+                EmptyView()
+            } else if let adModel = ad {
+                // Card
+                VStack(spacing: 0) {
+                    // Image
+                    if let imageUrlString = adModel.imageUrl, let imageUrl = URL(string: imageUrlString) {
+                        AsyncImage(url: imageUrl) { image in
+                            image.resizable()
+                                 .aspectRatio(16/9, contentMode: .fill)
+                        } placeholder: {
+                            Color.gray.opacity(0.2)
+                                .aspectRatio(16/9, contentMode: .fill)
+                        }
+                        .clipped()
+                        .onTapGesture { handleAdClick(ad: adModel) }
+                    }
+                    
+                    // Content
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(alignment: .top) {
+                            Text(adModel.title)
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(colorScheme == .dark ? .white : .primary)
+                                .lineLimit(1)
+                            
+                            Spacer()
+                            
+                            Text("AD")
+                                .font(.system(size: 10, weight: .bold))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 3)
+                                .background(Color.yellow)
+                                .foregroundColor(.black)
+                                .cornerRadius(4)
+                        }
+                        
+                        Text(adModel.description)
+                            .font(.system(size: 14))
+                            .foregroundColor(colorScheme == .dark ? .gray : .secondary)
+                            .lineLimit(3)
+                            .multilineTextAlignment(.leading)
+                        
+                        // CTA Button
+                        Button(action: { handleAdClick(ad: adModel) }) {
+                            Text("Learn More →")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.black)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(Color.yellow)
+                                .cornerRadius(12)
+                        }
+                        .padding(.top, 8)
+                    }
+                    .padding(20)
+                    .onTapGesture { handleAdClick(ad: adModel) }
+                }
+                .frame(maxWidth: 480)
+                .background(colorScheme == .dark ? Color(red: 0.12, green: 0.16, blue: 0.22) : Color.white)
+                .cornerRadius(20)
+                .shadow(color: Color.black.opacity(0.4), radius: 40, x: 0, y: 20)
+                .padding(.horizontal, 20)
+                .overlay(alignment: .topTrailing) {
+                    // Close / Countdown
+                    Group {
+                        if canClose {
+                            Button(action: onDismiss) {
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .frame(width: 36, height: 36)
+                                    .background(Color.black.opacity(0.6))
+                                    .clipShape(Circle())
+                            }
+                        } else {
+                            Text("\(countdown)")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(width: 36, height: 36)
+                                .background(Color.black.opacity(0.6))
+                                .clipShape(Circle())
+                        }
+                    }
+                    .padding(12)
+                    .padding(.trailing, 20)
+                }
+                .onAppear {
+                    handleImpression(ad: adModel)
+                }
+            }
+        }
+        .onAppear {
+            if isLoading {
+                loadAd()
+            }
+        }
+    }
+    
+    private func loadAd() {
+        guard AdTogether.shared.assertInitialized() else {
+            self.hasError = true
+            self.isLoading = false
+            return
+        }
+        
+        AdTogether.fetchAd(adUnitId: adUnitID, adType: "interstitial") { result in
+            DispatchQueue.main.async {
+                self.isLoading = false
+                switch result {
+                case .success(let fetchedAd):
+                    self.ad = fetchedAd
+                    startCountdown()
+                case .failure(let error):
+                    AdTogether.shared.logger.error("Failed to load interstitial: \(error.localizedDescription)")
+                    self.hasError = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        onDismiss()
+                    }
+                }
+            }
+        }
+    }
+    
+    private func startCountdown() {
+        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
+            DispatchQueue.main.async {
+                self.countdown -= 1
+                if self.countdown <= 0 {
+                    self.canClose = true
+                    timer.invalidate()
+                }
+            }
+        }
+    }
+    
+    private func handleImpression(ad: AdModel) {
+        guard !impressionTracked else { return }
+        impressionTracked = true
+        AdTogether.trackImpression(adId: ad.id, token: ad.token)
+    }
+    
+    private func handleAdClick(ad: AdModel) {
+        AdTogether.trackClick(adId: ad.id, token: ad.token)
+        if let clickStr = ad.clickUrl, let clickUrl = URL(string: clickStr) {
+            openURL(clickUrl)
+        }
+    }
+}

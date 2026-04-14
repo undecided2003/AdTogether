@@ -1,6 +1,6 @@
 import {
   AdTogether
-} from "./chunk-U56ZPF4D.mjs";
+} from "./chunk-XX24EF62.mjs";
 export {
   AdTogether
 };

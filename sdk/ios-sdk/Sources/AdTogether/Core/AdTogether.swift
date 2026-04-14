@@ -8,6 +8,7 @@ public final class AdTogether {
     
     private(set) var appId: String?
     private(set) var baseUrl: String = "https://adtogether.relaxsoftwareapps.com"
+    private(set) var lastAdId: String?
     
     let logger = Logger(subsystem: "com.adtogether.sdk", category: "Core")
     
@@ -36,13 +37,20 @@ public final class AdTogether {
     /// Fetches an ad for a specific ad unit.
     /// - Parameters:
     ///   - adUnitId: The unique identifier for the ad placement.
+    ///   - adType: Optional ad type filter, either "banner" or "interstitial".
     ///   - completion: Completeness block with Result containing AdModel or Error.
-    public static func fetchAd(adUnitId: String, completion: @escaping (Result<AdModel, Error>) -> Void) {
+    public static func fetchAd(adUnitId: String, adType: String? = nil, completion: @escaping (Result<AdModel, Error>) -> Void) {
         guard shared.assertInitialized() else {
             completion(.failure(NSError(domain: "AdTogether", code: -1, userInfo: [NSLocalizedDescriptionKey: "SDK not initialized"])))
             return
         }
-        AdNetworkService.fetchAd(adUnitId: adUnitId, completion: completion)
+        
+        AdNetworkService.fetchAd(adUnitId: adUnitId, adType: adType, exclude: shared.lastAdId) { result in
+            if case .success(let ad) = result {
+                shared.lastAdId = ad.id
+            }
+            completion(result)
+        }
     }
     
     /// Tracks an impression for a specific ad.

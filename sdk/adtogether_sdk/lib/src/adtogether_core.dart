@@ -45,7 +45,9 @@ class AdTogether {
 
   static String get appId {
     if (_appId == null) {
-      throw Exception('AdTogether Error: SDK has not been initialized. Please call AdTogether.initialize() first.');
+      throw Exception(
+        'AdTogether Error: SDK has not been initialized. Please call AdTogether.initialize() first.',
+      );
     }
     return _appId!;
   }
@@ -62,7 +64,7 @@ class AdTogether {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'adId': adId,
-          if (token != null) 'token': token,
+          'token': ?token,
           'apiKey': _appId,
           if (_bundleId != null) 'bundleId': _bundleId,
         }),
@@ -80,7 +82,7 @@ class AdTogether {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'adId': adId,
-          if (token != null) 'token': token,
+          'token': ?token,
           'apiKey': _appId,
           if (_bundleId != null) 'bundleId': _bundleId,
         }),
@@ -97,7 +99,8 @@ class AdTogether {
     // Ensure SDK is initialized
     final currentAppId = appId;
 
-    String url = '$_baseUrl/api/ads/serve?country=global&adUnitId=$adUnitId&apiKey=$currentAppId';
+    String url =
+        '$_baseUrl/api/ads/serve?country=global&adUnitId=$adUnitId&apiKey=$currentAppId';
     if (adType != null) {
       url += '&adType=$adType';
     }
@@ -116,8 +119,9 @@ class AdTogether {
       _lastAdId = ad.id;
       return ad;
     } else {
-      throw Exception('AdTogether Error: Failed to fetch ad. Status code: ${response.statusCode}');
+      throw Exception(
+        'AdTogether Error: Failed to fetch ad. Status code: ${response.statusCode}',
+      );
     }
   }
 }
-

@@ -252,7 +252,7 @@ export default function DocsPage() {
                   <CodeBlock language="bash" title="POST /api/ads/impression">
 {`curl -X POST "https://adtogether.relaxsoftwareapps.com/api/ads/impression" \\
   -H "Content-Type: application/json" \\
-  -d '{"adId": "123456"}'`}
+  -d '{"adId": "123456", "token": "HMAC_TOKEN_FROM_FETCH"}'`}
                   </CodeBlock>
                 </div>
               </div>
@@ -281,21 +281,37 @@ export default function DocsPage() {
                 Distribution
               </p>
               <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
-                CDN-hosted script tag — no npm package required.
+                NPM Package (React/Next.js) or CDN-hosted script tag.
               </p>
 
               <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3">
-                1. Add Script
+                1. Install (React/Next.js)
               </p>
-              <CodeBlock language="html" title="index.html">
-                {`<script src="https://adtogether.relaxsoftwareapps.com/sdk.js" defer></script>`}
+              <CodeBlock language="bash" title="terminal">
+                {`npm install @adtogether/web-sdk`}
               </CodeBlock>
 
               <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3 mt-6">
-                2. Place Ad Anchor
+                2. Usage (React)
               </p>
-              <CodeBlock language="html" title="page.html">
-                {`<div id="adtogether-ad" data-ad-unit="YOUR_AD_UNIT_ID"></div>`}
+              <CodeBlock language="tsx" title="MyComponent.tsx">
+                {`import { AdTogether } from '@adtogether/web-sdk';
+import { AdTogetherBanner } from '@adtogether/web-sdk/react';
+
+AdTogether.initialize({ apiKey: 'YOUR_API_KEY' });
+
+export default function MyComponent() {
+  return <AdTogetherBanner adUnitId="YOUR_AD_UNIT_ID" />;
+}`}
+              </CodeBlock>
+
+              <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3 mt-6">
+                Alternative: Plain HTML (CDN)
+              </p>
+              <CodeBlock language="html" title="index.html">
+                {`<script src="https://adtogether.relaxsoftwareapps.com/sdk.js" defer></script>
+<!-- Banner Ad -->
+<div id="adtogether-ad" data-ad-unit="YOUR_AD_UNIT_ID"></div>`}
               </CodeBlock>
             </section>
 
@@ -344,21 +360,29 @@ export default function DocsPage() {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await AdTogether.initialize(appId: 'YOUR_APP_ID');
+  await AdTogether.initialize(apiKey: 'YOUR_API_KEY');
   runApp(MyApp());
 }`}
               </CodeBlock>
 
               <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3 mt-6">
-                3. Show Banner
+                3. Show Ad
               </p>
               <CodeBlock language="dart" title="my_page.dart">
-{`AdTogetherBanner(
+{`// Show Banner
+AdTogetherBanner(
   adUnitId: 'YOUR_AD_UNIT_ID',
   size: AdSize.banner,
   onAdLoaded: () => print('Ad loaded!'),
   onAdFailedToLoad: (e) => print('Error: \$e'),
-)`}
+)
+
+// Show Interstitial
+AdTogetherInterstitial.show(
+  context: context,
+  adUnitId: 'YOUR_AD_UNIT_ID',
+  closeDelay: Duration(seconds: 3),
+);`}
               </CodeBlock>
             </section>
 
@@ -405,7 +429,7 @@ void main() async {
 @main
 struct MyApp: App {
     init() {
-        AdTogether.initialize(appId: "YOUR_APP_ID")
+        AdTogether.shared.initialize(apiKey: "YOUR_API_KEY")
     }
 
     var body: some Scene {
@@ -414,11 +438,25 @@ struct MyApp: App {
 }
 
 struct ContentView: View {
+    @State private var showAd = false
+
     var body: some View {
         VStack {
             Text("My App")
+            
+            // Banner Ad
             AdTogetherView(adUnitID: "YOUR_AD_UNIT_ID")
                 .frame(height: 50)
+            
+            // Interstitial Ad
+            Button("Show Interstitial") {
+                showAd = true
+            }
+            .fullScreenCover(isPresented: $showAd) {
+                AdTogetherInterstitialView(adUnitID: "YOUR_AD_UNIT_ID") {
+                    showAd = false
+                }
+            }
         }
     }
 }`}
@@ -463,23 +501,41 @@ struct ContentView: View {
               </p>
               <CodeBlock language="kotlin" title="MainActivity.kt">
 {`import com.adtogether.sdk.AdTogether
-import com.adtogether.sdk.AdTogetherView
+import com.adtogether.sdk.views.AdTogetherView
+import com.adtogether.sdk.views.AdTogetherInterstitial
 
 class MyApp : Application() {
     override fun onCreate() {
         super.onCreate()
-        AdTogether.initialize(this, appId = "YOUR_APP_ID")
+        AdTogether.initialize(this, "YOUR_API_KEY")
     }
 }
 
 @Composable
 fun MainScreen() {
+    var showAd by remember { mutableStateOf(false) }
+
     Column {
         Text("My App")
+        
+        // Banner Ad
         AdTogetherView(
             adUnitId = "YOUR_AD_UNIT_ID",
             modifier = Modifier.fillMaxWidth().height(50.dp)
         )
+        
+        // Interstitial Ad
+        Button(onClick = { showAd = true }) {
+            Text("Show Interstitial")
+        }
+        
+        if (showAd) {
+            AdTogetherInterstitial(
+                adUnitId = "YOUR_AD_UNIT_ID",
+                closeDelay = 3,
+                onDismiss = { showAd = false }
+            )
+        }
     }
 }`}
               </CodeBlock>

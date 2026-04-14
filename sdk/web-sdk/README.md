@@ -50,7 +50,7 @@ export default MyApp;
 ## Additional information
 
 - **Documentation**: For full documentation, visit [adtogether.relaxsoftwareapps.com/docs](https://adtogether.relaxsoftwareapps.com/docs).
-- **Issues**: Found a bug? File an issue on our [GitHub repository](https://github.com/AdTogether/AdTogether/issues).
+- **Issues**: Found a bug? File an issue on our [GitHub repository](https://github.com/undecided2003/AdTogether/issues).
 
 ## License
 

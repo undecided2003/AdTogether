@@ -8,15 +8,28 @@ import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { AdTogether } from '@adtogether/web-sdk';
-import { AdTogetherBanner } from '@adtogether/web-sdk/react';
+import { AdTogetherBanner, AdTogetherInterstitial } from '@adtogether/web-sdk/react';
 
-function ExampleAdPreview() {
+function ExampleAdPreview({ onShowInterstitial }: { onShowInterstitial: () => void }) {
   return (
-    <div className="py-2">
-      <AdTogetherBanner 
-        adUnitId="example_banner" 
-        className="w-full"
-      />
+    <div className="py-2 flex flex-col space-y-4">
+      <div>
+        <div className="text-xs font-semibold text-zinc-500 mb-2 uppercase tracking-wider">Banner Example</div>
+        <AdTogetherBanner 
+          adUnitId="example_banner" 
+          className="w-full"
+        />
+      </div>
+      
+      <div>
+        <div className="text-xs font-semibold text-zinc-500 mb-2 uppercase tracking-wider">Interstitial Example</div>
+        <button
+          onClick={onShowInterstitial}
+          className="w-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-medium py-2 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center gap-2"
+        >
+          Show Interstitial Ad
+        </button>
+      </div>
     </div>
   );
 }
@@ -26,12 +39,13 @@ export default function Navbar() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [showExampleAd, setShowExampleAd] = useState(false);
+  const [showInterstitial, setShowInterstitial] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   useEffect(() => {
     try {
-      AdTogether.initialize({ apiKey: 'at_a6fc73caffd44e2d8e8e058538dc8c70' });
+      AdTogether.initialize({ apiKey: 'at_f57425e89a9545eda1162baeedb78636' });
     } catch (e) {
       console.error('Error initializing AdTogether', e);
     }
@@ -74,7 +88,7 @@ export default function Navbar() {
             alt="AdTogether"
             width={140}
             height={36}
-            className="object-contain"
+            className="object-contain h-auto"
             priority
           />
         </Link>
@@ -96,7 +110,7 @@ export default function Navbar() {
                 className="text-zinc-600 dark:text-zinc-300 hover:text-amber-500 dark:hover:text-amber-400 font-medium rounded-lg text-sm px-4 py-2 transition-colors duration-300"
                 onClick={() => setShowExampleAd(!showExampleAd)}
               >
-                Example Ad
+                Example Ads
               </button>
               
               {showExampleAd && (
@@ -107,7 +121,11 @@ export default function Navbar() {
                       <X className="w-4 h-4" />
                     </button>
                   </div>
-                  <ExampleAdPreview />
+                  <ExampleAdPreview onShowInterstitial={() => {
+                    setShowInterstitial(true);
+                    setShowExampleAd(false);
+                    setIsOpen(false);
+                  }} />
                   <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-3 text-center">Powered by the AdTogether Web SDK</p>
                 </div>
               )}
@@ -162,6 +180,12 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+      
+      <AdTogetherInterstitial
+        adUnitId="example_interstitial"
+        isOpen={showInterstitial}
+        onClose={() => setShowInterstitial(false)}
+      />
     </nav>
   );
 }

@@ -23,7 +23,7 @@ This SDK allows iOS developers to easily integrate AdTogether ads into their app
 
 1. Open your project in Xcode.
 2. Go to **File > Add Packages**.
-3. Enter the repository URL: `https://github.com/AdTogether/AdTogether.git`
+3. Enter the repository URL: `https://github.com/undecided2003/AdTogether.git`
 4. Select the `ios-sdk` target and complete the addition.
 
 ## Usage
@@ -49,7 +49,7 @@ struct ContentView: View {
 ## Additional information
 
 - **Documentation**: For full documentation, visit [adtogether.relaxsoftwareapps.com/docs](https://adtogether.relaxsoftwareapps.com/docs).
-- **Issues**: Found a bug? File an issue on our [GitHub repository](https://github.com/AdTogether/AdTogether/issues).
+- **Issues**: Found a bug? File an issue on our [GitHub repository](https://github.com/undecided2003/AdTogether/issues).
 
 ## License
 

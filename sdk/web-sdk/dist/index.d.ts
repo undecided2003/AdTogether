@@ -1,3 +1,4 @@
+type AdType = 'banner' | 'interstitial';
 interface AdModel {
     id: string;
     title: string;
@@ -5,6 +6,7 @@ interface AdModel {
     clickUrl?: string;
     imageUrl?: string;
     token?: string;
+    adType?: AdType;
 }
 interface AdTogetherOptions {
     appId?: string;
@@ -20,10 +22,10 @@ declare class AdTogether {
     static get shared(): AdTogether;
     static initialize(options: AdTogetherOptions): void;
     assertInitialized(): boolean;
-    static fetchAd(adUnitId: string): Promise<AdModel>;
+    static fetchAd(adUnitId: string, adType?: AdType): Promise<AdModel>;
     static trackImpression(adId: string, token?: string): void;
     static trackClick(adId: string, token?: string): void;
     private static trackEvent;
 }
 
-export { type AdModel, AdTogether, type AdTogetherOptions };
+export { type AdModel, AdTogether, type AdTogetherOptions, type AdType };

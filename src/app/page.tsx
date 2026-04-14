@@ -1,19 +1,38 @@
 import Link from 'next/link';
 import { CodeBlock } from '@/components/CodeBlock';
+import ExampleAdsButton from '@/components/ExampleAdsButton';
 
 export default function Home() {
-  const exampleCode = `import { AdTogetherBanner } from '@adtogether/react';
+  const exampleCode = `"use client";
+import { useState } from 'react';
+import { AdTogether } from '@adtogether/web-sdk';
+import { AdTogetherBanner, AdTogetherInterstitial } from '@adtogether/web-sdk/react';
+
+// Initialize the SDK with your API Key
+AdTogether.initialize({ apiKey: 'at_f57425e89a9545eda1162baeedb78636' });
 
 export default function MyComponent() {
+  const [showInterstitial, setShowInterstitial] = useState(false);
+
   return (
     <div className="p-4">
       <h1>My Awesome App</h1>
       
-      {/* Earn credits by displaying ads */}
+      {/* Earn 1 credit by displaying a banner ad */}
       <AdTogetherBanner 
-        pubId="YOUR_PUBLISHER_ID"
-        format="banner" 
-        onAdLoaded={() => console.log('Ad loaded!')} 
+        adUnitId="YOUR_AD_UNIT_ID" 
+        onAdLoaded={() => console.log('Banner loaded!')} 
+      />
+
+      {/* Earn 5 credits by displaying an interstitial ad */}
+      <button onClick={() => setShowInterstitial(true)}>
+        Show Interstitial Ad
+      </button>
+
+      <AdTogetherInterstitial
+        adUnitId="YOUR_AD_UNIT_ID"
+        isOpen={showInterstitial}
+        onClose={() => setShowInterstitial(false)}
       />
     </div>
   );
@@ -34,7 +53,7 @@ export default function MyComponent() {
           </h1>
 
           <p className="text-lg md:text-xl text-zinc-600 dark:text-zinc-300 font-normal leading-relaxed max-w-xl">
-            AdTogether brings reciprocal marketing via ad exchange to independent creators. By embedding our lightweight, open-source SDK into your Android, iOS, Web, or Flutter app, you instantly join a completely moneyless ecosystem. Serve ads to your users to automatically earn credits, and spend those credits to promote your own projects globally. A true 1:1 value exchange.
+            AdTogether brings reciprocal marketing via ad exchange to independent creators. By embedding our lightweight, open-source SDK into your Android, iOS, Web, or Flutter app, you instantly join a completely moneyless ecosystem. Serve ads to your users to automatically earn credits, and spend those credits to promote your own projects globally. A true value exchange.
           </p>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-6">
@@ -50,6 +69,7 @@ export default function MyComponent() {
             >
               Read the Docs
             </Link>
+            <ExampleAdsButton />
           </div>
         </div>
         
@@ -96,7 +116,7 @@ export default function MyComponent() {
             <div className="text-amber-600 dark:text-[#FFCE2A] font-mono text-sm uppercase tracking-wide">03 / Transparent</div>
             <h3 className="text-2xl font-bold text-zinc-900 dark:text-white">Fair-Trade Economy</h3>
             <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed text-base">
-              A transparent 1:1 value exchange. The impressions you generate are exactly what you get back, ensuring a level playing field for apps of all sizes.
+              A transparent value exchange. Earn credits by showing ads and spend them to promote your own. Different ad formats have different weights, ensuring a level playing field and fair value for apps of all sizes.
             </p>
           </div>
         </div>

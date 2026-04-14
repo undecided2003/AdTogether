@@ -26,7 +26,7 @@ export default function LoginPage() {
       await setDoc(userRef, {
         uid: user.uid,
         email: user.email,
-        credits: 5, // Starter credits!
+        credits: 75, // Starter credits!
         country: "Unknown", // Can be updated later
         createdAt: new Date().toISOString(),
       });

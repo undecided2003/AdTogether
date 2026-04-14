@@ -20,7 +20,8 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // src/react/index.ts
 var react_exports = {};
 __export(react_exports, {
-  AdTogetherBanner: () => AdTogetherBanner
+  AdTogetherBanner: () => AdTogetherBanner,
+  AdTogetherInterstitial: () => AdTogetherInterstitial
 });
 module.exports = __toCommonJS(react_exports);
 
@@ -43,6 +44,8 @@ var AdTogether = class _AdTogether {
     sdk.appId = options.apiKey || options.appId;
     if (options.baseUrl) {
       sdk.baseUrl = options.baseUrl;
+    } else if (typeof window !== "undefined") {
+      sdk.baseUrl = "";
     }
     console.log(`AdTogether SDK Initialized with Key/ID: ${sdk.appId}`);
   }
@@ -53,15 +56,24 @@ var AdTogether = class _AdTogether {
     }
     return true;
   }
-  static async fetchAd(adUnitId) {
+  static async fetchAd(adUnitId, adType) {
     if (!_AdTogether.shared.assertInitialized()) {
       throw new Error("AdTogether not initialized");
     }
-    const response = await fetch(`${_AdTogether.shared.baseUrl}/api/ads/serve?country=global&adUnitId=${adUnitId}`);
-    if (!response.ok) {
+    try {
+      const sdk = _AdTogether.shared;
+      let url = `${sdk.baseUrl}/api/ads/serve?country=global&adUnitId=${adUnitId}&apiKey=${sdk.appId}`;
+      if (adType) {
+        url += `&adType=${adType}`;
+      }
+      const response = await fetch(url);
+      if (response.ok) {
+        return response.json();
+      }
       throw new Error(`Failed to fetch ad. Status: ${response.status}`);
+    } catch (err) {
+      throw err;
     }
-    return response.json();
   }
   static trackImpression(adId, token) {
     this.trackEvent("/api/ads/impression", adId, token);
@@ -76,7 +88,11 @@ var AdTogether = class _AdTogether {
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ adId, token })
+      body: JSON.stringify({
+        adId,
+        token,
+        apiKey: _AdTogether.shared.appId
+      })
     }).catch(console.error);
   }
 };
@@ -225,7 +241,291 @@ var AdTogetherBanner = ({
     }
   );
 };
+
+// src/react/AdTogetherInterstitial.tsx
+var import_react2 = require("react");
+var import_react_dom = require("react-dom");
+var import_jsx_runtime2 = require("react/jsx-runtime");
+var AdTogetherInterstitial = ({
+  adUnitId,
+  isOpen,
+  onClose,
+  onAdLoaded,
+  onAdFailedToLoad,
+  theme = "auto",
+  closeDelay = 3
+}) => {
+  const [adData, setAdData] = (0, import_react2.useState)(null);
+  const [isLoading, setIsLoading] = (0, import_react2.useState)(false);
+  const [hasError, setHasError] = (0, import_react2.useState)(false);
+  const [isDarkMode, setIsDarkMode] = (0, import_react2.useState)(theme === "dark");
+  const [canClose, setCanClose] = (0, import_react2.useState)(false);
+  const [countdown, setCountdown] = (0, import_react2.useState)(closeDelay);
+  const impressionTrackedRef = (0, import_react2.useRef)(false);
+  const closeTimerRef = (0, import_react2.useRef)(null);
+  const countdownRef = (0, import_react2.useRef)(null);
+  (0, import_react2.useEffect)(() => {
+    if (theme === "auto") {
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      setIsDarkMode(mediaQuery.matches);
+      const handler = (e) => setIsDarkMode(e.matches);
+      mediaQuery.addEventListener("change", handler);
+      return () => mediaQuery.removeEventListener("change", handler);
+    } else {
+      setIsDarkMode(theme === "dark");
+    }
+  }, [theme]);
+  (0, import_react2.useEffect)(() => {
+    if (!isOpen) {
+      setAdData(null);
+      setIsLoading(false);
+      setHasError(false);
+      setCanClose(false);
+      setCountdown(closeDelay);
+      impressionTrackedRef.current = false;
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+      if (countdownRef.current) clearInterval(countdownRef.current);
+      return;
+    }
+    let isMounted = true;
+    setIsLoading(true);
+    AdTogether.fetchAd(adUnitId, "interstitial").then((ad) => {
+      if (isMounted) {
+        setAdData(ad);
+        setIsLoading(false);
+        onAdLoaded?.();
+      }
+    }).catch((err) => {
+      if (isMounted) {
+        console.error("AdTogether Failed to load interstitial:", err);
+        setHasError(true);
+        setIsLoading(false);
+        onAdFailedToLoad?.(err);
+        onClose();
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, adUnitId]);
+  (0, import_react2.useEffect)(() => {
+    if (!isOpen || !adData) return;
+    setCountdown(closeDelay);
+    countdownRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          if (countdownRef.current) clearInterval(countdownRef.current);
+          setCanClose(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1e3);
+    return () => {
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    };
+  }, [isOpen, adData, closeDelay]);
+  (0, import_react2.useEffect)(() => {
+    if (!adData || !isOpen || impressionTrackedRef.current) return;
+    impressionTrackedRef.current = true;
+    AdTogether.trackImpression(adData.id, adData.token);
+  }, [adData, isOpen]);
+  const handleAdClick = (0, import_react2.useCallback)(() => {
+    if (!adData) return;
+    AdTogether.trackClick(adData.id, adData.token);
+    if (adData.clickUrl) {
+      window.open(adData.clickUrl, "_blank", "noopener,noreferrer");
+    }
+  }, [adData]);
+  const handleClose = (0, import_react2.useCallback)(() => {
+    if (canClose) {
+      onClose();
+    }
+  }, [canClose, onClose]);
+  (0, import_react2.useEffect)(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+  if (!isOpen) return null;
+  const bgOverlay = "rgba(0, 0, 0, 0.7)";
+  const cardBg = isDarkMode ? "#1F2937" : "#ffffff";
+  const borderColor = isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)";
+  const textColor = isDarkMode ? "#F9FAFB" : "#111827";
+  const descColor = isDarkMode ? "#9CA3AF" : "#6B7280";
+  const content = /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+    "div",
+    {
+      className: "adtogether-interstitial-overlay",
+      style: {
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        backgroundColor: bgOverlay,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 1e5,
+        backdropFilter: "blur(8px)",
+        animation: "adtogether-fade-in 0.3s ease-out"
+      },
+      onClick: (e) => {
+        if (e.target === e.currentTarget && canClose) handleClose();
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("style", { children: `
+        @keyframes adtogether-fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes adtogether-scale-in {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
+      ` }),
+        isLoading ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { color: "#fff", fontSize: "18px" }, children: "Loading Ad..." }) : adData ? /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+          "div",
+          {
+            style: {
+              position: "relative",
+              maxWidth: "600px",
+              width: "90%",
+              backgroundColor: cardBg,
+              borderRadius: "20px",
+              border: `1px solid ${borderColor}`,
+              overflow: "hidden",
+              boxShadow: "0 25px 50px rgba(0, 0, 0, 0.4)",
+              animation: "adtogether-scale-in 0.3s ease-out"
+            },
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { style: { position: "absolute", top: "12px", right: "12px", zIndex: 10 }, children: canClose ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                "button",
+                {
+                  onClick: handleClose,
+                  style: {
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "50%",
+                    backgroundColor: "rgba(0,0,0,0.6)",
+                    border: "none",
+                    color: "#fff",
+                    fontSize: "18px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backdropFilter: "blur(4px)"
+                  },
+                  "aria-label": "Close ad",
+                  children: "\u2715"
+                }
+              ) : /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                "div",
+                {
+                  style: {
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "50%",
+                    backgroundColor: "rgba(0,0,0,0.6)",
+                    color: "#fff",
+                    fontSize: "14px",
+                    fontWeight: "bold",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backdropFilter: "blur(4px)"
+                  },
+                  children: countdown
+                }
+              ) }),
+              adData.imageUrl && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                "div",
+                {
+                  style: { cursor: "pointer", position: "relative" },
+                  onClick: handleAdClick,
+                  children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                    "img",
+                    {
+                      src: adData.imageUrl,
+                      alt: adData.title,
+                      style: {
+                        width: "100%",
+                        aspectRatio: "16/9",
+                        objectFit: "cover",
+                        display: "block"
+                      }
+                    }
+                  )
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+                "div",
+                {
+                  style: { padding: "20px", cursor: "pointer" },
+                  onClick: handleAdClick,
+                  children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }, children: [
+                      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("span", { style: { fontWeight: "bold", fontSize: "18px", color: textColor }, children: adData.title }),
+                      /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                        "span",
+                        {
+                          style: {
+                            backgroundColor: "#FBBF24",
+                            color: "#000",
+                            fontSize: "10px",
+                            fontWeight: "bold",
+                            padding: "3px 6px",
+                            borderRadius: "4px",
+                            marginLeft: "8px",
+                            flexShrink: 0
+                          },
+                          children: "AD"
+                        }
+                      )
+                    ] }),
+                    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { style: { fontSize: "14px", color: descColor, margin: 0, lineHeight: 1.5 }, children: adData.description }),
+                    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                      "button",
+                      {
+                        style: {
+                          marginTop: "16px",
+                          width: "100%",
+                          padding: "12px",
+                          backgroundColor: "#F59E0B",
+                          color: "#000",
+                          fontWeight: "bold",
+                          fontSize: "14px",
+                          border: "none",
+                          borderRadius: "12px",
+                          cursor: "pointer"
+                        },
+                        onClick: (e) => {
+                          e.stopPropagation();
+                          handleAdClick();
+                        },
+                        children: "Learn More \u2192"
+                      }
+                    )
+                  ]
+                }
+              )
+            ]
+          }
+        ) : null
+      ]
+    }
+  );
+  return (0, import_react_dom.createPortal)(content, document.body);
+};
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
-  AdTogetherBanner
+  AdTogetherBanner,
+  AdTogetherInterstitial
 });

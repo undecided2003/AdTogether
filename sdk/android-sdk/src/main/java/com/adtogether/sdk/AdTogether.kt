@@ -14,6 +14,12 @@ object AdTogether {
     var baseUrl: String = "https://adtogether.relaxsoftwareapps.com"
         private set
 
+    var lastAdId: String? = null
+        private set
+
+    internal var appContext: Context? = null
+        private set
+
     /**
      * Initializes the AdTogether SDK.
      * @param context The application context.
@@ -22,6 +28,7 @@ object AdTogether {
      */
     fun initialize(context: Context, appId: String, baseUrl: String? = null) {
         this.appId = appId
+        this.appContext = context.applicationContext
         if (baseUrl != null) {
             this.baseUrl = baseUrl
         }
@@ -38,10 +45,15 @@ object AdTogether {
 
     /**
      * Fetches an ad for a specific ad unit.
+     * @param adType Optional filter: "banner" or "interstitial".
      */
-    suspend fun fetchAd(adUnitId: String): AdModel? {
+    suspend fun fetchAd(adUnitId: String, adType: String? = null): AdModel? {
         if (!assertInitialized()) return null
-        return AdNetworkService.fetchAd(adUnitId)
+        val ad = AdNetworkService.fetchAd(adUnitId, adType, lastAdId)
+        if (ad != null) {
+            lastAdId = ad.id
+        }
+        return ad
     }
 
     /**

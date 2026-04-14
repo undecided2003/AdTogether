@@ -8,7 +8,7 @@ AdTogether provides **4 separate SDKs**, each distributed through its platform's
 
 | SDK | Package | Distribution | Platforms |
 |-----|---------|-------------|-----------|
-| Web SDK | `sdk.js` | CDN script tag | Websites, SPAs, SSR (React, Next.js, Vue, HTML) |
+| Web SDK | `@adtogether/web-sdk` | NPM package or CDN script tag | Websites, SPAs, SSR (React, Next.js, Vue, HTML) |
 | Flutter SDK | `adtogether_sdk` | pub.dev | Android + iOS + Web (one package) |
 | Native iOS SDK | `AdTogether` | Swift Package Manager | SwiftUI, UIKit |
 | Native Android SDK | `com.adtogether:sdk` | Maven Central | Jetpack Compose, XML Views |
@@ -41,8 +41,10 @@ Will return a JSON object with ad details (`id`, `title`, `description`, `imageU
 \`\`\`bash
 curl -X POST "https://adtogether.relaxsoftwareapps.com/api/ads/impression" \
   -H "Content-Type: application/json" \
-  -d '{"adId": "123456"}'
+  -d '{"adId": "123456", "token": "HMAC_TOKEN_FROM_SERVE_RESPONSE"}'
 \`\`\`
+
+**Note:** The `token` field is required. It is an HMAC signature returned in the `/api/ads/serve` response. Requests without a valid token will be rejected.
 
 Decrements the advertiser's credit balance.
 
@@ -51,24 +53,40 @@ Decrements the advertiser's credit balance.
 \`\`\`bash
 curl -X POST "https://adtogether.relaxsoftwareapps.com/api/ads/click" \
   -H "Content-Type: application/json" \
-  -d '{"adId": "123456"}'
+  -d '{"adId": "123456", "token": "HMAC_TOKEN_FROM_SERVE_RESPONSE"}'
 \`\`\`
 
 ---
 
 ## Web Integration (React / Next.js / Vue / HTML)
 
-**Distribution:** CDN-hosted script tag — no npm package required.
+**Distribution:** NPM package (`@adtogether/web-sdk`) for React/Next.js, or CDN-hosted script tag for plain HTML.
 
-### Setup
+### Option A: NPM Package (React / Next.js)
+
+```bash
+npm install @adtogether/web-sdk
+```
+
+```tsx
+"use client";
+import { AdTogether } from '@adtogether/web-sdk';
+import { AdTogetherBanner } from '@adtogether/web-sdk/react';
+
+AdTogether.initialize({ apiKey: 'YOUR_API_KEY' });
+
+export default function MyComponent() {
+  return <AdTogetherBanner adUnitId="YOUR_AD_UNIT_ID" />;
+}
+```
+
+### Option B: CDN Script Tag (Plain HTML)
 
 Include the global script tag in your `<head>` or global layout:
 
 ```html
 <script src="https://adtogether.relaxsoftwareapps.com/sdk.js" defer></script>
 ```
-
-### Display an Ad
 
 Place a unique div element with the corresponding `data-ad-unit` attribute. The SDK will automatically scan the DOM and populate these divs:
 
@@ -97,7 +115,7 @@ import 'package:adtogether_sdk/adtogether_sdk.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await AdTogether.initialize(appId: 'YOUR_APP_ID');
+  await AdTogether.initialize(apiKey: 'YOUR_API_KEY');
   runApp(MyApp());
 }
 ```
@@ -163,7 +181,7 @@ import AdTogether
 @main
 struct MyApp: App {
     init() {
-        AdTogether.initialize(appId: "YOUR_APP_ID")
+        AdTogether.shared.initialize(apiKey: "YOUR_API_KEY")
     }
 
     var body: some Scene {
@@ -219,7 +237,7 @@ import com.adtogether.sdk.AdTogether
 class MyApp : Application() {
     override fun onCreate() {
         super.onCreate()
-        AdTogether.initialize(this, appId = "YOUR_APP_ID")
+        AdTogether.initialize(this, "YOUR_API_KEY")
     }
 }
 ```
@@ -262,7 +280,7 @@ fun MainScreen() {
 ## Technical Notes for AI Agents
 
 - A valid `AD_UNIT_ID` looks like `unit_x8f9...`
-- A valid `APP_ID` looks like `app_k3m7...`
+- A valid `API_KEY` looks like `at_k3m7...`
 - All SDKs communicate with the AdTogether REST API endpoints (`/api/ads/serve`, `/api/ads/impression`, `/api/ads/click`).
 - Initialization must happen **before** any ad rendering call — place it in app startup logic.
 - The Flutter SDK utilizes Platform Views under the hood. Ensure `io.flutter.embedded_views_preview` is enabled in iOS `Info.plist` if dealing with older Flutter engines.

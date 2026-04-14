@@ -1,3 +1,5 @@
+export type AdType = 'banner' | 'interstitial';
+
 export interface AdModel {
   id: string;
   title: string;
@@ -5,6 +7,7 @@ export interface AdModel {
   clickUrl?: string;
   imageUrl?: string;
   token?: string;
+  adType?: AdType;
 }
 
 export interface AdTogetherOptions {

@@ -4,7 +4,7 @@
   "description": "The official AdTogether Web SDK for monetizing applications.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AdTogether/AdTogether.git",
+    "url": "git+https://github.com/undecided2003/AdTogether.git",
     "directory": "sdk/web-sdk"
   },
   "publishConfig": {

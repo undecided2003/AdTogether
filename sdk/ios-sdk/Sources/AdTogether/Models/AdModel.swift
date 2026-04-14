@@ -7,4 +7,5 @@ public struct AdModel: Codable, Identifiable {
     public let clickUrl: String?
     public let imageUrl: String?
     public let token: String?
+    public let adType: String?
 }

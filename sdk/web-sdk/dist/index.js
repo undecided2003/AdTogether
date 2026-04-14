@@ -40,6 +40,8 @@ var AdTogether = class _AdTogether {
     sdk.appId = options.apiKey || options.appId;
     if (options.baseUrl) {
       sdk.baseUrl = options.baseUrl;
+    } else if (typeof window !== "undefined") {
+      sdk.baseUrl = "";
     }
     console.log(`AdTogether SDK Initialized with Key/ID: ${sdk.appId}`);
   }
@@ -50,15 +52,24 @@ var AdTogether = class _AdTogether {
     }
     return true;
   }
-  static async fetchAd(adUnitId) {
+  static async fetchAd(adUnitId, adType) {
     if (!_AdTogether.shared.assertInitialized()) {
       throw new Error("AdTogether not initialized");
     }
-    const response = await fetch(`${_AdTogether.shared.baseUrl}/api/ads/serve?country=global&adUnitId=${adUnitId}`);
-    if (!response.ok) {
+    try {
+      const sdk = _AdTogether.shared;
+      let url = `${sdk.baseUrl}/api/ads/serve?country=global&adUnitId=${adUnitId}&apiKey=${sdk.appId}`;
+      if (adType) {
+        url += `&adType=${adType}`;
+      }
+      const response = await fetch(url);
+      if (response.ok) {
+        return response.json();
+      }
       throw new Error(`Failed to fetch ad. Status: ${response.status}`);
+    } catch (err) {
+      throw err;
     }
-    return response.json();
   }
   static trackImpression(adId, token) {
     this.trackEvent("/api/ads/impression", adId, token);
@@ -73,7 +84,11 @@ var AdTogether = class _AdTogether {
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ adId, token })
+      body: JSON.stringify({
+        adId,
+        token,
+        apiKey: _AdTogether.shared.appId
+      })
     }).catch(console.error);
   }
 };

@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { adminDb as db } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import crypto from 'crypto';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,7 +17,17 @@ export async function OPTIONS() {
 
 export async function POST(request: Request) {
   try {
-    const { adId, token } = await request.json();
+    const reqHeaders = await headers();
+    const ip = reqHeaders.get('x-forwarded-for') || reqHeaders.get('x-real-ip') || 'unknown';
+    
+    // Extract origin for web tracking
+    const originHeader = reqHeaders.get('origin') || reqHeaders.get('referer') || '';
+    
+    if (!checkRateLimit(ip, 100, 60 * 1000)) { // 100 requests per minute
+      return NextResponse.json({ error: 'Too Many Requests' }, { status: 429, headers: corsHeaders });
+    }
+
+    const { adId, token, bundleId, apiKey } = await request.json();
 
     if (!adId) {
       return NextResponse.json({ error: 'adId is required' }, { status: 400, headers: corsHeaders });
@@ -25,7 +37,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Auth token is required' }, { status: 401, headers: corsHeaders });
     }
 
-    const hmac = crypto.createHmac('sha256', process.env.API_SECRET || 'default_secret_key');
+    // Determine the source tracking ID
+    let rawSource = bundleId;
+    if (!rawSource && originHeader) {
+      try {
+        const urlObj = new URL(originHeader.startsWith('http') ? originHeader : `https://${originHeader}`);
+        rawSource = urlObj.hostname;
+      } catch (e) {
+        rawSource = originHeader;
+      }
+    }
+    const safeSourceId = (rawSource || 'unknown_origin').replace(/\./g, '_').replace(/\//g, '_').substring(0, 50);
+
+    const configSnap = await db.collection('config').doc('secrets').get();
+    const secretsData = configSnap.data() || {};
+    const API_SECRET_KEY = secretsData.API_SECRET || process.env.API_SECRET;
+
+    if (!API_SECRET_KEY) {
+      console.error('API_SECRET is not configured');
+      return NextResponse.json({ error: 'Internal Server Error' }, { status: 500, headers: corsHeaders });
+    }
+    const hmac = crypto.createHmac('sha256', API_SECRET_KEY);
     hmac.update(adId);
     const expectedToken = hmac.digest('hex');
 
@@ -35,7 +67,36 @@ export async function POST(request: Request) {
 
     // Increment click count on the ad document for analytics
     const adRef = db.collection('ads').doc(adId);
-    await adRef.update({ clicks: FieldValue.increment(1) }).catch(console.error);
+    await adRef.update({ 
+      clicks: FieldValue.increment(1),
+      [`clicksByOrigin.${safeSourceId}`]: FieldValue.increment(1)
+    }).catch(console.error);
+
+    // Update publisher's earnings log with click count
+    if (apiKey) {
+      let publisherRef: FirebaseFirestore.DocumentReference | null = null;
+      const pSnap = await db.collection('users').where('apiKey', '==', apiKey).limit(1).get();
+      if (!pSnap.empty) {
+        publisherRef = pSnap.docs[0].ref;
+      } else {
+        const pSnapArr = await db.collection('users').where('apiKeys', 'array-contains', apiKey).limit(1).get();
+        if (!pSnapArr.empty) {
+          publisherRef = pSnapArr.docs[0].ref;
+        }
+      }
+      if (publisherRef) {
+        const pubDoc = await publisherRef.get();
+        const pubData = pubDoc.data();
+        if (pubData) {
+          const earningsLog = pubData.earningsLog || {};
+          if (earningsLog[adId]) {
+            earningsLog[adId].clicks = (earningsLog[adId].clicks || 0) + 1;
+            earningsLog[adId].lastUpdated = new Date().toISOString();
+            await publisherRef.update({ earningsLog });
+          }
+        }
+      }
+    }
 
     return NextResponse.json({ success: true }, { status: 200, headers: corsHeaders });
   } catch (error: any) {

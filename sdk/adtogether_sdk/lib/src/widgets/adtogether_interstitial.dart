@@ -79,7 +79,10 @@ class _InterstitialDialogState extends State<_InterstitialDialog>
 
   Future<void> _fetchAd() async {
     try {
-      final ad = await AdTogether.fetchAd(widget.adUnitId, adType: 'interstitial');
+      final ad = await AdTogether.fetchAd(
+        widget.adUnitId,
+        adType: 'interstitial',
+      );
       if (mounted) {
         setState(() {
           _adData = ad;
@@ -142,184 +145,195 @@ class _InterstitialDialogState extends State<_InterstitialDialog>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? const Color(0xFF1F2937) : Colors.white;
-    final textColor = isDark ? const Color(0xFFF9FAFB) : const Color(0xFF111827);
-    final descColor = isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+    final textColor = isDark
+        ? const Color(0xFFF9FAFB)
+        : const Color(0xFF111827);
+    final descColor = isDark
+        ? const Color(0xFF9CA3AF)
+        : const Color(0xFF6B7280);
 
     return Center(
       child: _isLoading
           ? const CircularProgressIndicator(color: Colors.amber)
           : _hasError || _adData == null
-              ? const SizedBox.shrink()
-              : AnimatedScale(
-                  scale: 1.0,
-                  duration: const Duration(milliseconds: 300),
-                  child: Container(
-                    width: MediaQuery.of(context).size.width * 0.9,
-                    constraints: const BoxConstraints(maxWidth: 480),
-                    decoration: BoxDecoration(
-                      color: bgColor,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.4),
-                          blurRadius: 40,
-                          offset: const Offset(0, 20),
-                        ),
-                      ],
+          ? const SizedBox.shrink()
+          : AnimatedScale(
+              scale: 1.0,
+              duration: const Duration(milliseconds: 300),
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.9,
+                constraints: const BoxConstraints(maxWidth: 480),
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      blurRadius: 40,
+                      offset: const Offset(0, 20),
                     ),
-                    clipBehavior: Clip.antiAlias,
-                    child: Stack(
+                  ],
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Stack(
+                  children: [
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            // Image
-                            if (_adData!.imageUrl != null)
-                              GestureDetector(
-                                onTap: _onAdClicked,
-                                child: AspectRatio(
-                                  aspectRatio: 16 / 9,
-                                  child: Image.network(
-                                    _adData!.imageUrl!,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) => Container(
+                        // Image
+                        if (_adData!.imageUrl != null)
+                          GestureDetector(
+                            onTap: _onAdClicked,
+                            child: AspectRatio(
+                              aspectRatio: 16 / 9,
+                              child: Image.network(
+                                _adData!.imageUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Container(
                                       color: Colors.grey.withValues(alpha: 0.2),
                                       child: const Center(
-                                        child: Icon(Icons.image_not_supported,
-                                            color: Colors.grey),
+                                        child: Icon(
+                                          Icons.image_not_supported,
+                                          color: Colors.grey,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ),
                               ),
+                            ),
+                          ),
 
-                            // Content
-                            GestureDetector(
-                              onTap: _onAdClicked,
-                              child: Padding(
-                                padding: const EdgeInsets.all(20),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                        // Content
+                        GestureDetector(
+                          onTap: _onAdClicked,
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
                                   children: [
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            _adData!.title,
-                                            style: TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                              color: textColor,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
+                                    Expanded(
+                                      child: Text(
+                                        _adData!.title,
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: textColor,
                                         ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 6, vertical: 3),
-                                          decoration: BoxDecoration(
-                                            color: Colors.amber,
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                          ),
-                                          child: const Text(
-                                            'AD',
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.black,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      _adData!.description,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: descColor,
-                                        height: 1.5,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                      maxLines: 3,
-                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    const SizedBox(height: 16),
-
-                                    // CTA Button
-                                    SizedBox(
-                                      width: double.infinity,
-                                      child: ElevatedButton(
-                                        onPressed: _onAdClicked,
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.amber,
-                                          foregroundColor: Colors.black,
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 14),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                          ),
-                                        ),
-                                        child: const Text(
-                                          'Learn More →',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 14,
-                                          ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 3,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.amber,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: const Text(
+                                        'AD',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black,
                                         ),
                                       ),
                                     ),
                                   ],
                                 ),
-                              ),
-                            ),
-                          ],
-                        ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  _adData!.description,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: descColor,
+                                    height: 1.5,
+                                  ),
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 16),
 
-                        // Close / Countdown button
-                        Positioned(
-                          top: 12,
-                          right: 12,
-                          child: _canClose
-                              ? GestureDetector(
-                                  onTap: () => Navigator.of(context).pop(),
-                                  child: Container(
-                                    width: 36,
-                                    height: 36,
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withValues(alpha: 0.6),
-                                      shape: BoxShape.circle,
+                                // CTA Button
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    onPressed: _onAdClicked,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.amber,
+                                      foregroundColor: Colors.black,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 14,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
                                     ),
-                                    alignment: Alignment.center,
-                                    child: const Icon(Icons.close,
-                                        color: Colors.white, size: 20),
-                                  ),
-                                )
-                              : Container(
-                                  width: 36,
-                                  height: 36,
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.6),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    '$_countdown',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
+                                    child: const Text(
+                                      'Learn More →',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
                                     ),
                                   ),
                                 ),
+                              ],
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                  ),
+
+                    // Close / Countdown button
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: _canClose
+                          ? GestureDetector(
+                              onTap: () => Navigator.of(context).pop(),
+                              child: Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.6),
+                                  shape: BoxShape.circle,
+                                ),
+                                alignment: Alignment.center,
+                                child: const Icon(
+                                  Icons.close,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                              ),
+                            )
+                          : Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.6),
+                                shape: BoxShape.circle,
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                '$_countdown',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                    ),
+                  ],
                 ),
+              ),
+            ),
     );
   }
 }
