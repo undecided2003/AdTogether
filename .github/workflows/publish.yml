@@ -15,14 +15,7 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
-
-      - name: Configure npm
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
-        working-directory: sdk/web-sdk
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
+          always-auth: true
       - name: Install dependencies
         run: npm install
         working-directory: sdk/web-sdk
@@ -32,7 +25,8 @@ jobs:
       - name: Publish to npm
         run: npm publish --access public --no-git-checks
         working-directory: sdk/web-sdk
-
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   # --- Android SDK (Maven Central) ---
   publish-android:
@@ -55,10 +49,12 @@ jobs:
           gradle publishAllPublicationsToMavenCentralRepository \
             -PmavenCentralUsername="${{ secrets.MAVEN_CENTRAL_USERNAME }}" \
             -PmavenCentralPassword="${{ secrets.MAVEN_CENTRAL_PASSWORD }}" \
+            -PsonatypeUsername="${{ secrets.MAVEN_CENTRAL_USERNAME }}" \
+            -PsonatypePassword="${{ secrets.MAVEN_CENTRAL_PASSWORD }}" \
             -Psigning.keyId="${{ secrets.SIGNING_KEY_ID }}" \
             -Psigning.password="${{ secrets.SIGNING_PASSWORD }}" \
             -Psigning.secretKeyRingFile="gpg_key.asc" \
-            --stacktrace
+            --stacktrace --info
         working-directory: sdk/android-sdk
 
   # --- Flutter SDK (pub.dev) ---
