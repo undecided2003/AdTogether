@@ -36,7 +36,7 @@ Add the dependency to your app-level `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.adtogether:sdk:0.1.5")
+    implementation("com.adtogether:sdk:0.1.6")
 }
 ```
 

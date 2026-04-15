@@ -1,4 +1,4 @@
-## 0.1.5
+## 0.1.6
 
 * Documentation improvements.
 * Localize ad assets for better registry rendering.

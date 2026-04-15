@@ -22,7 +22,9 @@ jobs:
         run: npm run build
         working-directory: sdk/web-sdk
       - name: Publish to npm
-        run: npm publish --access public --no-git-checks
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
+          npm publish --access public --no-git-checks
         working-directory: sdk/web-sdk
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -43,8 +45,7 @@ jobs:
 
       - name: Publish to Maven Central
         run: |
-          chmod +x gradlew
-          ./gradlew publishAllPublicationsToMavenCentralRepository \
+          gradle publishAllPublicationsToMavenCentralRepository \
             -PmavenCentralUsername="${{ secrets.MAVEN_CENTRAL_USERNAME }}" \
             -PmavenCentralPassword="${{ secrets.MAVEN_CENTRAL_PASSWORD }}" \
             -PsonatypeUsername="${{ secrets.MAVEN_CENTRAL_USERNAME }}" \

@@ -58,7 +58,7 @@ import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
 
 mavenPublishing {
     // Defines the coordinates
-    coordinates("com.adtogether", "sdk", "0.1.5")
+    coordinates("com.adtogether", "sdk", "0.1.6")
     
     // Configures the POM
     pom {

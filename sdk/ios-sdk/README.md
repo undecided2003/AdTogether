@@ -40,7 +40,7 @@ This SDK allows iOS developers to easily integrate AdTogether ads into their app
 ### CocoaPods
 
 ```ruby
-pod 'AdTogether', '~> 0.1.5'
+pod 'AdTogether', '~> 0.1.6'
 ```
 
 ### Initialize
