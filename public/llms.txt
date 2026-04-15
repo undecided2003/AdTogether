@@ -173,7 +173,7 @@ https://github.com/undecided2003/AdTogether.git
 Or add directly to `Package.swift`:
 
 ```swift
-.package(url: "https://github.com/undecided2003/AdTogether.git", from: "0.1.6")
+.package(url: "https://github.com/undecided2003/AdTogether.git", from: "0.1.7")
 ```
 
 ### Initialize
@@ -228,7 +228,7 @@ Add to your module-level `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.adtogether:sdk:0.1.6")
+    implementation("com.adtogether:sdk:0.1.7")
 }
 ```
 

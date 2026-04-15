@@ -1,4 +1,4 @@
-## 0.1.6
+## 0.1.7
 
 * **Documentation**: Embedded local preview images directly in the package to ensure proper visual rendering on pub.dev.
 * **Support**: Updated the AdTogether Discord community link.

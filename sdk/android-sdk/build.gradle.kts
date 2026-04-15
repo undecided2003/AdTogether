@@ -1,6 +1,6 @@
 plugins {
-    id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.library") version "8.2.2"
+    id("org.jetbrains.kotlin.android") version "1.9.22"
     id("com.vanniktech.maven.publish") version "0.28.0"
 }
 
@@ -58,7 +58,7 @@ import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
 
 mavenPublishing {
     // Defines the coordinates
-    coordinates("com.adtogether", "sdk", "0.1.6")
+    coordinates("com.adtogether", "sdk", "0.1.7")
     
     // Configures the POM
     pom {

@@ -544,7 +544,7 @@ AdTogetherInterstitial.show(
               <CodeBlock title="Package.swift">
 {`.package(
   url: "https://github.com/undecided2003/AdTogether.git",
-  from: "0.1.6"
+  from: "0.1.7"
 )`}
               </CodeBlock>
 
@@ -620,7 +620,7 @@ struct ContentView: View {
               </p>
               <CodeBlock title="build.gradle.kts">
 {`dependencies {
-    implementation("com.adtogether:sdk:0.1.6")
+    implementation("com.adtogether:sdk:0.1.7")
 }`}
               </CodeBlock>
 
