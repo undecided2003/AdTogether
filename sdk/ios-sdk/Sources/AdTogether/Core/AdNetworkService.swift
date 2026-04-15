@@ -2,7 +2,7 @@ import Foundation
 
 internal class AdNetworkService {
     
-    static func fetchAd(adUnitId: String, adType: String? = nil, exclude: String? = nil, completion: @escaping (Result<AdModel, Error>) -> Void) {
+    static func fetchAd(adUnitId: String, adType: String? = nil, exclude: String? = nil, allowSelfAds: Bool = true, completion: @escaping (Result<AdModel, Error>) -> Void) {
         var urlString = "\(AdTogether.shared.baseUrl)/api/ads/serve?country=global&adUnitId=\(adUnitId)&apiKey=\(AdTogether.shared.appId ?? "")"
         if let adType = adType {
             urlString += "&adType=\(adType)"
@@ -13,6 +13,7 @@ internal class AdNetworkService {
         if let bundleId = Bundle.main.bundleIdentifier {
             urlString += "&bundleId=\(bundleId)"
         }
+        urlString += "&allowSelfAds=\(allowSelfAds)"
         guard let url = URL(string: urlString) else {
             completion(.failure(NSError(domain: "AdTogether", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])))
             return

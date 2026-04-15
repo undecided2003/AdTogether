@@ -9,15 +9,16 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: 'AdTogether | Shown an ad, get an ad shown',
-  description: 'AdTogether is your ad exchange platform where you earn credits by showing ads and spend them to get your app shown globally.',
+  metadataBase: new URL('https://adtogether.relaxsoftwareapps.com'),
+  title: 'AdTogether | Show an ad, get an ad shown',
+  description: 'AdTogether is a reciprocal ad exchange platform to increase conversions. Earn credits by showing ads and spend them to get your own app shown globally.',
   icons: {
     icon: '/favicon.ico',
     apple: '/apple.png',
   },
   openGraph: {
-    title: 'AdTogether | Shown an ad, get an ad shown',
-    description: 'AdTogether is a fair 1-to-1 ad exchange platform. Earn credits by showing ads — spend them to grow your app globally.',
+    title: 'AdTogether | Show an ad, get an ad shown',
+    description: 'AdTogether is a fair 1-to-1 ad exchange platform to increase conversions and grow your audience. Earn credits by showing ads — spend them to grow your app globally.',
     url: 'https://adtogether.relaxsoftwareapps.com',
     siteName: 'AdTogether',
     images: [{ url: '/adtogether_logo.png', width: 1200, height: 630, alt: 'AdTogether' }],

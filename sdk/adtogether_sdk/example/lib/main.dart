@@ -5,7 +5,7 @@ void main() async {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 1. Initialize the SDK with your App API Key from the dashboard
+  // 1. Initialize the SDK with your App ID from the dashboard
   // Use a sample key for demonstration
   await AdTogether.initialize(appId: 'at_f57425e89a9545eda1162baeedb78636');
 

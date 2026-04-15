@@ -1,15 +1,15 @@
 
 import Link from 'next/link';
 import {
-  LucideTerminal,
-  LucideSmartphone,
-  LucideGlobe,
-  LucideBot,
-  LucideBox,
-  LucideLayers,
-  LucideArrowRight,
-  LucideCheck,
-  LucideInfo,
+  Terminal,
+  Smartphone,
+  Globe,
+  Bot,
+  Box,
+  Layers,
+  ArrowRight,
+  Check,
+  Info,
 } from 'lucide-react';
 
 function PlatformBadge({ label, color }: { label: string; color: string }) {
@@ -17,7 +17,7 @@ function PlatformBadge({ label, color }: { label: string; color: string }) {
     <span
       className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full border ${color}`}
     >
-      <LucideCheck className="w-3 h-3" />
+      <Check className="w-3 h-3" />
       {label}
     </span>
   );
@@ -67,16 +67,14 @@ export default function DocsPage() {
             </span>
           </h1>
           <p className="text-xl text-zinc-600 dark:text-gray-400 max-w-2xl leading-relaxed">
-            The cross-platform advertising SDK designed for the next generation
-            of apps. Instructions optimized for both human developers and AI
-            coding agents.
+            <strong>"Show an ad, get an ad shown"</strong> — the reciprocal ad exchange designed to <strong>increase conversions</strong> and grow your application's audience globally.
           </p>
         </header>
 
         {/* AI Awareness Alert */}
         <div className="bg-amber-100/50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-500/30 rounded-2xl p-6 mb-16 flex items-start space-x-4">
           <div className="p-3 bg-amber-500/20 rounded-xl rounded-tl-none">
-            <LucideBot className="w-6 h-6 text-amber-400" />
+            <Bot className="w-6 h-6 text-amber-400" />
           </div>
           <div>
             <h3 className="text-lg font-semibold text-amber-700 dark:text-amber-300 mb-2">
@@ -97,11 +95,87 @@ export default function DocsPage() {
           </div>
         </div>
 
+        {/* ── Visualizing the Experience ─────────────────── */}
+        <section className="mb-20">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="p-3 bg-gradient-to-br from-indigo-600/20 to-purple-600/20 rounded-xl">
+              <Globe className="w-6 h-6 text-indigo-400" />
+            </div>
+            <h2 className="text-3xl font-bold">Standard Ad Formats</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="group relative bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 rounded-3xl p-6 overflow-hidden transition-all hover:bg-zinc-100 dark:hover:bg-white/[0.05] md:h-[650px] flex flex-col">
+              <div className="flex items-center justify-between mb-4">
+                 <h3 className="text-xl font-bold">Native Banner</h3>
+                 <span className="text-xs bg-indigo-500/10 text-indigo-400 px-2 py-1 rounded-md border border-indigo-500/20 uppercase tracking-wider font-semibold">Web & Mobile</span>
+              </div>
+              <p className="text-sm text-zinc-600 dark:text-gray-400 mb-8">
+                Inline banner ads that adapt to their container. Perfect for headers, footers, or content breaks.
+              </p>
+              
+              <div className="flex-grow flex items-center justify-center">
+                {/* Mock Feed UI */}
+                <div className="w-full max-w-[400px] border border-zinc-200 dark:border-white/10 rounded-2xl overflow-hidden shadow-xl bg-white dark:bg-zinc-900/50">
+                  <div className="p-3 border-b border-zinc-100 dark:border-white/5 flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-zinc-200 dark:bg-zinc-800" />
+                    <div className="w-20 h-2 bg-zinc-200 dark:bg-zinc-800 rounded" />
+                  </div>
+                  <div className="p-4 space-y-3">
+                    <div className="w-full h-3 bg-zinc-100 dark:bg-zinc-800/50 rounded" />
+                    <div className="w-3/4 h-3 bg-zinc-100 dark:bg-zinc-800/50 rounded" />
+                  </div>
+                  
+                  {/* The Actual Ad (Pure Image from public/ads) */}
+                  <div className="mx-4 mb-4 bg-black rounded-xl border border-zinc-200 dark:border-indigo-500/30 overflow-hidden shadow-lg relative group/ad aspect-[3.9/1]">
+                    <img 
+                      src="/ads/Banner_Example.png" 
+                      alt="Banner Ad" 
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+
+                  <div className="p-4 border-t border-zinc-100 dark:border-white/5 flex justify-between">
+                    <div className="w-4 h-4 rounded bg-zinc-100 dark:bg-zinc-800" />
+                    <div className="w-4 h-4 rounded bg-zinc-100 dark:bg-zinc-800" />
+                    <div className="w-4 h-4 rounded bg-zinc-100 dark:bg-zinc-800" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="group relative bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 rounded-3xl p-6 overflow-hidden transition-all hover:bg-zinc-100 dark:hover:bg-white/[0.05] md:h-[650px] flex flex-col">
+              <div className="flex items-center justify-between mb-4">
+                 <h3 className="text-xl font-bold">Interstitial</h3>
+                 <span className="text-xs bg-indigo-500/10 text-indigo-400 px-2 py-1 rounded-md border border-indigo-500/20 uppercase tracking-wider font-semibold">Web & Mobile</span>
+              </div>
+              <p className="text-sm text-zinc-600 dark:text-gray-400 mb-8">
+                Full-screen immersive experiences during natural application transitions.
+              </p>
+              
+              <div className="flex-grow flex items-center justify-center">
+                <div className="w-[230px] aspect-[9/19] bg-zinc-900 rounded-[3rem] p-2.5 border-4 border-zinc-800 shadow-2xl relative overflow-hidden ring-1 ring-white/10">
+                  {/* Phone Screen */}
+                  <div className="w-full h-full bg-black rounded-[2.2rem] overflow-hidden relative border border-zinc-700 flex flex-col">
+                    <div className="w-full h-full bg-black flex items-center justify-center">
+                      <img 
+                        src="/ads/Interstitial_Example.png" 
+                        alt="Interstitial Ad Example" 
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* ── Architecture Overview ────────────────────────── */}
         <section className="mb-20">
           <div className="flex items-center gap-3 mb-8">
             <div className="p-3 bg-gradient-to-br from-amber-600/20 to-orange-600/20 rounded-xl">
-              <LucideLayers className="w-6 h-6 text-amber-400" />
+              <Layers className="w-6 h-6 text-amber-400" />
             </div>
             <h2 className="text-3xl font-bold">SDK Architecture</h2>
           </div>
@@ -144,7 +218,7 @@ export default function DocsPage() {
 
               {/* Arrow */}
               <div className="hidden md:flex items-center pt-8">
-                <LucideArrowRight className="w-6 h-6 text-zinc-600" />
+                <ArrowRight className="w-6 h-6 text-zinc-600" />
               </div>
 
               {/* Platforms Served */}
@@ -160,7 +234,7 @@ export default function DocsPage() {
                     { sdk: 'Android SDK', platforms: 'Compose / View-based apps' },
                   ].map(({ sdk, platforms }) => (
                     <div key={sdk} className="flex items-start gap-3">
-                      <LucideCheck className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                      <Check className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
                       <div>
                         <span className="text-zinc-900 dark:text-white font-medium text-sm">{sdk}</span>
                         <span className="text-zinc-600 dark:text-zinc-500 text-sm"> → {platforms}</span>
@@ -174,7 +248,7 @@ export default function DocsPage() {
             {/* Flutter Internal Architecture */}
             <div className="mt-10 border-t border-zinc-200 dark:border-white/5 pt-8 relative z-10">
               <div className="flex items-center gap-2 mb-4">
-                <LucideInfo className="w-4 h-4 text-amber-400" />
+                <Info className="w-4 h-4 text-amber-400" />
                 <h4 className="text-sm font-semibold text-amber-700 dark:text-amber-300">
                   How the Flutter SDK works internally
                 </h4>
@@ -217,7 +291,7 @@ export default function DocsPage() {
         <section className="mb-16">
           <div className="flex items-center gap-3 mb-8">
             <div className="p-3 bg-gradient-to-br from-amber-600/20 to-orange-600/20 rounded-xl">
-              <LucideBox className="w-6 h-6 text-amber-400" />
+              <Box className="w-6 h-6 text-amber-400" />
             </div>
             <h2 className="text-3xl font-bold">Integration Guides</h2>
           </div>
@@ -227,7 +301,7 @@ export default function DocsPage() {
             <section className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 p-8 rounded-3xl hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors md:col-span-2">
               <div className="flex items-center space-x-3 mb-3">
                 <div className="p-3 bg-red-500/20 rounded-xl text-red-400">
-                  <LucideGlobe className="w-6 h-6" />
+                  <Globe className="w-6 h-6" />
                 </div>
                 <h2 className="text-2xl font-semibold">REST API endpoints</h2>
               </div>
@@ -262,7 +336,7 @@ export default function DocsPage() {
             <section className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 p-8 rounded-3xl hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors">
               <div className="flex items-center space-x-3 mb-3">
                 <div className="p-3 bg-pink-500/20 rounded-xl text-pink-400">
-                  <LucideGlobe className="w-6 h-6" />
+                  <Globe className="w-6 h-6" />
                 </div>
                 <h2 className="text-2xl font-semibold">Web SDK</h2>
               </div>
@@ -298,7 +372,7 @@ export default function DocsPage() {
                 {`import { AdTogether } from '@adtogether/web-sdk';
 import { AdTogetherBanner } from '@adtogether/web-sdk/react';
 
-AdTogether.initialize({ apiKey: 'YOUR_API_KEY' });
+AdTogether.initialize({ appId: 'YOUR_APP_ID' });
 
 export default function MyComponent() {
   return <AdTogetherBanner adUnitId="YOUR_AD_UNIT_ID" />;
@@ -323,7 +397,7 @@ export default function MyComponent() {
 
               <div className="flex items-center space-x-3 mb-3">
                 <div className="p-3 bg-amber-500/20 rounded-xl text-amber-400">
-                  <LucideSmartphone className="w-6 h-6" />
+                  <Smartphone className="w-6 h-6" />
                 </div>
                 <h2 className="text-2xl font-semibold">Flutter SDK</h2>
               </div>
@@ -360,7 +434,7 @@ export default function MyComponent() {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await AdTogether.initialize(apiKey: 'YOUR_API_KEY');
+  await AdTogether.initialize(appId: 'YOUR_APP_ID');
   runApp(MyApp());
 }`}
               </CodeBlock>
@@ -390,7 +464,7 @@ AdTogetherInterstitial.show(
             <section className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 p-8 rounded-3xl hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors">
               <div className="flex items-center space-x-3 mb-3">
                 <div className="p-3 bg-orange-500/20 rounded-xl text-orange-400">
-                  <LucideTerminal className="w-6 h-6" />
+                  <Terminal className="w-6 h-6" />
                 </div>
                 <h2 className="text-2xl font-semibold">Native iOS SDK</h2>
               </div>
@@ -415,8 +489,8 @@ AdTogetherInterstitial.show(
               </p>
               <CodeBlock title="Package.swift">
 {`.package(
-  url: "https://github.com/adtogether/ios-sdk.git",
-  from: "1.0.0"
+  url: "https://github.com/undecided2003/AdTogether.git",
+  from: "0.1.1"
 )`}
               </CodeBlock>
 
@@ -429,7 +503,7 @@ AdTogetherInterstitial.show(
 @main
 struct MyApp: App {
     init() {
-        AdTogether.shared.initialize(apiKey: "YOUR_API_KEY")
+        AdTogether.initialize(appId: "YOUR_APP_ID")
     }
 
     var body: some Scene {
@@ -467,7 +541,7 @@ struct ContentView: View {
             <section className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 p-8 rounded-3xl hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors">
               <div className="flex items-center space-x-3 mb-3">
                 <div className="p-3 bg-purple-500/20 rounded-xl text-purple-400">
-                  <LucideTerminal className="w-6 h-6" />
+                  <Terminal className="w-6 h-6" />
                 </div>
                 <h2 className="text-2xl font-semibold">Native Android SDK</h2>
               </div>
@@ -492,7 +566,7 @@ struct ContentView: View {
               </p>
               <CodeBlock title="build.gradle.kts">
 {`dependencies {
-    implementation("com.adtogether:sdk:1.0.0")
+    implementation("com.adtogether:sdk:0.1.1")
 }`}
               </CodeBlock>
 
@@ -507,7 +581,7 @@ import com.adtogether.sdk.views.AdTogetherInterstitial
 class MyApp : Application() {
     override fun onCreate() {
         super.onCreate()
-        AdTogether.initialize(this, "YOUR_API_KEY")
+        AdTogether.initialize(this, "YOUR_APP_ID")
     }
 }
 

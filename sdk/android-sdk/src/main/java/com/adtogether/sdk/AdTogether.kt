@@ -16,6 +16,9 @@ object AdTogether {
 
     var lastAdId: String? = null
         private set
+        
+    var allowSelfAds: Boolean = true
+        private set
 
     internal var appContext: Context? = null
         private set
@@ -26,9 +29,10 @@ object AdTogether {
      * @param appId Your registered application ID.
      * @param baseUrl (Optional) Override the base URL for testing purposes.
      */
-    fun initialize(context: Context, appId: String, baseUrl: String? = null) {
+    fun initialize(context: Context, appId: String, baseUrl: String? = null, allowSelfAds: Boolean = true) {
         this.appId = appId
         this.appContext = context.applicationContext
+        this.allowSelfAds = allowSelfAds
         if (baseUrl != null) {
             this.baseUrl = baseUrl
         }
@@ -49,7 +53,7 @@ object AdTogether {
      */
     suspend fun fetchAd(adUnitId: String, adType: String? = null): AdModel? {
         if (!assertInitialized()) return null
-        val ad = AdNetworkService.fetchAd(adUnitId, adType, lastAdId)
+        val ad = AdNetworkService.fetchAd(adUnitId, adType, lastAdId, allowSelfAds)
         if (ad != null) {
             lastAdId = ad.id
         }

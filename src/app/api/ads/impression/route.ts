@@ -70,7 +70,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid auth token' }, { status: 403, headers: corsHeaders });
     }
 
-    let publisherRef: FirebaseFirestore.DocumentReference | null = null;
+    let publisherRef: any = null;
     if (apiKey) {
       const pSnap = await db.collection('users').where('apiKey', '==', apiKey).limit(1).get();
       if (!pSnap.empty) {
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
     let outOfCredits = false;
 
     // Use runTransaction to safely process impression and deduct/add credits
-    await db.runTransaction(async (transaction) => {
+    await db.runTransaction(async (transaction: any) => {
       // 1. ALL READS FIRST
       const adSnap = await transaction.get(adRef);
       if (!adSnap.exists) {
@@ -110,12 +110,36 @@ export async function POST(request: Request) {
         userSnap = await transaction.get(userRef);
       }
 
-      let pSnap: FirebaseFirestore.DocumentSnapshot | null = null;
+      let pSnap: any = null;
       if (publisherRef) {
         pSnap = await transaction.get(publisherRef);
       }
 
-      // 2. ALL WRITES AFTER READS
+      // 2. Determine if this is a self-impression
+      let isSelfImpression = false;
+      
+      // Check if publisher is the owner
+      if (ownerUid && pSnap?.exists && pSnap.id === ownerUid) {
+        isSelfImpression = true;
+      } 
+      // Check if destination matches source
+      else if (adData.clickUrl && rawSource && rawSource !== 'unknown_origin') {
+        try {
+          const clickUrlObj = new URL(adData.clickUrl);
+          const clickHostname = clickUrlObj.hostname.toLowerCase();
+          const sourceHostname = rawSource.toLowerCase();
+
+          if (
+            clickHostname === sourceHostname || 
+            clickHostname.endsWith('.' + sourceHostname) || 
+            sourceHostname.endsWith('.' + clickHostname)
+          ) {
+            isSelfImpression = true;
+          }
+        } catch (e) {}
+      }
+
+      // 3. ALL WRITES AFTER READS
       // Increment ad impressions
       const currentImpressions = adData.impressions || 0;
       
@@ -129,46 +153,71 @@ export async function POST(request: Request) {
         origins: originsMap
       });
 
-      if (userSnap && userSnap.exists && userRef) {
-        const userData = userSnap.data();
-        if (userData) {
-          const currentCredits = userData.credits || 0;
+      // Only deduct credits if NOT a self-impression
+      if (!isSelfImpression) {
+        if (userSnap && userSnap.exists && userRef) {
+          const userData = userSnap.data();
+          if (userData) {
+            const currentCredits = userData.credits || 0;
 
-          if (currentCredits <= -5) {
-            // No credits left (and hit the negative limit), deactivate ad and don't deduct
-            transaction.update(adRef, { active: false });
-            outOfCredits = true;
-          } else {
-            // Deduct safely
-            transaction.update(userRef, { credits: currentCredits - creditCost });
-            if (currentCredits - creditCost <= -5) {
+            if (currentCredits <= -5) {
+              // No credits left (and hit the negative limit), deactivate ad and don't deduct
               transaction.update(adRef, { active: false });
+              outOfCredits = true;
+            } else {
+              // Deduct safely
+              transaction.update(userRef, { credits: currentCredits - creditCost });
+              if (currentCredits - creditCost <= -5) {
+                transaction.update(adRef, { active: false });
+              }
             }
           }
         }
-      }
 
-      if (pSnap && pSnap.exists && publisherRef) {
-        const pData = pSnap.data();
-        if (pData) {
-           const pCredits = pData.credits || 0;
-           
-           // Build earnings log entry for publisher visibility
-           const earningsLog = pData.earningsLog || {};
-           const logKey = adId;
-           const existing = earningsLog[logKey] || {};
-           earningsLog[logKey] = {
-             adTitle: adData.title || 'Unknown Campaign',
-             adImageUrl: adData.imageUrl || '',
-             adType: adType,
-             apiKey: apiKey || '',
-             impressions: (existing.impressions || 0) + 1,
-             clicks: existing.clicks || 0,
-             creditsEarned: (existing.creditsEarned || 0) + creditCost,
-             lastUpdated: new Date().toISOString(),
-           };
-           
-           transaction.update(publisherRef, { credits: pCredits + creditCost, earningsLog });
+        // Add credits to publisher if NOT a self-impression
+        if (pSnap && pSnap.exists && publisherRef) {
+          const pData = pSnap.data();
+          if (pData) {
+             const pCredits = pData.credits || 0;
+             
+             // Build earnings log entry for publisher visibility
+             const earningsLog = pData.earningsLog || {};
+             const logKey = adId;
+             const existing = earningsLog[logKey] || {};
+             earningsLog[logKey] = {
+               adTitle: adData.title || 'Unknown Campaign',
+               adImageUrl: adData.imageUrl || '',
+               adType: adType,
+               apiKey: apiKey || '',
+               impressions: (existing.impressions || 0) + 1,
+               clicks: existing.clicks || 0,
+               creditsEarned: (existing.creditsEarned || 0) + creditCost,
+               lastUpdated: new Date().toISOString(),
+             };
+             
+             transaction.update(publisherRef, { credits: pCredits + creditCost, earningsLog });
+          }
+        }
+      } else {
+        // Still log the impression in the earnings log for the publisher (even if 0 credits earned)
+        if (pSnap && pSnap.exists && publisherRef) {
+          const pData = pSnap.data();
+          if (pData) {
+             const earningsLog = pData.earningsLog || {};
+             const logKey = adId;
+             const existing = earningsLog[logKey] || {};
+             earningsLog[logKey] = {
+               adTitle: adData.title || 'Unknown Campaign (Self)',
+               adImageUrl: adData.imageUrl || '',
+               adType: adType,
+               apiKey: apiKey || '',
+               impressions: (existing.impressions || 0) + 1,
+               clicks: existing.clicks || 0,
+               creditsEarned: existing.creditsEarned || 0, // No new credits
+               lastUpdated: new Date().toISOString(),
+             };
+             transaction.update(publisherRef, { earningsLog });
+          }
         }
       }
     });

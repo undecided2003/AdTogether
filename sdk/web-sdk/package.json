@@ -1,7 +1,7 @@
 {
   "name": "@adtogether/web-sdk",
-  "version": "0.1.1",
-  "description": "The official AdTogether Web SDK for monetizing applications.",
+  "version": "0.1.4",
+  "description": "The official AdTogether Web SDK — reciprocal ad exchange to increase conversions and grow your audience.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/undecided2003/AdTogether.git",

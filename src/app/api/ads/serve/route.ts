@@ -29,9 +29,11 @@ export async function GET(request: Request) {
     const adType = searchParams.get('adType'); // 'banner' | 'interstitial' | null
     const exclude = searchParams.get('exclude'); // ID of the last shown ad
     const bundleId = searchParams.get('bundleId'); // Optional from mobile SDKs
+    const explicitSourceUrl = searchParams.get('sourceUrl'); // Explicitly passed by SDK
+    const allowSelfAdsParam = searchParams.get('allowSelfAds'); // 'true' or 'false'
 
     // Determine the source tracking ID for evaluating blocklist
-    const originHeader = reqHeaders.get('origin') || reqHeaders.get('referer') || '';
+    const originHeader = explicitSourceUrl || reqHeaders.get('origin') || reqHeaders.get('referer') || '';
     let rawSource = bundleId;
     if (!rawSource && originHeader) {
       try {
@@ -56,25 +58,18 @@ export async function GET(request: Request) {
       }
     }
 
-    const ads: any[] = [];
+    const externalAds: any[] = [];
+    const selfAds: any[] = [];
     
     try {
       // 1. Fetch active ads
-      // Note: In a production environment with many ads, you would want to 
-      // use more specific queries and potentially a more sophisticated 
-      // selection algorithm based on weight/credits.
       const adsRef = db.collection('ads');
       const q = adsRef.where('active', '==', true);
       const querySnapshot = await q.get();
       
-      querySnapshot.forEach((doc) => {
+      querySnapshot.forEach((doc: any) => {
         const data = doc.data();
         
-        // Skip ads owned by the viewer (if apiKey provided)
-        if (viewerUid && data.ownerUid === viewerUid) {
-          return;
-        }
-
         // Filter by ad type if specified
         if (adType && data.adType && data.adType !== adType) {
           return;
@@ -92,24 +87,60 @@ export async function GET(request: Request) {
         const isGlobalAd = adTargetCountries.length === 0 || adTargetCountries.includes('global');
 
         if (isGlobalAd || adTargetCountries.includes(targetCountry) || targetCountry === 'global') {
-          ads.push({ id: doc.id, ...data });
+          // Check if it's a "self ad"
+          // Criteria: owned by viewer OR destination matches source
+          let isSelfAd = false;
+          
+          if (viewerUid && data.ownerUid === viewerUid) {
+            isSelfAd = true;
+          } else if (data.clickUrl && rawSource && rawSource !== 'unknown_origin') {
+            try {
+              const clickUrlObj = new URL(data.clickUrl);
+              const clickHostname = clickUrlObj.hostname.toLowerCase();
+              const sourceHostname = rawSource.toLowerCase();
+              
+              // Robust domain match: identical OR one is a subdomain of the other
+              if (
+                clickHostname === sourceHostname || 
+                clickHostname.endsWith('.' + sourceHostname) || 
+                sourceHostname.endsWith('.' + clickHostname)
+              ) {
+                isSelfAd = true;
+              }
+            } catch (e) {
+              // Ignore URL parse errors
+            }
+          }
+
+          if (isSelfAd) {
+            selfAds.push({ id: doc.id, ...data, isSelfAd: true });
+          } else {
+            externalAds.push({ id: doc.id, ...data, isSelfAd: false });
+          }
         }
       });
     } catch (dbError) {
       console.error('Database fetch failed:', dbError);
     }
 
-    if (ads.length === 0) {
+    // 2. Selection Logic
+    // Priority 2: Self ads (fallen back if no external ads available AND allowSelfAds is not false)
+    let candidates = externalAds;
+    if (candidates.length === 0 && allowSelfAdsParam !== 'false') {
+      candidates = selfAds;
+    }
+
+    if (candidates.length === 0) {
       return NextResponse.json({ error: 'No ads available' }, { status: 404, headers: corsHeaders });
     }
 
-    // 2. Select an ad, avoiding the 'exclude' one if possible
-    let candidates = ads;
-    if (exclude && ads.length > 1) {
-      candidates = ads.filter(ad => ad.id !== exclude);
+    // Select an ad, avoiding the 'exclude' one if possible
+    let filteredCandidates = candidates;
+    if (exclude && candidates.length > 1) {
+      filteredCandidates = candidates.filter(ad => ad.id !== exclude);
     }
     
-    const randomAd = candidates[Math.floor(Math.random() * candidates.length)];
+    const randomAd = filteredCandidates[Math.floor(Math.random() * filteredCandidates.length)];
 
     // 3. Create auth token for impressions/clicks
     const configSnap = await db.collection('config').doc('secrets').get();

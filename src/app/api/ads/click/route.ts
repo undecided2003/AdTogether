@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
-import { adminDb as db } from '@/lib/firebase-admin';
-import { FieldValue } from 'firebase-admin/firestore';
+import { adminDb as db, FieldValue } from '@/lib/firebase-admin';
 import crypto from 'crypto';
 import { checkRateLimit } from '@/lib/rate-limit';
 
@@ -74,7 +73,7 @@ export async function POST(request: Request) {
 
     // Update publisher's earnings log with click count
     if (apiKey) {
-      let publisherRef: FirebaseFirestore.DocumentReference | null = null;
+      let publisherRef: any = null;
       const pSnap = await db.collection('users').where('apiKey', '==', apiKey).limit(1).get();
       if (!pSnap.empty) {
         publisherRef = pSnap.docs[0].ref;

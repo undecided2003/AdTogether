@@ -8,8 +8,10 @@ import { useState } from 'react';
 import { AdTogether } from '@adtogether/web-sdk';
 import { AdTogetherBanner, AdTogetherInterstitial } from '@adtogether/web-sdk/react';
 
-// Initialize the SDK with your API Key
-AdTogether.initialize({ apiKey: 'at_f57425e89a9545eda1162baeedb78636' });
+// Initialize the SDK with your App ID
+if (typeof window !== 'undefined') {
+  AdTogether.initialize({ appId: 'at_f57425e89a9545eda1162baeedb78636' });
+}
 
 export default function MyComponent() {
   const [showInterstitial, setShowInterstitial] = useState(false);
@@ -49,11 +51,11 @@ export default function MyComponent() {
           </div>
 
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-zinc-900 dark:text-white leading-[1.1] uppercase">
-            Show an ad, <br/> get an ad shown.
+            Show an ad, <br/> get an ad shown
           </h1>
 
           <p className="text-lg md:text-xl text-zinc-600 dark:text-zinc-300 font-normal leading-relaxed max-w-xl">
-            AdTogether brings reciprocal marketing via ad exchange to independent creators. By embedding our lightweight, open-source SDK into your Android, iOS, Web, or Flutter app, you instantly join a completely moneyless ecosystem. Serve ads to your users to automatically earn credits, and spend those credits to promote your own projects globally. A true value exchange.
+            AdTogether brings reciprocal marketing via ad exchange to independent creators. By embedding our lightweight, open-source SDK into your Android, iOS, Web, or Flutter app, you instantly join a completely moneyless ecosystem. Serve ads to your users to automatically earn credits, and spend those credits to promote your own projects globally — helping you increase conversions without spending a dime.
           </p>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-6">
@@ -100,7 +102,7 @@ export default function MyComponent() {
             <div className="text-amber-600 dark:text-[#FFCE2A] font-mono text-sm uppercase tracking-wide">01 / Reciprocal</div>
             <h3 className="text-2xl font-bold text-zinc-900 dark:text-white">Mutual Growth</h3>
             <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed text-base">
-              Stop paying for user acquisition. Display ads from other creators to generate credits, and use them to put your app in front of a worldwide audience.
+              Stop paying for user acquisition. Display ads from other creators to generate credits, and use them to put your app in front of a worldwide audience. Increase conversions by reaching users who are already engaged with similar products.
             </p>
           </div>
 
@@ -121,7 +123,6 @@ export default function MyComponent() {
           </div>
         </div>
       </div>
-      
     </div>
   );
 }

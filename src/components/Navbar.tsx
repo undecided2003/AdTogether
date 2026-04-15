@@ -15,12 +15,12 @@ function ExampleAdPreview({ onShowInterstitial }: { onShowInterstitial: () => vo
     <div className="py-2 flex flex-col space-y-4">
       <div>
         <div className="text-xs font-semibold text-zinc-500 mb-2 uppercase tracking-wider">Banner Example</div>
-        <AdTogetherBanner 
-          adUnitId="example_banner" 
+        <AdTogetherBanner
+          adUnitId="example_banner"
           className="w-full"
         />
       </div>
-      
+
       <div>
         <div className="text-xs font-semibold text-zinc-500 mb-2 uppercase tracking-wider">Interstitial Example</div>
         <button
@@ -45,7 +45,7 @@ export default function Navbar() {
 
   useEffect(() => {
     try {
-      AdTogether.initialize({ apiKey: 'at_f57425e89a9545eda1162baeedb78636' });
+      AdTogether.initialize({ appId: 'at_f57425e89a9545eda1162baeedb78636' });
     } catch (e) {
       console.error('Error initializing AdTogether', e);
     }
@@ -92,7 +92,7 @@ export default function Navbar() {
             priority
           />
         </Link>
-        
+
         {/* Mobile menu button */}
         <div className="flex md:hidden order-3 pl-4">
           <button
@@ -112,7 +112,7 @@ export default function Navbar() {
               >
                 Example Ads
               </button>
-              
+
               {showExampleAd && (
                 <div className="absolute top-full mt-2 right-0 md:left-1/2 md:right-auto md:-translate-x-1/2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-xl p-4 shadow-2xl z-50 w-[320px] sm:w-[400px]">
                   <div className="flex justify-between items-center mb-3">
@@ -180,7 +180,7 @@ export default function Navbar() {
           </div>
         </div>
       </div>
-      
+
       <AdTogetherInterstitial
         adUnitId="example_interstitial"
         isOpen={showInterstitial}

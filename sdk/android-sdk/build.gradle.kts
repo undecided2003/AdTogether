@@ -58,12 +58,12 @@ import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
 
 mavenPublishing {
     // Defines the coordinates
-    coordinates("com.adtogether", "sdk", "0.1.1")
+    coordinates("com.adtogether", "sdk", "0.1.4")
     
     // Configures the POM
     pom {
         name.set("AdTogether Android SDK")
-        description.set("The official AdTogether Android SDK for monetizing applications.")
+        description.set("The official AdTogether Android SDK — reciprocal ad exchange to increase conversions and grow your audience.")
         url.set("https://adtogether.relaxsoftwareapps.com")
         licenses {
             license {

@@ -1,5 +1,8 @@
 # AdTogether SDK Integration
 
+**"Show an ad, get an ad shown"**
+*The reciprocal ad exchange to increase conversions and grow your app's audience.*
+
 > This file is provided in markdown format specifically optimized for LLMs and AI Coding Assistants (like Cursor, GitHub Copilot, or ChatGPT) to quickly ingest context and write integration code for their human users.
 
 ## SDK Architecture Overview
@@ -31,7 +34,7 @@ For custom environments without an SDK, you can directly interface with the Next
 ### Fetch Ad
 
 \`\`\`bash
-curl -X GET "https://adtogether.relaxsoftwareapps.com/api/ads/serve?country=global"
+curl -X GET "https://adtogether.relaxsoftwareapps.com/api/ads/serve?country=global&adUnitId=YOUR_AD_UNIT_ID&apiKey=YOUR_APP_ID"
 \`\`\`
 
 Will return a JSON object with ad details (`id`, `title`, `description`, `imageUrl`, `clickUrl`).
@@ -41,7 +44,7 @@ Will return a JSON object with ad details (`id`, `title`, `description`, `imageU
 \`\`\`bash
 curl -X POST "https://adtogether.relaxsoftwareapps.com/api/ads/impression" \
   -H "Content-Type: application/json" \
-  -d '{"adId": "123456", "token": "HMAC_TOKEN_FROM_SERVE_RESPONSE"}'
+  -d '{"adId": "123456", "token": "HMAC_TOKEN_FROM_SERVE_RESPONSE", "apiKey": "YOUR_APP_ID"}'
 \`\`\`
 
 **Note:** The `token` field is required. It is an HMAC signature returned in the `/api/ads/serve` response. Requests without a valid token will be rejected.
@@ -53,7 +56,7 @@ Decrements the advertiser's credit balance.
 \`\`\`bash
 curl -X POST "https://adtogether.relaxsoftwareapps.com/api/ads/click" \
   -H "Content-Type: application/json" \
-  -d '{"adId": "123456", "token": "HMAC_TOKEN_FROM_SERVE_RESPONSE"}'
+  -d '{"adId": "123456", "token": "HMAC_TOKEN_FROM_SERVE_RESPONSE", "apiKey": "YOUR_APP_ID"}'
 \`\`\`
 
 ---
@@ -73,7 +76,7 @@ npm install @adtogether/web-sdk
 import { AdTogether } from '@adtogether/web-sdk';
 import { AdTogetherBanner } from '@adtogether/web-sdk/react';
 
-AdTogether.initialize({ apiKey: 'YOUR_API_KEY' });
+AdTogether.initialize({ appId: 'YOUR_APP_ID' });
 
 export default function MyComponent() {
   return <AdTogetherBanner adUnitId="YOUR_AD_UNIT_ID" />;
@@ -115,7 +118,7 @@ import 'package:adtogether_sdk/adtogether_sdk.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await AdTogether.initialize(apiKey: 'YOUR_API_KEY');
+  await AdTogether.initialize(appId: 'YOUR_APP_ID');
   runApp(MyApp());
 }
 ```
@@ -164,13 +167,13 @@ class MyPage extends StatelessWidget {
 In Xcode: **File → Add Packages** → enter the repository URL:
 
 ```
-https://github.com/adtogether/ios-sdk.git
+https://github.com/undecided2003/AdTogether.git
 ```
 
 Or add directly to `Package.swift`:
 
 ```swift
-.package(url: "https://github.com/adtogether/ios-sdk.git", from: "1.0.0")
+.package(url: "https://github.com/undecided2003/AdTogether.git", from: "0.1.1")
 ```
 
 ### Initialize
@@ -181,7 +184,7 @@ import AdTogether
 @main
 struct MyApp: App {
     init() {
-        AdTogether.shared.initialize(apiKey: "YOUR_API_KEY")
+        AdTogether.initialize(appId: "YOUR_APP_ID")
     }
 
     var body: some Scene {
@@ -225,7 +228,7 @@ Add to your module-level `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.adtogether:sdk:1.0.0")
+    implementation("com.adtogether:sdk:0.1.1")
 }
 ```
 
@@ -237,7 +240,7 @@ import com.adtogether.sdk.AdTogether
 class MyApp : Application() {
     override fun onCreate() {
         super.onCreate()
-        AdTogether.initialize(this, "YOUR_API_KEY")
+        AdTogether.initialize(this, "YOUR_APP_ID")
     }
 }
 ```

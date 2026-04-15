@@ -171,7 +171,7 @@ export default function LoginPage() {
             {isLogin ? "Welcome Back" : "Join AdTogether"}
           </h2>
           <p className="text-zinc-600 dark:text-zinc-400 text-center mb-8 text-sm">
-            {isLogin ? "Log in to manage your ad sharing credits" : "Create an account to start earning global traffic"}
+            {isLogin ? "Log in to show an ad and get an ad shown" : "Join the reciprocal ad exchange to increase conversions"}
           </p>
 
           <form onSubmit={handleAuth} className="space-y-5">

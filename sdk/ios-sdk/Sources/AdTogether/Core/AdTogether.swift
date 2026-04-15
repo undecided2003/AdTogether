@@ -9,6 +9,7 @@ public final class AdTogether {
     private(set) var appId: String?
     private(set) var baseUrl: String = "https://adtogether.relaxsoftwareapps.com"
     private(set) var lastAdId: String?
+    private(set) var allowSelfAds: Bool = true
     
     let logger = Logger(subsystem: "com.adtogether.sdk", category: "Core")
     
@@ -18,8 +19,9 @@ public final class AdTogether {
     /// - Parameters:
     ///   - appId: Your registered application ID.
     ///   - baseUrl: (Optional) Override the base URL for testing purposes.
-    public static func initialize(appId: String, baseUrl: String? = nil) {
+    public static func initialize(appId: String, baseUrl: String? = nil, allowSelfAds: Bool = true) {
         shared.appId = appId
+        shared.allowSelfAds = allowSelfAds
         if let overrideUrl = baseUrl {
             shared.baseUrl = overrideUrl
         }
@@ -45,7 +47,7 @@ public final class AdTogether {
             return
         }
         
-        AdNetworkService.fetchAd(adUnitId: adUnitId, adType: adType, exclude: shared.lastAdId) { result in
+        AdNetworkService.fetchAd(adUnitId: adUnitId, adType: adType, exclude: shared.lastAdId, allowSelfAds: shared.allowSelfAds) { result in
             if case .success(let ad) = result {
                 shared.lastAdId = ad.id
             }

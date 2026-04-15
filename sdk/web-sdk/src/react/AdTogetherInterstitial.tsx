@@ -196,13 +196,13 @@ export const AdTogetherInterstitial: React.FC<AdTogetherInterstitialProps> = ({
         <div
           style={{
             position: 'relative',
-            maxWidth: '600px',
-            width: '90%',
+            maxWidth: '800px',
+            width: '95%',
             backgroundColor: cardBg,
-            borderRadius: '20px',
+            borderRadius: '24px',
             border: `1px solid ${borderColor}`,
             overflow: 'hidden',
-            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.4)',
+            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.5)',
             animation: 'adtogether-scale-in 0.3s ease-out',
           }}
         >

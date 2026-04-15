@@ -1,10 +1,10 @@
 Pod::Spec.new do |spec|
   spec.name         = "AdTogether"
-  spec.version      = "0.1.1"
-  spec.summary      = "The official AdTogether iOS SDK for reciprocal marketing."
+  spec.version      = "0.1.4"
+  spec.summary      = "The official AdTogether iOS SDK — reciprocal ad exchange to increase conversions and grow your audience."
   spec.description  = <<-DESC
-    AdTogether is an ad exchange platform. "Shown an ad, get ad shown." 
-    This SDK allows you to easily engage in reciprocal marketing for your iOS applications by displaying native ads.
+    AdTogether is an ad exchange platform. "Show an ad, get an ad shown." 
+    This SDK allows you to easily engage in reciprocal marketing for your iOS applications by displaying native ads and helping you increase conversions.
   DESC
   spec.homepage     = "https://adtogether.relaxsoftwareapps.com"
   spec.license      = { :type => "MIT", :file => "LICENSE" }

@@ -4,27 +4,25 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   serverExternalPackages: [
     'lightningcss',
-    'firebase-admin',
-    'firebase-admin/app',
-    'firebase-admin/firestore',
     'puppeteer'
   ],
-  turbopack: {
-    resolveAlias: {
-      'tailwindcss': require.resolve('tailwindcss'),
-      'firebase-admin/app': require.resolve('firebase-admin/app'),
-      'firebase-admin/firestore': require.resolve('firebase-admin/firestore'),
-    },
-  },
-  webpack: (config) => {
+  webpack: (config: any, { isServer }: { isServer: boolean }) => {
+    if (isServer) {
+      config.externals = [...(config.externals || [])];
+    }
     config.resolve.alias = {
       ...config.resolve.alias,
       'tailwindcss': require.resolve('tailwindcss'),
-      'firebase-admin/app': require.resolve('firebase-admin/app'),
-      'firebase-admin/firestore': require.resolve('firebase-admin/firestore'),
     };
     return config;
   },
-};
+  // @ts-ignore
+  turbopack: {
+    root: __dirname,
+    resolveAlias: {
+      'tailwindcss': require.resolve('tailwindcss'),
+    },
+  },
+} as any;
 
 export default nextConfig;

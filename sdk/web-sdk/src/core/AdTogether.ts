@@ -3,6 +3,7 @@ import { AdModel, AdType, AdTogetherOptions } from './types';
 export class AdTogether {
   private static instance: AdTogether;
   private appId?: string;
+  private allowSelfAds: boolean = true;
   public baseUrl: string = 'https://adtogether.relaxsoftwareapps.com';
 
   private constructor() {}
@@ -18,6 +19,10 @@ export class AdTogether {
     const sdk = AdTogether.shared;
     sdk.appId = options.apiKey || options.appId;
     
+    if (options.allowSelfAds !== undefined) {
+      sdk.allowSelfAds = options.allowSelfAds;
+    }
+    
     if (options.baseUrl) {
       sdk.baseUrl = options.baseUrl;
     } else if (typeof window !== 'undefined') {
@@ -25,7 +30,7 @@ export class AdTogether {
       sdk.baseUrl = '';
     }
     
-    console.log(`AdTogether SDK Initialized with Key/ID: ${sdk.appId}`);
+    console.log(`AdTogether SDK Initialized with App ID: ${sdk.appId}`);
   }
 
   assertInitialized() {
@@ -51,6 +56,12 @@ export class AdTogether {
       }
       if (sdk.lastAdId) {
         url += `&exclude=${sdk.lastAdId}`;
+      }
+      
+      // Pass allowSelfAds and source URL for smart serving
+      url += `&allowSelfAds=${sdk.allowSelfAds}`;
+      if (typeof window !== 'undefined') {
+        url += `&sourceUrl=${encodeURIComponent(window.location.href)}`;
       }
 
       const response = await fetch(url);

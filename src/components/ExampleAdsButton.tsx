@@ -42,7 +42,7 @@ export default function ExampleAdsButton() {
   useEffect(() => {
     try {
       // Use the project's default example key
-      AdTogether.initialize({ apiKey: 'at_f57425e89a9545eda1162baeedb78636' });
+      AdTogether.initialize({ appId: 'at_f57425e89a9545eda1162baeedb78636' });
     } catch (e) {
       console.error('Error initializing AdTogether', e);
     }

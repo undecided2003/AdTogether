@@ -24,11 +24,11 @@ export default function DashboardPage() {
   const [newCountry, setNewCountry] = useState("");
   const [savingCountry, setSavingCountry] = useState(false);
   
-  // API key state
+  // App ID state
   const [showApiKey, setShowApiKey] = useState<Record<string, boolean>>({});
-  const [generatingKey, setGeneratingKey] = useState(false);
+  const [generating, setGenerating] = useState(false);
   
-  // API key labeling state
+  // App ID labeling state
   const [newKeyLabel, setNewKeyLabel] = useState("");
   const [showNewKeyForm, setShowNewKeyForm] = useState(false);
   const [editingLabel, setEditingLabel] = useState<string | null>(null);
@@ -156,11 +156,11 @@ export default function DashboardPage() {
     }
     const currentKeys = userData?.apiKeys || (userData?.apiKey ? [userData.apiKey] : []);
     if (currentKeys.length >= 3) {
-      alert("You can only generate up to 3 API keys.");
+      alert("You can only generate up to 3 App IDs.");
       return;
     }
     
-    setGeneratingKey(true);
+    setGenerating(true);
     try {
       const newKey = `at_${crypto.randomUUID().replace(/-/g, '')}`;
       const updatedKeys = [...currentKeys, newKey];
@@ -173,16 +173,16 @@ export default function DashboardPage() {
       setNewKeyLabel("");
       setShowNewKeyForm(false);
     } catch (e) {
-      console.error("Failed to generate API key", e);
+      console.error("Failed to generate App ID", e);
     } finally {
-      setGeneratingKey(false);
+      setGenerating(false);
     }
   };
 
   const handleDeleteApiKey = async (keyToDelete: string) => {
     if (!user) return;
     const label = userData?.apiKeyLabels?.[keyToDelete] || 'this key';
-    if (!window.confirm(`Are you sure you want to delete the API key for "${label}"? Apps using it will fail to track impressions.`)) return;
+    if (!window.confirm(`Are you sure you want to delete the App ID for "${label}"? Apps using it will fail to track impressions.`)) return;
     const currentKeys = userData?.apiKeys || (userData?.apiKey ? [userData.apiKey] : []);
     const updatedKeys = currentKeys.filter((k: string) => k !== keyToDelete);
     const currentLabels = { ...(userData?.apiKeyLabels || {}) };
@@ -192,7 +192,7 @@ export default function DashboardPage() {
       await updateDoc(userRef, { apiKeys: updatedKeys, apiKey: updatedKeys[0] || null, apiKeyLabels: currentLabels });
       setUserData({ ...userData, apiKeys: updatedKeys, apiKey: updatedKeys[0] || null, apiKeyLabels: currentLabels });
     } catch (e) {
-      console.error("Failed to delete API key", e);
+      console.error("Failed to delete App ID", e);
     }
   };
 
@@ -214,7 +214,7 @@ export default function DashboardPage() {
 
   const copyApiKey = (key: string) => {
     navigator.clipboard.writeText(key);
-    alert("API Key copied to clipboard!");
+    alert("App ID copied to clipboard!");
   };
 
   const ctr = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) : "0.00";
@@ -331,12 +331,12 @@ export default function DashboardPage() {
         <div className="absolute -right-20 -top-20 w-64 h-64 bg-amber-500/10 blur-[80px] rounded-full pointer-events-none" />
         <div className="flex-grow z-10">
           <h3 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2 mb-2">
-            <Coins className="w-5 h-5 text-amber-500 dark:text-amber-400" /> How Credits Work
+            <Coins className="w-5 h-5 text-amber-500 dark:text-amber-400" /> How Credits Work to Increase Conversions
           </h3>
           <p className="text-zinc-600 dark:text-zinc-400 text-sm mb-4 md:mb-0">
-            AdTogether is a fair ad exchange. Showing or placing a banner ad has a base cost/reward of <strong className="text-amber-600 dark:text-amber-300">1 credit</strong>. Interstitial ads (full screen) are more engaging and have a base cost/reward of <strong className="text-amber-600 dark:text-amber-300">5 credits</strong> per impression.
+            AdTogether is a fair ad exchange: <strong>"Show an ad, get an ad shown"</strong>. Showing or placing a banner ad has a base cost/reward of <strong className="text-amber-600 dark:text-amber-300">1 credit</strong>. Interstitial ads (full screen) are more engaging and have a base cost/reward of <strong className="text-amber-600 dark:text-amber-300">5 credits</strong> per impression.
             <br/><br/>
-            <strong>Note:</strong> Final credit rates are multiplied by a geographic tier multiplier (up to 5x) based on the location of the user viewing the ad to prevent traffic arbitrage and ensure fair value.
+            <strong>Note:</strong> Final credit rates are multiplied by a geographic tier multiplier (up to 5x) based on the location of the user viewing the ad to ensure maximum value as you grow your audience.
           </p>
         </div>
         <div className="flex shrink-0 gap-4 z-10 w-full md:w-auto">
@@ -508,7 +508,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* API Key Section */}
+      {/* App ID Section */}
       {userData && (
         <div className="mb-12 bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -517,9 +517,9 @@ export default function DashboardPage() {
                 <Key className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">API Keys</h3>
+                <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">App IDs</h3>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                  One key per app or website (up to 3). Each key tracks its own traffic.
+                  One App ID per app or website (up to 3). Each ID tracks its own traffic.
                 </p>
               </div>
             </div>
@@ -555,10 +555,10 @@ export default function DashboardPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={handleGenerateApiKey}
-                    disabled={generatingKey || !newKeyLabel.trim()}
-                    className="bg-amber-500 hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed text-black px-5 py-2.5 rounded-xl font-medium transition-colors whitespace-nowrap text-sm"
+                    disabled={generating || !newKeyLabel.trim()}
+                    className="px-4 py-2 bg-zinc-900 border border-transparent dark:bg-zinc-800 text-white dark:text-zinc-200 text-sm font-medium rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors cursor-pointer"
                   >
-                    {generatingKey ? "Generating..." : "Generate Key"}
+                    {generating ? "Generating..." : "Generate App ID"}
                   </button>
                   <button
                     onClick={() => { setShowNewKeyForm(false); setNewKeyLabel(""); }}
@@ -617,7 +617,7 @@ export default function DashboardPage() {
                       <button
                         onClick={() => handleDeleteApiKey(key)}
                         className="p-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 border border-red-100 dark:border-red-500/20 rounded-lg text-red-600 dark:text-red-400 transition-colors"
-                        title="Delete Key"
+                        title="Delete App ID"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -630,14 +630,14 @@ export default function DashboardPage() {
                       <button
                         onClick={() => setShowApiKey(prev => ({ ...prev, [key]: !prev[key] }))}
                         className="p-2 bg-white hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-white/10 rounded-lg text-zinc-600 dark:text-zinc-400 transition-colors shrink-0"
-                        title={showApiKey[key] ? "Hide Key" : "Show Key"}
+                        title={showApiKey[key] ? "Hide App ID" : "Show App ID"}
                       >
                         {showApiKey[key] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                       <button
                         onClick={() => copyApiKey(key)}
                         className="p-2 bg-white hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-white/10 rounded-lg text-zinc-600 dark:text-zinc-400 transition-colors shrink-0"
-                        title="Copy Key"
+                        title="Copy App ID"
                       >
                         <Copy className="w-4 h-4" />
                       </button>
@@ -665,7 +665,7 @@ import { AdTogether } from '@adtogether/web-sdk';
 import { AdTogetherBanner, AdTogetherInterstitial } from '@adtogether/web-sdk/react';
 
 // Initialize
-AdTogether.initialize({ apiKey: '${userData?.apiKeys?.[0] || userData?.apiKey || 'YOUR_API_KEY'}' });
+AdTogether.initialize({ appId: '${userData?.apiKeys?.[0] || userData?.apiKey || 'YOUR_APP_ID'}' });
 
 // Banner Ad
 <AdTogetherBanner adUnitId="home_banner" theme="dark" />
@@ -687,20 +687,19 @@ const [showAd, setShowAd] = useState(false);
                 code={`import 'package:adtogether_sdk/adtogether_sdk.dart';
 
 // Initialize
-await AdTogether.initialize(apiKey: '${userData?.apiKeys?.[0] || userData?.apiKey || 'YOUR_API_KEY'}');
+await AdTogether.initialize(appId: '${userData?.apiKeys?.[0] || userData?.apiKey || 'YOUR_APP_ID'}');
 
 // Banner Ad
 AdTogetherBanner(
   adUnitId: 'home_banner',
-  width: double.infinity,
-  height: 80,
+  size: AdSize.banner,
 )
 
 // Interstitial Ad
 AdTogetherInterstitial.show(
   context: context,
   adUnitId: 'level_complete',
-  closeDelay: Duration(seconds: 3),
+  closeDelay: const Duration(seconds: 3),
 );`}
               />
             </div>
@@ -711,13 +710,16 @@ AdTogetherInterstitial.show(
                 code={`import AdTogether
 
 // Initialize
-AdTogether.shared.initialize(apiKey: "${userData?.apiKeys?.[0] || userData?.apiKey || 'YOUR_API_KEY'}")
+AdTogether.initialize(appId: "${userData?.apiKeys?.[0] || userData?.apiKey || 'YOUR_APP_ID'}")
 
 // Banner Ad
 AdTogetherView(adUnitID: "home_banner")
-    .frame(height: 80)
+    .frame(height: 50)
 
 // Interstitial Ad
+Button("Show Interstitial") {
+    showAd = true
+}
 .fullScreenCover(isPresented: $showAd) {
     AdTogetherInterstitialView(
         adUnitID: "level_complete"
@@ -734,7 +736,7 @@ import com.adtogether.sdk.views.AdTogetherView
 import com.adtogether.sdk.views.AdTogetherInterstitial
 
 // Initialize
-AdTogether.initialize(context, "${userData?.apiKeys?.[0] || userData?.apiKey || 'YOUR_API_KEY'}")
+AdTogether.initialize(context, "${userData?.apiKeys?.[0] || userData?.apiKey || 'YOUR_APP_ID'}")
 
 // Banner Ad (XML)
 val adView = AdTogetherView(context)

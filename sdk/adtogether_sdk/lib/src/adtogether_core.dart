@@ -7,21 +7,19 @@ class AdTogether {
   static String? _appId;
   static String _baseUrl = 'https://adtogether.relaxsoftwareapps.com';
   static String? _bundleId;
+  static bool _allowSelfAds = true;
 
-  /// Initialize the AdTogether SDK
-  /// [appId] is your registered application ID.
-  /// [baseUrl] can optionally be overridden for testing purposes.
-  /// [bundleId] can optionally be set manually; if not set it will be
-  /// auto-detected on native platforms.
   static Future<void> initialize({
     required String appId,
     String? baseUrl,
     String? bundleId,
+    bool allowSelfAds = true,
   }) async {
     _appId = appId;
     if (baseUrl != null) {
       _baseUrl = baseUrl;
     }
+    _allowSelfAds = allowSelfAds;
     // Use the explicitly provided bundleId, or try to auto-detect
     if (bundleId != null) {
       _bundleId = bundleId;
@@ -64,7 +62,7 @@ class AdTogether {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'adId': adId,
-          'token': ?token,
+          'token': token,
           'apiKey': _appId,
           if (_bundleId != null) 'bundleId': _bundleId,
         }),
@@ -82,7 +80,7 @@ class AdTogether {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'adId': adId,
-          'token': ?token,
+          'token': token,
           'apiKey': _appId,
           if (_bundleId != null) 'bundleId': _bundleId,
         }),
@@ -110,6 +108,7 @@ class AdTogether {
     if (_bundleId != null) {
       url += '&bundleId=$_bundleId';
     }
+    url += '&allowSelfAds=$_allowSelfAds';
 
     final response = await http.get(Uri.parse(url));
 
