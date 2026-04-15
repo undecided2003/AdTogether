@@ -4,6 +4,17 @@ version: 0.1.5
 homepage: "https://adtogether.relaxsoftwareapps.com"
 repository: "https://github.com/undecided2003/AdTogether/tree/main/sdk/adtogether_sdk"
 issue_tracker: "https://github.com/undecided2003/AdTogether/issues"
+topics:
+  - ads
+  - monetization
+  - advertising
+  - ad-exchange
+  - conversion-optimization
+screenshots:
+  - description: "Standard AdTogether Banner Integrated in App"
+    path: doc/preview_standard.png
+  - description: "Premium AdTogether Interstitial Ad Experience"
+    path: doc/preview_premium.png
 environment:
   sdk: ^3.11.4
   flutter: ">=1.17.0"

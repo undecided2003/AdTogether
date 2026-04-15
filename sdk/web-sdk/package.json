@@ -7,6 +7,19 @@
     "url": "git+https://github.com/undecided2003/AdTogether.git",
     "directory": "sdk/web-sdk"
   },
+  "homepage": "https://adtogether.relaxsoftwareapps.com",
+  "bugs": {
+    "url": "https://github.com/undecided2003/AdTogether/issues"
+  },
+  "keywords": [
+    "ads",
+    "ad-exchange",
+    "monetization",
+    "advertising",
+    "react",
+    "reciprocal",
+    "conversions"
+  ],
   "publishConfig": {
     "access": "public"
   },
@@ -29,9 +42,8 @@
     "build": "tsup",
     "dev": "tsup --watch"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "AdTogether Team",
+  "license": "MIT",
   "type": "commonjs",
   "peerDependencies": {
     "react": "^19.2.4",

@@ -15,7 +15,6 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
-          always-auth: true
       - name: Install dependencies
         run: npm install
         working-directory: sdk/web-sdk
@@ -23,9 +22,7 @@ jobs:
         run: npm run build
         working-directory: sdk/web-sdk
       - name: Publish to npm
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
-          npm publish --access public --no-git-checks
+        run: npm publish --access public --no-git-checks
         working-directory: sdk/web-sdk
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -40,10 +37,14 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+      
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
       - name: Publish to Maven Central
         run: |
-          gradle publishAllPublicationsToMavenCentralRepository \
+          chmod +x gradlew
+          ./gradlew publishAllPublicationsToMavenCentralRepository \
             -PmavenCentralUsername="${{ secrets.MAVEN_CENTRAL_USERNAME }}" \
             -PmavenCentralPassword="${{ secrets.MAVEN_CENTRAL_PASSWORD }}" \
             -PsonatypeUsername="${{ secrets.MAVEN_CENTRAL_USERNAME }}" \
@@ -62,20 +63,24 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+      
+      - name: Install dependencies
+        run: flutter pub get
+        working-directory: sdk/adtogether_sdk
+
       - name: Publish Flutter SDK
         run: |
           mkdir -p ~/.config/dart
-          # Create both filenames as different Dart versions expect different formats
           echo '${{ secrets.PUB_DEV_CREDENTIALS }}' > ~/.config/dart/pub-credentials.json
-          echo '${{ secrets.PUB_DEV_CREDENTIALS }}' > ~/.config/dart/pub_credentials.json
           flutter pub publish -f
         working-directory: sdk/adtogether_sdk
 
   # --- iOS SDK (SPM) ---
-  test-ios:
+  build-ios:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - name: Build iOS SDK
         run: swift build
         working-directory: sdk/ios-sdk
+
