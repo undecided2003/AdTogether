@@ -27,7 +27,7 @@ We provide a seamless, high-performance API and a suite of native SDKs across we
 
 | **Standard Banner Ad** | **Premium Interstitial Ad** |
 |:---:|:---:|
-| ![Banner Example](./public/ads/Banner_Example.jpg) | ![Interstitial Example](./public/ads/Interstitial_Example.jpg) |
+| ![Banner Example](doc/preview_standard.png) | ![Interstitial Example](doc/preview_premium.png) |
 | *Native Banner Example (370x95)* | *Full-Screen Immersive Interstitial Example* |
 
 ## ✨ Features

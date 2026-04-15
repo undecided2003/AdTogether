@@ -5,6 +5,7 @@ let package = Package(
     name: "AdTogether",
     platforms: [
         .iOS(.v15),
+        .macOS(.v11),
         .macCatalyst(.v15)
     ],
     products: [

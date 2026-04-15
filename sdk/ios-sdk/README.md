@@ -18,7 +18,7 @@ This SDK allows iOS developers to easily integrate AdTogether ads into their app
 
 | **iOS Banner (SwiftUI)** | **Vertical Interstitial** |
 |:---:|:---:|
-| ![Banner Example](doc/Banner_Example.png) | ![Interstitial Example](doc/Interstitial_Example.png) |
+| ![Banner Example](doc/preview_standard.png) | ![Interstitial Example](doc/preview_premium.png) |
 | *Native SwiftUI AdTogetherView* | *Full-Screen Vertical Interstitial* |
 
 ## Features

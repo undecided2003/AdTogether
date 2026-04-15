@@ -18,7 +18,7 @@ This SDK allows web developers (React and Vanilla JS) to easily integrate AdToge
 
 | **Native Banner Ad** | **Interstitial Full-Screen** |
 |:---:|:---:|
-| ![Banner Example](doc/Banner_Example.png) | ![Interstitial Example](doc/Interstitial_Example.png) |
+| ![Banner Example](doc/preview_standard.png) | ![Interstitial Example](doc/preview_premium.png) |
 | *Adaptive React Banner Component* | *Full-Screen Interstitial Experience* |
 
 ## Features
