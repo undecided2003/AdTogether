@@ -15,6 +15,7 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
+          always-auth: true
       - name: Install dependencies
         run: npm install
         working-directory: sdk/web-sdk
@@ -22,7 +23,7 @@ jobs:
         run: npm run build
         working-directory: sdk/web-sdk
       - name: Publish to npm
-        run: npm publish --access public
+        run: npm publish --access public --no-git-checks
         working-directory: sdk/web-sdk
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -37,14 +38,10 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          server-id: ossrh
-          server-username: OSSRH_USERNAME
-          server-password: OSSRH_PASSWORD
 
       - name: Decode GPG Key
         run: |
           echo "${{ secrets.SIGNING_KEY }}" > gpg_key.asc
-          # Import if needed, but our Gradle uses in-memory PGP
         working-directory: sdk/android-sdk
 
       - name: Publish to Maven Central
@@ -54,7 +51,8 @@ jobs:
             -PmavenCentralPassword="${{ secrets.MAVEN_CENTRAL_PASSWORD }}" \
             -Psigning.keyId="${{ secrets.SIGNING_KEY_ID }}" \
             -Psigning.password="${{ secrets.SIGNING_PASSWORD }}" \
-            -Psigning.secretKeyRingFile="gpg_key.asc"
+            -Psigning.secretKeyRingFile="gpg_key.asc" \
+            --stacktrace
         working-directory: sdk/android-sdk
 
   # --- Flutter SDK (pub.dev) ---
@@ -64,7 +62,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: 'latest'
+          channel: 'stable'
       - name: Publish Flutter SDK
         run: |
           mkdir -p ~/.config/dart
@@ -73,11 +71,10 @@ jobs:
         working-directory: sdk/adtogether_sdk
 
   # --- iOS SDK (SPM) ---
-  # SPM is tag-based, so this job just ensures tests pass on tag
   test-ios:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - name: Test iOS SDK
-        run: xcodebuild test -scheme AdTogether -destination 'platform=iOS Simulator,name=iPhone 15'
+        run: swift test
         working-directory: sdk/ios-sdk
