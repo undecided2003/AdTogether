@@ -19,7 +19,7 @@ This SDK allows Flutter developers to easily integrate AdTogether ads into their
 
 | **Flutter Native Banner** | **Vertical Interstitial** |
 |:---:|:---:|
-| ![Banner Example](../../public/ads/Banner_Example.jpg) | ![Interstitial Example](../../public/ads/Interstitial_Example.jpg) |
+| ![Banner Example](doc/Banner_Example.png) | ![Interstitial Example](doc/Interstitial_Example.png) |
 | *Adaptive Dart Banner Widget* | *Full-Screen Immersive Interstitial* |
 
 ## Features
@@ -39,7 +39,7 @@ Add the dependency to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  adtogether_sdk: ^0.1.3
+  adtogether_sdk: ^0.1.5
 ```
 
 Then run:
@@ -232,7 +232,7 @@ This SDK depends on the following packages:
 
 - 📖 **Documentation**: [adtogether.relaxsoftwareapps.com/docs](https://adtogether.relaxsoftwareapps.com/docs)
 - 🐛 **Issues**: [GitHub Issues](https://github.com/undecided2003/AdTogether/issues)
-- 💬 **Support**: Join our [Discord community](https://discord.gg/adtogether) for real-time help.
+- 💬 **Support**: Join our [Discord community](https://discord.gg/maA8g4ADpk) for real-time help.
 - 🌐 **Dashboard**: [adtogether.relaxsoftwareapps.com/dashboard](https://adtogether.relaxsoftwareapps.com/dashboard)
 
 ## License

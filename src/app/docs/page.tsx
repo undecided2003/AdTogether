@@ -1,5 +1,7 @@
+"use client";
 
 import Link from 'next/link';
+import { useState } from 'react';
 import {
   Terminal,
   Smartphone,
@@ -10,6 +12,7 @@ import {
   ArrowRight,
   Check,
   Info,
+  X,
 } from 'lucide-react';
 
 function PlatformBadge({ label, color }: { label: string; color: string }) {
@@ -20,6 +23,40 @@ function PlatformBadge({ label, color }: { label: string; color: string }) {
       <Check className="w-3 h-3" />
       {label}
     </span>
+  );
+}
+
+function ZoomableImage({ src, alt, className }: { src: string; alt: string; className?: string }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <>
+      <img
+        src={src}
+        alt={alt}
+        className={`${className} cursor-zoom-in transition-transform hover:scale-[1.02]`}
+        onClick={() => setIsOpen(true)}
+      />
+      {isOpen && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm cursor-zoom-out"
+          onClick={() => setIsOpen(false)}
+        >
+          <img
+            src={src}
+            alt={alt}
+            className="max-w-[95%] max-h-[95%] object-contain rounded-xl shadow-2xl cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button 
+            className="absolute z-[110] md:top-8 md:right-8 top-4 right-4 p-2.5 text-white hover:text-white bg-zinc-900/80 hover:bg-zinc-800 backdrop-blur-md rounded-full transition-all ring-1 ring-white/20 shadow-xl"
+            onClick={() => setIsOpen(false)}
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -52,6 +89,8 @@ function CodeBlock({
 }
 
 export default function DocsPage() {
+  const [showAlert, setShowAlert] = useState(true);
+
   return (
     <div className="text-zinc-900 dark:text-white">
       <div className="max-w-5xl mx-auto pb-24">
@@ -72,28 +111,37 @@ export default function DocsPage() {
         </header>
 
         {/* AI Awareness Alert */}
-        <div className="bg-amber-100/50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-500/30 rounded-2xl p-6 mb-16 flex items-start space-x-4">
-          <div className="p-3 bg-amber-500/20 rounded-xl rounded-tl-none">
-            <Bot className="w-6 h-6 text-amber-400" />
+        {showAlert && (
+          <div className="relative bg-amber-100/50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-500/30 rounded-2xl p-6 mb-16 flex items-start space-x-4">
+            <button
+              onClick={() => setShowAlert(false)}
+              className="absolute top-4 right-4 p-1 rounded-md text-amber-700/50 hover:text-amber-700 dark:text-amber-400/50 dark:hover:text-amber-400 hover:bg-amber-500/10 transition-colors"
+              aria-label="Close alert"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="p-3 bg-amber-500/20 rounded-xl rounded-tl-none">
+              <Bot className="w-6 h-6 text-amber-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-amber-700 dark:text-amber-300 mb-2">
+                Are you an AI Coding Assistant?
+              </h3>
+              <p className="text-zinc-600 dark:text-gray-400 leading-relaxed max-w-3xl pr-8">
+                We have provided a machine-readable documentation file format
+                perfectly tuned for LLMs. Read the{' '}
+                <Link
+                  href="/llms.txt"
+                  className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 underline underline-offset-4"
+                >
+                  /llms.txt
+                </Link>{' '}
+                file at the root of this domain for the optimal integration
+                context, endpoints, and code snippets.
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-lg font-semibold text-amber-700 dark:text-amber-300 mb-2">
-              Are you an AI Coding Assistant?
-            </h3>
-            <p className="text-zinc-600 dark:text-gray-400 leading-relaxed max-w-3xl">
-              We have provided a machine-readable documentation file format
-              perfectly tuned for LLMs. Read the{' '}
-              <Link
-                href="/llms.txt"
-                className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 underline underline-offset-4"
-              >
-                /llms.txt
-              </Link>{' '}
-              file at the root of this domain for the optimal integration
-              context, endpoints, and code snippets.
-            </p>
-          </div>
-        </div>
+        )}
 
         {/* ── Visualizing the Experience ─────────────────── */}
         <section className="mb-20">
@@ -128,7 +176,10 @@ export default function DocsPage() {
                   
                   {/* The Actual Ad (Pure Image from public/ads) */}
                   <div className="mx-4 mb-4 bg-black rounded-xl border border-zinc-200 dark:border-indigo-500/30 overflow-hidden shadow-lg relative group/ad aspect-[3.9/1]">
-                    <img 
+                    <div className="absolute top-1 right-1 z-10 p-0.5 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 pointer-events-none">
+                      <X className="w-2.5 h-2.5 text-white/90" />
+                    </div>
+                    <ZoomableImage 
                       src="/ads/Banner_Example.png" 
                       alt="Banner Ad" 
                       className="w-full h-full object-contain"
@@ -157,8 +208,11 @@ export default function DocsPage() {
                 <div className="w-[230px] aspect-[9/19] bg-zinc-900 rounded-[3rem] p-2.5 border-4 border-zinc-800 shadow-2xl relative overflow-hidden ring-1 ring-white/10">
                   {/* Phone Screen */}
                   <div className="w-full h-full bg-black rounded-[2.2rem] overflow-hidden relative border border-zinc-700 flex flex-col">
+                    <div className="absolute top-6 right-4 z-10 p-1 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 pointer-events-none shadow-sm">
+                      <X className="w-4 h-4 text-white/90" />
+                    </div>
                     <div className="w-full h-full bg-black flex items-center justify-center">
-                      <img 
+                      <ZoomableImage 
                         src="/ads/Interstitial_Example.png" 
                         alt="Interstitial Ad Example" 
                         className="w-full h-full object-contain"

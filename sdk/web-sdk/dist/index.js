@@ -27,6 +27,7 @@ module.exports = __toCommonJS(index_exports);
 // src/core/AdTogether.ts
 var AdTogether = class _AdTogether {
   constructor() {
+    this.allowSelfAds = true;
     this.baseUrl = "https://adtogether.relaxsoftwareapps.com";
   }
   static get shared() {
@@ -38,12 +39,15 @@ var AdTogether = class _AdTogether {
   static initialize(options) {
     const sdk = _AdTogether.shared;
     sdk.appId = options.apiKey || options.appId;
+    if (options.allowSelfAds !== void 0) {
+      sdk.allowSelfAds = options.allowSelfAds;
+    }
     if (options.baseUrl) {
       sdk.baseUrl = options.baseUrl;
     } else if (typeof window !== "undefined") {
       sdk.baseUrl = "";
     }
-    console.log(`AdTogether SDK Initialized with Key/ID: ${sdk.appId}`);
+    console.log(`AdTogether SDK Initialized with App ID: ${sdk.appId}`);
   }
   assertInitialized() {
     if (!this.appId) {
@@ -62,9 +66,18 @@ var AdTogether = class _AdTogether {
       if (adType) {
         url += `&adType=${adType}`;
       }
+      if (sdk.lastAdId) {
+        url += `&exclude=${sdk.lastAdId}`;
+      }
+      url += `&allowSelfAds=${sdk.allowSelfAds}`;
+      if (typeof window !== "undefined") {
+        url += `&sourceUrl=${encodeURIComponent(window.location.href)}`;
+      }
       const response = await fetch(url);
       if (response.ok) {
-        return response.json();
+        const ad = await response.json();
+        sdk.lastAdId = ad.id;
+        return ad;
       }
       throw new Error(`Failed to fetch ad. Status: ${response.status}`);
     } catch (err) {

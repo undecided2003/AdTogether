@@ -18,7 +18,7 @@ This SDK allows web developers (React and Vanilla JS) to easily integrate AdToge
 
 | **Native Banner Ad** | **Interstitial Full-Screen** |
 |:---:|:---:|
-| ![Banner Example](../../public/ads/Banner_Example.png) | ![Interstitial Example](../../public/ads/Interstitial_Example.png) |
+| ![Banner Example](doc/Banner_Example.png) | ![Interstitial Example](doc/Interstitial_Example.png) |
 | *Adaptive React Banner Component* | *Full-Screen Interstitial Experience* |
 
 ## Features
@@ -139,7 +139,7 @@ Create and manage your campaigns from the [AdTogether Dashboard](https://adtoget
 
 - 📖 **Documentation**: [adtogether.relaxsoftwareapps.com/docs](https://adtogether.relaxsoftwareapps.com/docs)
 - 🐛 **Issues**: [GitHub Issues](https://github.com/undecided2003/AdTogether/issues)
-- 💬 **Support**: Join our [Discord community](https://discord.gg/adtogether) for real-time help.
+- 💬 **Support**: Join our [Discord community](https://discord.gg/maA8g4ADpk) for real-time help.
 - 🌐 **Dashboard**: [adtogether.relaxsoftwareapps.com/dashboard](https://adtogether.relaxsoftwareapps.com/dashboard)
 
 ## License

@@ -18,7 +18,7 @@ This SDK allows Android developers to easily integrate AdTogether ads into their
 
 | **Android Banner (Compose)** | **Vertical Interstitial** |
 |:---:|:---:|
-| ![Banner Example](../../public/ads/Banner_Example.jpg) | ![Interstitial Example](../../public/ads/Interstitial_Example.jpg) |
+| ![Banner Example](doc/Banner_Example.png) | ![Interstitial Example](doc/Interstitial_Example.png) |
 | *Native Jetpack Compose Banner* | *Full-Screen Immersive Interstitial* |
 
 ## Features
@@ -36,7 +36,7 @@ Add the dependency to your app-level `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.adtogether:sdk:0.1.1")
+    implementation("com.adtogether:sdk:0.1.5")
 }
 ```
 
@@ -93,7 +93,7 @@ Create and manage your campaigns from the [AdTogether Dashboard](https://adtoget
 
 - 📖 **Documentation**: [adtogether.relaxsoftwareapps.com/docs](https://adtogether.relaxsoftwareapps.com/docs)
 - 🐛 **Issues**: [GitHub Issues](https://github.com/undecided2003/AdTogether/issues)
-- 💬 **Support**: Join our [Discord community](https://discord.gg/adtogether) for real-time help.
+- 💬 **Support**: Join our [Discord community](https://discord.gg/maA8g4ADpk) for real-time help.
 - 🌐 **Dashboard**: [adtogether.relaxsoftwareapps.com/dashboard](https://adtogether.relaxsoftwareapps.com/dashboard)
 
 ## License

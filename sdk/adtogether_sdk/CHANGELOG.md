@@ -1,3 +1,12 @@
+## 0.1.5
+
+* **Documentation**: Embedded local preview images directly in the package to ensure proper visual rendering on pub.dev.
+* **Support**: Updated the AdTogether Discord community link.
+
+## 0.1.4
+
+* **Documentation**: Standardized value proposition and tagline terminology ("Show an ad, get an ad shown").
+
 ## 0.1.3
 
 * **Fix**: Updated repository and issue tracker URLs to correct GitHub path (`undecided2003/AdTogether`).

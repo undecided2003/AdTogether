@@ -31,6 +31,7 @@ var import_react = require("react");
 // src/core/AdTogether.ts
 var AdTogether = class _AdTogether {
   constructor() {
+    this.allowSelfAds = true;
     this.baseUrl = "https://adtogether.relaxsoftwareapps.com";
   }
   static get shared() {
@@ -42,12 +43,15 @@ var AdTogether = class _AdTogether {
   static initialize(options) {
     const sdk = _AdTogether.shared;
     sdk.appId = options.apiKey || options.appId;
+    if (options.allowSelfAds !== void 0) {
+      sdk.allowSelfAds = options.allowSelfAds;
+    }
     if (options.baseUrl) {
       sdk.baseUrl = options.baseUrl;
     } else if (typeof window !== "undefined") {
       sdk.baseUrl = "";
     }
-    console.log(`AdTogether SDK Initialized with Key/ID: ${sdk.appId}`);
+    console.log(`AdTogether SDK Initialized with App ID: ${sdk.appId}`);
   }
   assertInitialized() {
     if (!this.appId) {
@@ -66,9 +70,18 @@ var AdTogether = class _AdTogether {
       if (adType) {
         url += `&adType=${adType}`;
       }
+      if (sdk.lastAdId) {
+        url += `&exclude=${sdk.lastAdId}`;
+      }
+      url += `&allowSelfAds=${sdk.allowSelfAds}`;
+      if (typeof window !== "undefined") {
+        url += `&sourceUrl=${encodeURIComponent(window.location.href)}`;
+      }
       const response = await fetch(url);
       if (response.ok) {
-        return response.json();
+        const ad = await response.json();
+        sdk.lastAdId = ad.id;
+        return ad;
       }
       throw new Error(`Failed to fetch ad. Status: ${response.status}`);
     } catch (err) {
@@ -395,13 +408,13 @@ var AdTogetherInterstitial = ({
           {
             style: {
               position: "relative",
-              maxWidth: "600px",
-              width: "90%",
+              maxWidth: "800px",
+              width: "95%",
               backgroundColor: cardBg,
-              borderRadius: "20px",
+              borderRadius: "24px",
               border: `1px solid ${borderColor}`,
               overflow: "hidden",
-              boxShadow: "0 25px 50px rgba(0, 0, 0, 0.4)",
+              boxShadow: "0 25px 50px rgba(0, 0, 0, 0.5)",
               animation: "adtogether-scale-in 0.3s ease-out"
             },
             children: [
