@@ -11,9 +11,16 @@
 
 ---
 
-**AdTogether** is an ad exchange platform designed to empower developers and creators. By participating in our network, you can engage in reciprocal marketing for your own applications while simultaneously driving traffic to your products. Our core philosophy is simple: **"Show an ad, get an ad shown"**.
+**AdTogether** is an ad exchange platform designed to empower developers and creators. By participating in our network, you can engage in reciprocal marketing for your own applications while simultaneously driving traffic to your products and helping you **increase conversions**. Our core philosophy is simple: **"Show an ad, get an ad shown"**.
 
 This SDK allows Flutter developers to easily integrate AdTogether ads into their applications. By displaying ads from other community members, you earn **Ad Credits** that allow your own app's ads to be shown across the AdTogether network.
+
+### 🖼️ Visualizing the Experience
+
+| **Flutter Native Banner** | **Vertical Interstitial** |
+|:---:|:---:|
+| ![Banner Example](../../public/ads/Banner_Example.jpg) | ![Interstitial Example](../../public/ads/Interstitial_Example.jpg) |
+| *Adaptive Dart Banner Widget* | *Full-Screen Immersive Interstitial* |
 
 ## Features
 
@@ -21,7 +28,7 @@ This SDK allows Flutter developers to easily integrate AdTogether ads into their
 - 📺 **Interstitial Ads** — Full-screen ads with a configurable close-button countdown, perfect for natural transition points.
 - ⚖️ **Fair Exchange** — Automated impression and click tracking ensures fair distribution of ad credits.
 - 🌙 **Dark Mode Support** — All ad widgets automatically adapt to your app's `ThemeData` brightness.
-- 🔌 **Easy Integration** — A single `initialize()` call and one widget is all you need to start earning credits.
+- 🔌 **Easy Integration** — A single `initialize()` call and one widget is all you need to start earning credits and increase conversions.
 - 👥 **Community Focused** — Help other developers grow while getting exposure for your own project.
 
 ## Getting Started
@@ -43,13 +50,14 @@ flutter pub get
 
 ### 2. Initialize
 
-Call `AdTogether.initialize()` **before** `runApp()`. You can obtain your API Key from the [AdTogether Dashboard](https://adtogether.relaxsoftwareapps.com/dashboard).
+Call `AdTogether.initialize()` **before** `runApp()`. You can obtain your App ID from the [AdTogether Dashboard](https://adtogether.relaxsoftwareapps.com/dashboard).
 
 ```dart
 import 'package:adtogether_sdk/adtogether_sdk.dart';
 
-void main() {
-  AdTogether.initialize(appId: 'YOUR_API_KEY');
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AdTogether.initialize(appId: 'YOUR_APP_ID');
   runApp(const MyApp());
 }
 ```
@@ -58,13 +66,13 @@ void main() {
 
 | Parameter   | Type      | Required | Description |
 |-------------|-----------|----------|-------------|
-| `appId`     | `String`  | ✅       | Your registered API Key from the AdTogether Dashboard. |
+| `appId`     | `String`  | ✅       | Your registered App ID from the AdTogether Dashboard. |
 | `baseUrl`   | `String?` | ❌       | Override the API base URL (useful for staging/testing environments). |
 | `bundleId`  | `String?` | ❌       | Explicitly set your app's bundle/package identifier. If omitted, web traffic is identified by the `Origin` header automatically. For mobile, it is recommended to set this explicitly. |
 
 ```dart
 AdTogether.initialize(
-  appId: 'YOUR_API_KEY',
+  appId: 'YOUR_APP_ID',
   baseUrl: 'https://staging.adtogether.example.com', // optional
   bundleId: 'com.example.myapp',                     // recommended for mobile
 );
@@ -194,7 +202,7 @@ await AdTogether.trackClick(ad.id, token: ad.token);
 ## How Credits Work
 
 1. **Earn credits** — Every time your app displays an ad from the AdTogether network and the impression is verified, you earn ad credits.
-2. **Spend credits** — Your ad credits are automatically spent to show *your* campaigns inside other apps on the network.
+2. **Spend credits** — Your ad credits are automatically spent to show *your* campaigns inside other apps on the network, helping you increase conversions.
 3. **Fair weighting** — Different ad formats and geographies have different credit weights, ensuring a level playing field for apps of all sizes.
 
 Create and manage your campaigns from the [AdTogether Dashboard](https://adtogether.relaxsoftwareapps.com/dashboard).
@@ -223,7 +231,7 @@ This SDK depends on the following packages:
 ## Additional Information
 
 - 📖 **Documentation**: [adtogether.relaxsoftwareapps.com/docs](https://adtogether.relaxsoftwareapps.com/docs)
-- 🐛 **Issues**: [GitHub Issues](https://github.com/AdTogether/AdTogether/issues)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/undecided2003/AdTogether/issues)
 - 💬 **Support**: Join our [Discord community](https://discord.gg/adtogether) for real-time help.
 - 🌐 **Dashboard**: [adtogether.relaxsoftwareapps.com/dashboard](https://adtogether.relaxsoftwareapps.com/dashboard)
 

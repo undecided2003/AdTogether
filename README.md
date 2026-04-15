@@ -3,7 +3,7 @@
 </h1>
 
 <p align="center">
-  <strong>"Shown an ad, get ad shown"</strong><br>
+  <strong>"Show an ad, get an ad shown"</strong><br>
   The Universal Ad Exchange & Reciprocal Marketing Platform
 </p>
 
@@ -19,15 +19,23 @@
 
 ## 📖 About AdTogether
 
-**AdTogether** is a state-of-the-art ad exchange platform designed to empower developers and creators. By participating in our network, you can engage in reciprocal marketing for your own applications while simultaneously driving traffic to your products. Our core philosophy is simple: **"Shown an ad, get ad shown"**.
+**AdTogether** is a state-of-the-art ad exchange platform designed to empower developers and creators. By participating in our network, you can engage in reciprocal marketing for your own applications while simultaneously driving traffic to your products and helping you **increase conversions**. Our core philosophy is simple: **"Show an ad, get an ad shown"**.
 
 We provide a seamless, high-performance API and a suite of native SDKs across web, mobile, and cross-platform ecosystems, enabling you to integrate native advertising into any environment.
+
+### 🖼️ Visual Examples
+
+| **Standard Banner Ad** | **Premium Interstitial Ad** |
+|:---:|:---:|
+| ![Banner Example](./public/ads/Banner_Example.jpg) | ![Interstitial Example](./public/ads/Interstitial_Example.jpg) |
+| *Native Banner Example (370x95)* | *Full-Screen Immersive Interstitial Example* |
 
 ## ✨ Features
 
 - **Universal Ad Exchange**: Earn credits by showing ads, and spend credits to showcase your own campaigns.
+- **Increase Conversions**: Promote your app across the network and drive real installs from engaged users.
 - **Multi-Platform SDKs**: First-class support for Web, Android, iOS, and Flutter.
-- **High Performance**: Built on a highly scalable Next.js 15 & Firebase backend infrastructure.
+- **High Performance**: Built on a highly scalable Next.js 16 & Firebase backend infrastructure.
 - **Developer-First Integration**: Modern hooks, composables, and declarative APIs designed for modern app architectures.
 - **Automated Workflows**: Fully configured GitHub Actions CI/CD to handle automated testing and publishing to npm, Maven Central, pub.dev, and SPM.
 
@@ -48,7 +56,7 @@ AdTogether provides native SDKs for the most popular platforms. All code is mana
 
 ### 1. The Core Platform (Dashboard & Backend API)
 
-The backend and developer dashboard are built using **Next.js 15** and **Firebase**.
+The backend and developer dashboard are built using **Next.js 16** and **Firebase**.
 
 #### Prerequisites
 - Node.js (v18+)
@@ -65,8 +73,8 @@ cd AdTogether
 npm install
 
 # 3. Configure environment variables
-# Copy the example env file and fill in your Firebase credentials
-cp .env.example .env.local
+# Create a .env.local file and add your Firebase credentials
+# (See .env.local.example or project documentation for required keys)
 
 # 4. Start the development server
 npm run dev
@@ -81,7 +89,7 @@ Visit [https://adtogether.relaxsoftwareapps.com](https://adtogether.relaxsoftwar
 Detailed instructions are provided in each SDK's local `README.md`. 
 
 - **Web integration:** `npm install @adtogether/web-sdk`
-- **Android integration:** Implement `com.adtogether:sdk:1.0.0` inside your `build.gradle.kts`.
+- **Android integration:** Implement `com.adtogether:sdk:0.1.1` inside your `build.gradle.kts`.
 - **iOS integration:** Add the Swift Package through Xcode directly from this repository link.
 - **Flutter integration:** Run `flutter pub add adtogether_sdk:^0.1.3`.
 
