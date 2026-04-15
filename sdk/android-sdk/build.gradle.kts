@@ -1,6 +1,9 @@
+import com.vanniktech.maven.publish.SonatypeHost
+import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
+
 plugins {
-    id("com.android.library") version "8.2.2"
-    id("org.jetbrains.kotlin.android") version "1.9.22"
+    id("com.android.library") version "8.5.2"
+    id("org.jetbrains.kotlin.android") version "1.9.24"
     id("com.vanniktech.maven.publish") version "0.28.0"
 }
 
@@ -53,8 +56,6 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.5.0")
 }
 
-import com.vanniktech.maven.publish.SonatypeHost
-import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
 
 mavenPublishing {
     // Defines the coordinates
