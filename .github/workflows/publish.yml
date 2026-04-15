@@ -76,10 +76,18 @@ jobs:
       - name: Publish Flutter SDK
         run: |
           mkdir -p ~/.config/dart
-          mkdir -p ~/.pub-cache
-          echo '${{ secrets.PUB_DEV_CREDENTIALS }}' > ~/.config/dart/pub-credentials.json
-          echo '${{ secrets.PUB_DEV_CREDENTIALS }}' > ~/.pub-cache/credentials.json
-          flutter pub publish -f
+          # Write credentials to multiple potential locations used by different versions
+          printf '%s' '${{ secrets.PUB_DEV_CREDENTIALS }}' > ~/.config/dart/pub-credentials.json
+          printf '%s' '${{ secrets.PUB_DEV_CREDENTIALS }}' > ~/.config/dart/credentials.json
+          if [ -d "$PUB_CACHE" ]; then
+            printf '%s' '${{ secrets.PUB_DEV_CREDENTIALS }}' > "$PUB_CACHE/pub-credentials.json"
+            printf '%s' '${{ secrets.PUB_DEV_CREDENTIALS }}' > "$PUB_CACHE/credentials.json"
+          else
+            mkdir -p ~/.pub-cache
+            printf '%s' '${{ secrets.PUB_DEV_CREDENTIALS }}' > ~/.pub-cache/pub-credentials.json
+            printf '%s' '${{ secrets.PUB_DEV_CREDENTIALS }}' > ~/.pub-cache/credentials.json
+          fi
+          flutter pub publish --force
         working-directory: sdk/adtogether_sdk
 
   # --- iOS SDK (SPM) ---
