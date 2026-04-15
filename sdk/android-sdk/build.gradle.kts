@@ -29,12 +29,7 @@ android {
         jvmTarget = "1.8"
     }
 
-    publishing {
-        singleVariant("release") {
-            withSourcesJar()
-            withJavadocJar()
-        }
-    }
+    // Publishing is handled by the com.vanniktech.maven.publish plugin below
 }
 
 dependencies {
