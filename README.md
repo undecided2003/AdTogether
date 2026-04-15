@@ -89,9 +89,9 @@ Visit [https://adtogether.relaxsoftwareapps.com](https://adtogether.relaxsoftwar
 Detailed instructions are provided in each SDK's local `README.md`. 
 
 - **Web integration:** `npm install @adtogether/web-sdk`
-- **Android integration:** Implement `com.adtogether:sdk:0.1.4` inside your `build.gradle.kts`.
+- **Android integration:** Implement `com.adtogether:sdk:0.1.5` inside your `build.gradle.kts`.
 - **iOS integration:** Add the Swift Package through Xcode directly from this repository link.
-- **Flutter integration:** Run `flutter pub add adtogether_sdk:^0.1.4`.
+- **Flutter integration:** Run `flutter pub add adtogether_sdk:^0.1.5`.
 
 ---
 
