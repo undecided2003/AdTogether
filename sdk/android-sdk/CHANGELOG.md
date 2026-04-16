@@ -1,3 +1,8 @@
+## 0.1.8
+
+* **Feature**: Added `onAdLoaded` and `onAdFailedToLoad` callback support to both `AdTogetherView` (Banner) and `AdTogetherInterstitial`.
+* **Standardization**: Updated API signatures to match the unified AdTogether SDK standard across all platforms.
+
 ## 0.1.7
 
 * Documentation improvements.

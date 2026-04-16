@@ -88,8 +88,10 @@ internal object AdNetworkService {
             if (code != HttpURLConnection.HTTP_OK) {
                 Log.e(TAG, "Failed to track $endpoint. Code: $code")
             }
+            Unit
         } catch (e: Exception) {
             Log.e(TAG, "Network error tracking $endpoint", e)
+            Unit
         }
     }
 }
