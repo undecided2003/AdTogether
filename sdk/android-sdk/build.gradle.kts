@@ -54,7 +54,7 @@ dependencies {
 
 mavenPublishing {
     // Defines the coordinates
-    coordinates("com.adtogether", "sdk", "0.1.7")
+    coordinates("com.adtogether", "sdk", "0.1.8")
     
     // Configures the POM
     pom {

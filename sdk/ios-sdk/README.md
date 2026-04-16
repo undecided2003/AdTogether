@@ -71,14 +71,33 @@ import SwiftUI
 import AdTogether
 
 struct ContentView: View {
+    @State private var showAd = false
+
     var body: some View {
         VStack {
             Text("My Awesome iOS App")
 
+            Button("Show Interstitial") {
+                showAd = true
+            }
+
             Spacer()
 
-            AdTogetherView(adUnitID: "YOUR_AD_UNIT_ID")
-                .frame(height: 50)
+            // Banner Ad
+            AdTogetherView(
+                adUnitID: "YOUR_BANNER_UNIT_ID",
+                onAdLoaded: { print("Banner loaded!") }
+            )
+            .frame(height: 50)
+        }
+        .fullScreenCover(isPresented: $showAd) {
+            // Interstitial Ad
+            AdTogetherInterstitialView(
+                adUnitID: "YOUR_INTERSTITIAL_UNIT_ID",
+                onAdLoaded: { print("Interstitial loaded!") }
+            ) {
+                showAd = false
+            }
         }
     }
 }

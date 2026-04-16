@@ -66,17 +66,34 @@ import com.adtogether.sdk.views.AdTogetherView
 
 @Composable
 fun MainScreen() {
+    var showAd by remember { mutableStateOf(false) }
+
     Column(modifier = Modifier.fillMaxSize()) {
         // Your App Content Here
+        Button(onClick = { showAd = true }) {
+            Text("Show Interstitial")
+        }
+
         Spacer(modifier = Modifier.weight(1f))
 
         // Display the AdTogether Banner
         AdTogetherView(
             adUnitId = "YOUR_AD_UNIT_ID",
+            onAdLoaded = { println("Banner loaded!") },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp)
         )
+
+        // Show Interstitial Ad
+        if (showAd) {
+            AdTogetherInterstitial(
+                adUnitId = "YOUR_INTERSTITIAL_UNIT_ID",
+                closeDelay = 5,
+                onAdLoaded = { println("Interstitial loaded!") },
+                onDismiss = { showAd = false }
+            )
+        }
     }
 }
 ```

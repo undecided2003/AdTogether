@@ -34,7 +34,7 @@ We provide a seamless, high-performance API and a suite of native SDKs across we
 
 - **Universal Ad Exchange**: Earn credits by showing ads, and spend credits to showcase your own campaigns.
 - **Increase Conversions**: Promote your app across the network and drive real installs from engaged users.
-- **Multi-Platform SDKs**: First-class support for Web, Android, iOS, and Flutter.
+- **Multi-Platform SDKs**: First-class support for Web, React Native, Android, iOS, and Flutter.
 - **High Performance**: Built on a highly scalable Next.js 16 & Firebase backend infrastructure.
 - **Developer-First Integration**: Modern hooks, composables, and declarative APIs designed for modern app architectures.
 - **Automated Workflows**: Fully configured GitHub Actions CI/CD to handle automated testing and publishing to npm, Maven Central, pub.dev, and SPM.
@@ -46,6 +46,7 @@ AdTogether provides native SDKs for the most popular platforms. All code is mana
 | Platform | SDK Path | Package Tracker/Manager | Description |
 |----------|----------|-------------------------|-------------|
 | **🌐 Web** | [`./sdk/web-sdk`](./sdk/web-sdk) | npm: `@adtogether/web-sdk` | Lightweight TypeScript SDK for React and Vanilla JS. Features hooks and native React components. |
+| **⚛️ React Native** | [`./sdk/react-native-sdk`](./sdk/react-native-sdk) | npm: `@adtogether/react-native-sdk` | Native SDK for React Native featuring full ad component integrations. |
 | **🤖 Android** | [`./sdk/android-sdk`](./sdk/android-sdk) | Maven: `com.adtogether:sdk` | Native Kotlin SDK with full Jetpack Compose support, offering lifecycle-aware ad loading. |
 | **🍎 iOS** | [`./sdk/ios-sdk`](./sdk/ios-sdk) | SPM / CocoaPods | Swift-native iOS SDK requiring iOS 15.0+ with high-performance native ad rendering. |
 | **💙 Flutter** | [`./sdk/adtogether_sdk`](./sdk/adtogether_sdk) | pub.dev: `adtogether_sdk` | Cross-platform Dart SDK offering beautiful, performant customizable ad widgets. |
@@ -89,6 +90,7 @@ Visit [https://adtogether.relaxsoftwareapps.com](https://adtogether.relaxsoftwar
 Detailed instructions are provided in each SDK's local `README.md`. 
 
 - **Web integration:** `npm install @adtogether/web-sdk`
+- **React Native integration:** `npm install @adtogether/react-native-sdk`
 - **Android integration:** Implement `com.adtogether:sdk:0.1.7` inside your `build.gradle.kts`.
 - **iOS integration:** Add the Swift Package through Xcode directly from this repository link.
 - **Flutter integration:** Run `flutter pub add adtogether_sdk:^0.1.7`.

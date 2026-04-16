@@ -1,0 +1,67 @@
+{
+  "name": "@adtogether/react-native-sdk",
+  "version": "0.1.8",
+  "description": "The official AdTogether React Native SDK — reciprocal ad exchange to increase conversions and grow your audience.",
+  "main": "lib/commonjs/index.js",
+  "module": "lib/module/index.js",
+  "react-native": "src/index.ts",
+  "source": "src/index.ts",
+  "types": "lib/typescript/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./lib/module/index.js",
+      "require": "./lib/commonjs/index.js",
+      "types": "./lib/typescript/index.d.ts"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/undecided2003/AdTogether.git",
+    "directory": "sdk/react-native-sdk"
+  },
+  "homepage": "https://adtogether.relaxsoftwareapps.com",
+  "bugs": {
+    "url": "https://github.com/undecided2003/AdTogether/issues"
+  },
+  "scripts": {
+    "build": "bob build",
+    "dev": "bob build --watch",
+    "prepack": "npm run build"
+  },
+  "keywords": [
+    "react-native",
+    "ads",
+    "ad-exchange",
+    "monetization",
+    "advertising",
+    "reciprocal",
+    "conversions"
+  ],
+  "author": "AdTogether Team",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "react": "18.2.0",
+    "react-native": "0.74.0",
+    "react-native-builder-bob": "^0.30.2",
+    "typescript": "^5.0.0"
+  },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      "commonjs",
+      "module",
+      [
+        "typescript",
+        {
+          "project": "tsconfig.build.json"
+        }
+      ]
+    ]
+  }
+}

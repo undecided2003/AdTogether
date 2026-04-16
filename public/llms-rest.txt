@@ -1,0 +1,41 @@
+# AdTogether REST API — LLM Integration Reference
+
+> **Integration Guide:** For custom environments without a dedicated SDK, you can directly interface with the AdTogether Ad Serving API.
+
+**Base URL:** `https://adtogether.relaxsoftwareapps.com`
+
+### Fetch Ad
+
+```bash
+curl -X GET "https://adtogether.relaxsoftwareapps.com/api/ads/serve?country=global&adUnitId=YOUR_AD_UNIT_ID&apiKey=YOUR_APP_ID"
+```
+
+Returns a JSON object:
+```json
+{
+  "id": "ad_abc123",
+  "title": "App Name",
+  "description": "App description text",
+  "imageUrl": "https://...",
+  "clickUrl": "https://...",
+  "token": "HMAC_SIGNATURE"
+}
+```
+
+### Track Impression
+
+```bash
+curl -X POST "https://adtogether.relaxsoftwareapps.com/api/ads/impression" \
+  -H "Content-Type: application/json" \
+  -d '{"adId": "ad_abc123", "token": "HMAC_TOKEN_FROM_SERVE_RESPONSE", "apiKey": "YOUR_APP_ID"}'
+```
+
+**Note:** The `token` field is required. It is an HMAC signature returned in the `/api/ads/serve` response. Requests without a valid token will be rejected.
+
+### Track Click
+
+```bash
+curl -X POST "https://adtogether.relaxsoftwareapps.com/api/ads/click" \
+  -H "Content-Type: application/json" \
+  -d '{"adId": "ad_abc123", "token": "HMAC_TOKEN_FROM_SERVE_RESPONSE", "apiKey": "YOUR_APP_ID"}'
+```

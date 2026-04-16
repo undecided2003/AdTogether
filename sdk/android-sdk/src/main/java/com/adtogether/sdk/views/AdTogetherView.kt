@@ -45,6 +45,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun AdTogetherView(
     adUnitId: String,
+    onAdLoaded: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     if (!AdTogether.assertInitialized()) return
@@ -61,6 +62,7 @@ fun AdTogetherView(
         val result = AdTogether.fetchAd(adUnitId)
         if (result != null) {
             adData = result
+            onAdLoaded?.invoke()
         } else {
             hasError = true
         }

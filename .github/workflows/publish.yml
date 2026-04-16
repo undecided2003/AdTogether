@@ -29,6 +29,29 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+  # --- React Native SDK (npm) ---
+  publish-react-native:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+      - name: Install dependencies
+        run: npm install
+        working-directory: sdk/react-native-sdk
+      - name: Build React Native SDK
+        run: npm run build
+        working-directory: sdk/react-native-sdk
+      - name: Publish to npm
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
+          npm publish --access public --no-git-checks
+        working-directory: sdk/react-native-sdk
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
   # --- Android SDK (Maven Central) ---
   publish-android:
     runs-on: ubuntu-latest

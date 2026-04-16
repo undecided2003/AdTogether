@@ -10,11 +10,14 @@ public struct AdTogetherView: View {
     @State private var impressionTracked = false
     @State private var isHovering = false
     
+    private let onAdLoaded: (() -> Void)?
+    
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.openURL) var openURL
     
-    public init(adUnitID: String) {
+    public init(adUnitID: String, onAdLoaded: (() -> Void)? = nil) {
         self.adUnitID = adUnitID
+        self.onAdLoaded = onAdLoaded
     }
     
     public var body: some View {
@@ -111,6 +114,7 @@ public struct AdTogetherView: View {
                 switch result {
                 case .success(let fetchedAd):
                     self.ad = fetchedAd
+                    self.onAdLoaded?()
                 case .failure(let error):
                     AdTogether.shared.logger.error("Failed to load ad: \(error.localizedDescription)")
                     self.hasError = true

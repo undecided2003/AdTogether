@@ -14,6 +14,7 @@ public struct AdTogetherInterstitialView: View {
     public let adUnitID: String
     public let closeDelay: Int
     public let onDismiss: () -> Void
+    public let onAdLoaded: (() -> Void)?
     
     @State private var ad: AdModel?
     @State private var isLoading = true
@@ -25,10 +26,11 @@ public struct AdTogetherInterstitialView: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.openURL) var openURL
     
-    public init(adUnitID: String, closeDelay: Int = 3, onDismiss: @escaping () -> Void) {
+    public init(adUnitID: String, closeDelay: Int = 3, onAdLoaded: (() -> Void)? = nil, onDismiss: @escaping () -> Void) {
         self.adUnitID = adUnitID
         self.closeDelay = closeDelay
         self.onDismiss = onDismiss
+        self.onAdLoaded = onAdLoaded
         self._countdown = State(initialValue: closeDelay)
     }
     
@@ -154,6 +156,7 @@ public struct AdTogetherInterstitialView: View {
                 switch result {
                 case .success(let fetchedAd):
                     self.ad = fetchedAd
+                    self.onAdLoaded?()
                     startCountdown()
                 case .failure(let error):
                     AdTogether.shared.logger.error("Failed to load interstitial: \(error.localizedDescription)")

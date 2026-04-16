@@ -1,0 +1,102 @@
+# AdTogether Web SDK — LLM Integration Reference
+
+**Package:** `@adtogether/web-sdk`
+**Distribution:** NPM (for React/Next.js) or CDN script tag (for plain HTML)
+**Targets:** Websites, SPAs, SSR frameworks (React, Next.js, Vue, HTML)
+
+### Option A: NPM Installation (React / Next.js)
+
+```bash
+npm install @adtogether/web-sdk
+```
+
+### Initialization
+
+```typescript
+import { AdTogether } from '@adtogether/web-sdk';
+
+// Call once at app startup. In Next.js, guard against SSR:
+if (typeof window !== 'undefined') {
+  AdTogether.initialize({ appId: 'YOUR_APP_ID' });
+}
+```
+
+**`AdTogether.initialize()` accepts:**
+```typescript
+interface AdTogetherOptions {
+  appId?: string;    // Your registered app ID (preferred)
+  apiKey?: string;   // Alternative name for appId
+  baseUrl?: string;  // Override API base URL (optional)
+  allowSelfAds?: boolean; // Show own ads as fallback (default: true)
+}
+```
+
+### React Components
+
+**Import path:** `@adtogether/web-sdk/react`
+
+```tsx
+"use client"; // Required for Next.js App Router
+import { useState } from 'react';
+import { AdTogether } from '@adtogether/web-sdk';
+import { AdTogetherBanner, AdTogetherInterstitial } from '@adtogether/web-sdk/react';
+
+if (typeof window !== 'undefined') {
+  AdTogether.initialize({ appId: 'YOUR_APP_ID' });
+}
+
+export default function MyComponent() {
+  const [showAd, setShowAd] = useState(false);
+
+  return (
+    <div>
+      {/* Banner Ad */}
+      <AdTogetherBanner 
+        adUnitId="YOUR_AD_UNIT_ID" 
+        onAdLoaded={() => console.log('Ad loaded!')}
+      />
+
+      {/* Interstitial Ad */}
+      <button onClick={() => setShowAd(true)}>Show Interstitial</button>
+      <AdTogetherInterstitial
+        adUnitId="YOUR_AD_UNIT_ID"
+        isOpen={showAd}
+        onClose={() => setShowAd(false)}
+        onAdLoaded={() => console.log('Interstitial loaded')}
+      />
+    </div>
+  );
+}
+```
+
+**`<AdTogetherBanner>` props:**
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `adUnitId` | `string` | **required** | Ad placement identifier |
+| `theme` | `'dark' \| 'light' \| 'auto'` | `'auto'` | Color scheme |
+| `width` | `number \| string` | `'100%'` | Container width |
+| `height` | `number \| string` | `'auto'` | Container height |
+| `onAdLoaded` | `() => void` | — | Fires when ad is fetched |
+| `onAdFailedToLoad` | `(error: Error) => void` | — | Fires on fetch failure |
+| `className` | `string` | — | CSS class name |
+| `style` | `React.CSSProperties` | — | Inline styles |
+
+**`<AdTogetherInterstitial>` props:**
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `adUnitId` | `string` | **required** | Ad placement identifier |
+| `isOpen` | `boolean` | **required** | Controls visibility |
+| `onClose` | `() => void` | **required** | Called when user closes |
+| `closeDelay` | `number` | `3` | Seconds before close button appears |
+| `theme` | `'dark' \| 'light' \| 'auto'` | `'auto'` | Color scheme |
+| `onAdLoaded` | `() => void` | — | Fires when ad is fetched |
+| `onAdFailedToLoad` | `(error: Error) => void` | — | Fires on fetch failure |
+
+### Option B: CDN Script Tag (Plain HTML)
+
+```html
+<script src="https://adtogether.relaxsoftwareapps.com/sdk.js" defer></script>
+
+<!-- Banner Ad — the SDK auto-populates this div -->
+<div id="adtogether-ad-1" data-ad-unit="YOUR_AD_UNIT_ID"></div>
+```

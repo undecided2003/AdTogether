@@ -1,0 +1,136 @@
+# AdTogether Native Android SDK — LLM Integration Reference
+
+**Package:** `com.adtogether:sdk`
+**Distribution:** Maven Central
+**Targets:** Android API 21+ (minSdk 21)
+**Frameworks:** Jetpack Compose, XML Views
+
+> **Only for pure Kotlin/Java Android apps.** If you're using Flutter, use SDK #3 (Flutter SDK) instead.
+
+### Install via Gradle
+
+Add to your module-level `build.gradle.kts`:
+
+```kotlin
+dependencies {
+    implementation("com.adtogether:sdk:0.1.8")
+}
+```
+
+### Initialize
+
+```kotlin
+import com.adtogether.sdk.AdTogether
+
+class MyApp : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        AdTogether.initialize(this, "YOUR_APP_ID")
+    }
+}
+```
+
+Register `MyApp` in `AndroidManifest.xml`:
+
+```xml
+<application android:name=".MyApp" ... >
+```
+
+**`AdTogether.initialize()` signature:**
+```kotlin
+fun initialize(
+    context: Context,
+    appId: String,
+    baseUrl: String? = null,       // Override API base URL (optional)
+    allowSelfAds: Boolean = true
+)
+```
+
+> **Key difference from other SDKs:** Android requires a `Context` as the first parameter.
+
+### Banner Ad (Jetpack Compose)
+
+```kotlin
+import com.adtogether.sdk.views.AdTogetherView
+
+@Composable
+fun MainScreen() {
+    Column {
+        Text("My App")
+        AdTogetherView(
+            adUnitId = "YOUR_AD_UNIT_ID",
+            modifier = Modifier.fillMaxWidth().height(50.dp),
+            onAdLoaded = { println("Ad loaded!") }
+        )
+    }
+}
+```
+
+**`AdTogetherView` composable signature:**
+```kotlin
+@Composable
+fun AdTogetherView(
+    adUnitId: String,
+    onAdLoaded: (() -> Unit)? = null,
+    onAdFailedToLoad: ((String) -> Unit)? = null,
+    modifier: Modifier = Modifier
+)
+```
+
+### Interstitial Ad (Jetpack Compose)
+
+```kotlin
+import com.adtogether.sdk.views.AdTogetherInterstitial
+
+@Composable
+fun MainScreen() {
+    var showAd by remember { mutableStateOf(false) }
+
+    Column {
+        Text("My App")
+
+        Button(onClick = { showAd = true }) {
+            Text("Show Interstitial")
+        }
+
+        if (showAd) {
+            AdTogetherInterstitial(
+                adUnitId = "YOUR_AD_UNIT_ID",
+                closeDelay = 3,
+                onDismiss = { showAd = false },
+                onAdLoaded = { println("Interstitial loaded") }
+            )
+        }
+    }
+}
+```
+
+**`AdTogetherInterstitial` composable signature:**
+```kotlin
+@Composable
+fun AdTogetherInterstitial(
+    adUnitId: String,
+    closeDelay: Int = 3,            // Seconds before close button appears
+    onDismiss: () -> Unit,
+    onAdLoaded: (() -> Unit)? = null,
+    onAdFailedToLoad: ((String) -> Unit)? = null,
+    modifier: Modifier = Modifier
+)
+```
+
+### Display a Banner (XML Layout)
+
+```xml
+<com.adtogether.sdk.AdTogetherBannerView
+    android:id="@+id/adView"
+    android:layout_width="match_parent"
+    android:layout_height="50dp"
+    app:adUnitId="YOUR_AD_UNIT_ID" />
+```
+
+### Android-Specific Notes
+
+- If using ProGuard/R8, add the following keep rule:
+  ```
+  -keep class com.adtogether.sdk.** { *; }
+  ```

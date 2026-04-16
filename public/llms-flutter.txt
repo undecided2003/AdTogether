@@ -1,0 +1,101 @@
+# AdTogether Flutter SDK — LLM Integration Reference
+
+**Package:** `adtogether_sdk`
+**Distribution:** pub.dev
+**Targets:** Android, iOS, and Flutter Web — all from ONE Dart package
+
+> **Internal architecture:** On mobile the SDK uses native Platform Channels (Kotlin for Android, Swift for iOS). On Flutter Web it renders ads via `HtmlElementView` loading the Web SDK (`sdk.js`) under the hood.
+
+### Install
+
+```bash
+flutter pub add adtogether_sdk
+```
+
+### Initialize (required before rendering any ads)
+
+```dart
+import 'package:adtogether_sdk/adtogether_sdk.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AdTogether.initialize(appId: 'YOUR_APP_ID');
+  runApp(MyApp());
+}
+```
+
+**`AdTogether.initialize()` signature:**
+```dart
+static Future<void> initialize({
+  required String appId,
+  String? baseUrl,       // Override API base URL (optional)
+  String? bundleId,      // Explicit bundle/package ID (optional, auto-detected)
+  bool allowSelfAds = true,
+})
+```
+
+### Banner Ad
+
+```dart
+import 'package:adtogether_sdk/adtogether_sdk.dart';
+
+class MyPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Column(
+        children: [
+          Expanded(child: Text("App Content")),
+          AdTogetherBanner(
+            adUnitId: 'YOUR_AD_UNIT_ID',
+            size: AdSize.banner,
+            onAdLoaded: () => print('Ad loaded!'),
+            onAdFailedToLoad: (error) => print('Error: $error'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+```
+
+**`AdTogetherBanner` constructor parameters:**
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `adUnitId` | `String` | **required** | Ad placement identifier |
+| `size` | `AdSize` | `AdSize.fluid` | Ad size preset |
+| `onAdLoaded` | `VoidCallback?` | — | Fires when ad data loads |
+| `onAdFailedToLoad` | `Function(String)?` | — | Fires on load failure |
+
+### Interstitial Ad
+
+```dart
+// Show as a full-screen dialog (imperative API)
+AdTogetherInterstitial.show(
+  context: context,
+  adUnitId: 'YOUR_AD_UNIT_ID',
+  closeDelay: const Duration(seconds: 3),
+  onAdLoaded: () => print('Interstitial ready'),
+  onAdClosed: () => print('User closed'),
+);
+```
+
+**`AdTogetherInterstitial.show()` signature:**
+```dart
+static Future<void> show({
+  required BuildContext context,
+  required String adUnitId,
+  Duration closeDelay = const Duration(seconds: 3),
+  VoidCallback? onAdLoaded,
+  Function(String)? onAdFailedToLoad,
+  VoidCallback? onAdClosed,
+})
+```
+
+> **Note:** Flutter uses an imperative `.show()` pattern (not a declarative widget like React). The interstitial opens as a dialog and closes when the user taps the close button.
+
+### Flutter-Specific Notes
+
+- On **iOS**: Ensure `io.flutter.embedded_views_preview` is enabled in `Info.plist` if using older Flutter engines.
+- On **Flutter Web**: The SDK renders ads via `HtmlElementView` — no native plugin code runs. Ensure your web host serves the `sdk.js` script.
+- On **Android**: Platform Views are used. Minimum SDK version 19 required.

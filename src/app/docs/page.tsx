@@ -11,6 +11,7 @@ import {
   Layers,
   ArrowRight,
   Check,
+  Copy,
   Info,
   X,
 } from 'lucide-react';
@@ -69,17 +70,47 @@ function CodeBlock({
   language?: string;
   title?: string;
 }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(children);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
+  };
+
   return (
-    <div className="bg-zinc-100 dark:bg-black/60 border border-zinc-200 dark:border-white/5 rounded-xl overflow-hidden">
+    <div className="group/code relative bg-zinc-100 dark:bg-black/60 border border-zinc-200 dark:border-white/5 rounded-xl overflow-hidden">
       {title && (
-        <div className="flex items-center gap-2 px-4 py-2 border-b border-zinc-200 dark:border-white/5 bg-zinc-200/50 dark:bg-white/[0.02]">
-          <div className="flex gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-400 dark:bg-red-500/70" />
-            <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 dark:bg-yellow-500/70" />
-            <span className="w-2.5 h-2.5 rounded-full bg-green-400 dark:bg-green-500/70" />
+        <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-200 dark:border-white/5 bg-zinc-200/50 dark:bg-white/[0.02]">
+          <div className="flex items-center gap-2">
+            <div className="flex gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-400 dark:bg-red-500/70" />
+              <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 dark:bg-yellow-500/70" />
+              <span className="w-2.5 h-2.5 rounded-full bg-green-400 dark:bg-green-500/70" />
+            </div>
+            <span className="text-xs text-zinc-600 dark:text-zinc-500 font-mono ml-2">{title}</span>
           </div>
-          <span className="text-xs text-zinc-600 dark:text-zinc-500 font-mono ml-2">{title}</span>
+          <button
+            onClick={handleCopy}
+            className="p-1.5 rounded-md text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-300/50 dark:hover:bg-white/10 transition-all"
+            title="Copy code"
+          >
+            {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+          </button>
         </div>
+      )}
+      {!title && (
+        <button
+          onClick={handleCopy}
+          className="absolute top-3 right-3 z-10 p-1.5 rounded-md text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-300/50 dark:hover:bg-white/10 transition-all opacity-0 group-hover/code:opacity-100"
+          title="Copy code"
+        >
+          {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+        </button>
       )}
       <pre className="p-4 overflow-x-auto text-sm font-mono leading-relaxed text-zinc-800 dark:text-zinc-300">
         <code>{children}</code>
@@ -128,16 +159,14 @@ export default function DocsPage() {
                 Are you an AI Coding Assistant?
               </h3>
               <p className="text-zinc-600 dark:text-gray-400 leading-relaxed max-w-3xl pr-8">
-                We have provided a machine-readable documentation file format
-                perfectly tuned for LLMs. Read the{' '}
-                <Link
-                  href="/llms.txt"
-                  className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 underline underline-offset-4"
+                We have provided optimized, machine-readable documentation files perfectly tuned for LLMs. Scroll down to the{' '}
+                <a
+                  href="#integration-guides"
+                  className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 underline underline-offset-4 font-semibold"
                 >
-                  /llms.txt
-                </Link>{' '}
-                file at the root of this domain for the optimal integration
-                context, endpoints, and code snippets.
+                  Integration Guides
+                </a>{' '}
+                section below and click the "LLM" badge next to the platform you are building for to get the specific integration context, endpoints, and code snippets.
               </p>
             </div>
           </div>
@@ -235,7 +264,7 @@ export default function DocsPage() {
           </div>
 
           <p className="text-zinc-600 dark:text-gray-400 max-w-3xl mb-8 leading-relaxed">
-            AdTogether is distributed as <strong className="text-zinc-900 dark:text-white">four separate SDK packages</strong> — each
+            AdTogether is distributed as <strong className="text-zinc-900 dark:text-white">five separate SDK packages</strong> — each
             optimized for its target platform. The Flutter SDK is special: it
             wraps the native Android and iOS cores under the hood, giving
             Flutter developers a single Dart API that works everywhere.
@@ -256,6 +285,7 @@ export default function DocsPage() {
                 <div className="flex flex-wrap gap-3">
                   {[
                     { label: 'Web (JS)', color: 'text-pink-600 dark:text-pink-400 bg-pink-100 dark:bg-pink-500/10 border-pink-300 dark:border-pink-500/20' },
+                    { label: 'React Native', color: 'text-cyan-600 dark:text-cyan-400 bg-cyan-100 dark:bg-cyan-500/10 border-cyan-300 dark:border-cyan-500/20' },
                     { label: 'Flutter (Dart)', color: 'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-500/10 border-blue-300 dark:border-blue-500/20' },
                     { label: 'Native iOS (Swift)', color: 'text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-500/10 border-orange-300 dark:border-orange-500/20' },
                     { label: 'Native Android (Kotlin)', color: 'text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-500/10 border-purple-300 dark:border-purple-500/20' },
@@ -283,6 +313,7 @@ export default function DocsPage() {
                 <div className="bg-zinc-100 dark:bg-black/40 border border-zinc-200 dark:border-white/10 rounded-2xl p-5 space-y-3">
                   {[
                     { sdk: 'Web SDK', platforms: 'Websites, SPAs, SSR apps' },
+                    { sdk: 'React Native SDK', platforms: 'React Native CLI, Expo' },
                     { sdk: 'Flutter SDK', platforms: 'Android + iOS + Web (one package)' },
                     { sdk: 'iOS SDK', platforms: 'SwiftUI / UIKit apps' },
                     { sdk: 'Android SDK', platforms: 'Compose / View-based apps' },
@@ -342,7 +373,7 @@ export default function DocsPage() {
         </section>
 
         {/* ── Platform Integration Cards ──────────────────── */}
-        <section className="mb-16">
+        <section id="integration-guides" className="mb-16 scroll-mt-24">
           <div className="flex items-center gap-3 mb-8">
             <div className="p-3 bg-gradient-to-br from-amber-600/20 to-orange-600/20 rounded-xl">
               <Box className="w-6 h-6 text-amber-400" />
@@ -357,7 +388,13 @@ export default function DocsPage() {
                 <div className="p-3 bg-red-500/20 rounded-xl text-red-400">
                   <Globe className="w-6 h-6" />
                 </div>
-                <h2 className="text-2xl font-semibold">REST API endpoints</h2>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-2xl font-semibold">REST API endpoints</h2>
+                  <Link href="/llms-rest.txt" prefetch={false} className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 bg-zinc-200 dark:bg-white/10 text-zinc-600 dark:text-zinc-400 rounded hover:bg-amber-100 hover:text-amber-700 dark:hover:bg-amber-500/20 dark:hover:text-amber-400 transition-colors flex items-center gap-1">
+                    <Bot className="w-3 h-3" />
+                    LLM
+                  </Link>
+                </div>
               </div>
               <p className="text-zinc-600 dark:text-gray-400 mb-6 max-w-3xl">
                 For complete control, or if you are building an integration for a custom platform, you can directly interact with the AdTogether Ad Serving REST API.
@@ -392,7 +429,13 @@ export default function DocsPage() {
                 <div className="p-3 bg-pink-500/20 rounded-xl text-pink-400">
                   <Globe className="w-6 h-6" />
                 </div>
-                <h2 className="text-2xl font-semibold">Web SDK</h2>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-2xl font-semibold">Web SDK</h2>
+                  <Link href="/llms-web.txt" prefetch={false} className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 bg-zinc-200 dark:bg-white/10 text-zinc-600 dark:text-zinc-400 rounded hover:bg-amber-100 hover:text-amber-700 dark:hover:bg-amber-500/20 dark:hover:text-amber-400 transition-colors flex items-center gap-1">
+                    <Bot className="w-3 h-3" />
+                    LLM
+                  </Link>
+                </div>
               </div>
               <div className="flex flex-wrap gap-2 mb-6">
                 <PlatformBadge label="HTML" color="text-pink-600 dark:text-pink-400 border-pink-300 dark:border-pink-500/30" />
@@ -423,13 +466,36 @@ export default function DocsPage() {
                 2. Usage (React)
               </p>
               <CodeBlock language="tsx" title="MyComponent.tsx">
-                {`import { AdTogether } from '@adtogether/web-sdk';
-import { AdTogetherBanner } from '@adtogether/web-sdk/react';
+                {`"use client";
+import { useState } from 'react';
+import { AdTogether } from '@adtogether/web-sdk';
+import { AdTogetherBanner, AdTogetherInterstitial } from '@adtogether/web-sdk/react';
 
-AdTogether.initialize({ appId: 'YOUR_APP_ID' });
+if (typeof window !== 'undefined') {
+  AdTogether.initialize({ appId: 'YOUR_APP_ID' });
+}
 
 export default function MyComponent() {
-  return <AdTogetherBanner adUnitId="YOUR_AD_UNIT_ID" />;
+  const [showAd, setShowAd] = useState(false);
+
+  return (
+    <div>
+      {/* Banner Ad */}
+      <AdTogetherBanner 
+        adUnitId="YOUR_AD_UNIT_ID" 
+        onAdLoaded={() => console.log('Ad loaded!')}
+      />
+      
+      {/* Interstitial Ad */}
+      <button onClick={() => setShowAd(true)}>Show Interstitial</button>
+      <AdTogetherInterstitial 
+        adUnitId="YOUR_AD_UNIT_ID" 
+        isOpen={showAd} 
+        onClose={() => setShowAd(false)} 
+        onAdLoaded={() => console.log('Interstitial loaded!')}
+      />
+    </div>
+  );
 }`}
               </CodeBlock>
 
@@ -453,7 +519,13 @@ export default function MyComponent() {
                 <div className="p-3 bg-amber-500/20 rounded-xl text-amber-400">
                   <Smartphone className="w-6 h-6" />
                 </div>
-                <h2 className="text-2xl font-semibold">Flutter SDK</h2>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-2xl font-semibold">Flutter SDK</h2>
+                  <Link href="/llms-flutter.txt" prefetch={false} className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 bg-zinc-200 dark:bg-white/10 text-zinc-600 dark:text-zinc-400 rounded hover:bg-amber-100 hover:text-amber-700 dark:hover:bg-amber-500/20 dark:hover:text-amber-400 transition-colors flex items-center gap-1">
+                    <Bot className="w-3 h-3" />
+                    LLM
+                  </Link>
+                </div>
               </div>
               <div className="flex flex-wrap gap-2 mb-6">
                 <PlatformBadge label="Android" color="text-green-600 dark:text-green-400 border-green-300 dark:border-green-500/30" />
@@ -502,14 +574,15 @@ AdTogetherBanner(
   adUnitId: 'YOUR_AD_UNIT_ID',
   size: AdSize.banner,
   onAdLoaded: () => print('Ad loaded!'),
-  onAdFailedToLoad: (e) => print('Error: \$e'),
+  onAdFailedToLoad: (e) => print('Error: $e'),
 )
 
 // Show Interstitial
 AdTogetherInterstitial.show(
   context: context,
   adUnitId: 'YOUR_AD_UNIT_ID',
-  closeDelay: Duration(seconds: 3),
+  closeDelay: const Duration(seconds: 3),
+  onAdLoaded: () => print('Interstitial loaded!'),
 );`}
               </CodeBlock>
             </section>
@@ -520,7 +593,13 @@ AdTogetherInterstitial.show(
                 <div className="p-3 bg-orange-500/20 rounded-xl text-orange-400">
                   <Terminal className="w-6 h-6" />
                 </div>
-                <h2 className="text-2xl font-semibold">Native iOS SDK</h2>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-2xl font-semibold">Native iOS SDK</h2>
+                  <Link href="/llms-ios.txt" prefetch={false} className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 bg-zinc-200 dark:bg-white/10 text-zinc-600 dark:text-zinc-400 rounded hover:bg-amber-100 hover:text-amber-700 dark:hover:bg-amber-500/20 dark:hover:text-amber-400 transition-colors flex items-center gap-1">
+                    <Bot className="w-3 h-3" />
+                    LLM
+                  </Link>
+                </div>
               </div>
               <div className="flex flex-wrap gap-2 mb-6">
                 <PlatformBadge label="SwiftUI" color="text-orange-600 dark:text-orange-400 border-orange-300 dark:border-orange-500/30" />
@@ -544,7 +623,7 @@ AdTogetherInterstitial.show(
               <CodeBlock title="Package.swift">
 {`.package(
   url: "https://github.com/undecided2003/AdTogether.git",
-  from: "0.1.7"
+  from: "0.1.8"
 )`}
               </CodeBlock>
 
@@ -573,8 +652,10 @@ struct ContentView: View {
             Text("My App")
             
             // Banner Ad
-            AdTogetherView(adUnitID: "YOUR_AD_UNIT_ID")
-                .frame(height: 50)
+            AdTogetherView(adUnitID: "YOUR_AD_UNIT_ID") {
+                print("Ad loaded!")
+            }
+            .frame(height: 50)
             
             // Interstitial Ad
             Button("Show Interstitial") {
@@ -583,6 +664,8 @@ struct ContentView: View {
             .fullScreenCover(isPresented: $showAd) {
                 AdTogetherInterstitialView(adUnitID: "YOUR_AD_UNIT_ID") {
                     showAd = false
+                } onAdLoaded: {
+                    print("Interstitial loaded!")
                 }
             }
         }
@@ -597,7 +680,13 @@ struct ContentView: View {
                 <div className="p-3 bg-purple-500/20 rounded-xl text-purple-400">
                   <Terminal className="w-6 h-6" />
                 </div>
-                <h2 className="text-2xl font-semibold">Native Android SDK</h2>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-2xl font-semibold">Native Android SDK</h2>
+                  <Link href="/llms-android.txt" prefetch={false} className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 bg-zinc-200 dark:bg-white/10 text-zinc-600 dark:text-zinc-400 rounded hover:bg-amber-100 hover:text-amber-700 dark:hover:bg-amber-500/20 dark:hover:text-amber-400 transition-colors flex items-center gap-1">
+                    <Bot className="w-3 h-3" />
+                    LLM
+                  </Link>
+                </div>
               </div>
               <div className="flex flex-wrap gap-2 mb-6">
                 <PlatformBadge label="Jetpack Compose" color="text-purple-600 dark:text-purple-400 border-purple-300 dark:border-purple-500/30" />
@@ -620,7 +709,7 @@ struct ContentView: View {
               </p>
               <CodeBlock title="build.gradle.kts">
 {`dependencies {
-    implementation("com.adtogether:sdk:0.1.7")
+    implementation("com.adtogether:sdk:0.1.8")
 }`}
               </CodeBlock>
 
@@ -649,7 +738,8 @@ fun MainScreen() {
         // Banner Ad
         AdTogetherView(
             adUnitId = "YOUR_AD_UNIT_ID",
-            modifier = Modifier.fillMaxWidth().height(50.dp)
+            modifier = Modifier.fillMaxWidth().height(50.dp),
+            onAdLoaded = { println("Ad loaded!") }
         )
         
         // Interstitial Ad
@@ -661,12 +751,105 @@ fun MainScreen() {
             AdTogetherInterstitial(
                 adUnitId = "YOUR_AD_UNIT_ID",
                 closeDelay = 3,
-                onDismiss = { showAd = false }
+                onDismiss = { showAd = false },
+                onAdLoaded = { println("Interstitial loaded!") }
             )
         }
     }
 }`}
               </CodeBlock>
+            </section>
+
+            {/* ─── React Native ─── */}
+            <section className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 p-8 rounded-3xl hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors md:col-span-2">
+              <div className="flex items-center space-x-3 mb-3">
+                <div className="p-3 bg-blue-500/20 rounded-xl text-blue-400">
+                  <Smartphone className="w-6 h-6" />
+                </div>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-2xl font-semibold">React Native SDK</h2>
+                  <Link href="/llms-react-native.txt" prefetch={false} className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 bg-zinc-200 dark:bg-white/10 text-zinc-600 dark:text-zinc-400 rounded hover:bg-amber-100 hover:text-amber-700 dark:hover:bg-amber-500/20 dark:hover:text-amber-400 transition-colors flex items-center gap-1">
+                    <Bot className="w-3 h-3" />
+                    LLM
+                  </Link>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 mb-6">
+                <PlatformBadge label="Expo" color="text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-500/30" />
+                <PlatformBadge label="React Native CLI" color="text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-500/30" />
+              </div>
+              <p className="text-zinc-600 dark:text-gray-400 mb-6">
+                Official support for React Native applications. Easy drop-in components
+                to monetize your mobile apps.
+              </p>
+
+              <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3">
+                Distribution
+              </p>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
+                NPM Package
+              </p>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3">
+                    1. Install
+                  </p>
+                  <CodeBlock language="bash" title="terminal">
+                    {`npm install @adtogether/react-native-sdk`}
+                  </CodeBlock>
+
+                  <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3 mt-6">
+                    2. Initialize
+                  </p>
+                  <CodeBlock language="tsx" title="App.tsx">
+{`import { AdTogether } from '@adtogether/react-native-sdk';
+
+// Call before rendering ad components
+AdTogether.initialize({ appId: 'YOUR_APP_ID' });`}
+                  </CodeBlock>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3">
+                    3. Usage
+                  </p>
+                  <CodeBlock language="tsx" title="MyScreen.tsx">
+{`import { useState } from 'react';
+import { View, Button } from 'react-native';
+import { 
+  AdTogetherBanner, 
+  AdTogetherInterstitial 
+} from '@adtogether/react-native-sdk';
+
+export default function MyScreen() {
+  const [showAd, setShowAd] = useState(false);
+
+  return (
+    <View style={{ flex: 1 }}>
+      {/* Banner Ad */}
+      <AdTogetherBanner 
+        adUnitId="YOUR_AD_UNIT_ID" 
+        onAdLoaded={() => console.log('Ad loaded!')}
+      />
+      
+      {/* Interstitial Ad */}
+      <Button 
+        title="Show Interstitial" 
+        onPress={() => setShowAd(true)} 
+      />
+      
+      <AdTogetherInterstitial 
+        adUnitId="YOUR_AD_UNIT_ID" 
+        isOpen={showAd} 
+        onClose={() => setShowAd(false)} 
+        onAdLoaded={() => console.log('Interstitial loaded!')}
+      />
+    </View>
+  );
+}`}
+                  </CodeBlock>
+                </div>
+              </div>
             </section>
           </div>
         </section>

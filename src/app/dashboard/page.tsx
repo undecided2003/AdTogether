@@ -40,6 +40,9 @@ export default function DashboardPage() {
   // Earnings log state
   const [showEarnings, setShowEarnings] = useState(false);
   
+  // App ID copying state
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  
   const router = useRouter();
 
   useEffect(() => {
@@ -214,7 +217,8 @@ export default function DashboardPage() {
 
   const copyApiKey = (key: string) => {
     navigator.clipboard.writeText(key);
-    alert("App ID copied to clipboard!");
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 2000);
   };
 
   const ctr = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) : "0.00";
@@ -639,7 +643,11 @@ export default function DashboardPage() {
                         className="p-2 bg-white hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-white/10 rounded-lg text-zinc-600 dark:text-zinc-400 transition-colors shrink-0"
                         title="Copy App ID"
                       >
-                        <Copy className="w-4 h-4" />
+                        {copiedKey === key ? (
+                          <Check className="w-4 h-4 text-green-500" />
+                        ) : (
+                          <Copy className="w-4 h-4" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -659,6 +667,7 @@ export default function DashboardPage() {
               <h3 className="text-lg font-semibold text-amber-600 dark:text-amber-400 mb-3 flex-none">React / Next.js</h3>
               <CodeBlock 
                 language="tsx"
+                title="React / Next.js"
                 code={`"use client";
 import { useState } from 'react';
 import { AdTogether } from '@adtogether/web-sdk';
@@ -668,7 +677,11 @@ import { AdTogetherBanner, AdTogetherInterstitial } from '@adtogether/web-sdk/re
 AdTogether.initialize({ appId: '${userData?.apiKeys?.[0] || userData?.apiKey || 'YOUR_APP_ID'}' });
 
 // Banner Ad
-<AdTogetherBanner adUnitId="home_banner" theme="dark" />
+<AdTogetherBanner 
+  adUnitId="home_banner" 
+  theme="dark" 
+  onAdLoaded={() => console.log('Ad loaded!')}
+/>
 
 // Interstitial Ad
 const [showAd, setShowAd] = useState(false);
@@ -677,6 +690,7 @@ const [showAd, setShowAd] = useState(false);
   isOpen={showAd}
   onClose={() => setShowAd(false)}
   closeDelay={3}
+  onAdLoaded={() => console.log('Ad loaded!')}
 />`} 
               />
             </div>
@@ -684,6 +698,7 @@ const [showAd, setShowAd] = useState(false);
               <h3 className="text-lg font-semibold text-amber-600 dark:text-amber-400 mb-3 flex-none">Flutter</h3>
               <CodeBlock
                 language="dart"
+                title="Flutter"
                 code={`import 'package:adtogether_sdk/adtogether_sdk.dart';
 
 // Initialize
@@ -693,6 +708,7 @@ await AdTogether.initialize(appId: '${userData?.apiKeys?.[0] || userData?.apiKey
 AdTogetherBanner(
   adUnitId: 'home_banner',
   size: AdSize.banner,
+  onAdLoaded: () => print('Ad loaded!'),
 )
 
 // Interstitial Ad
@@ -700,21 +716,52 @@ AdTogetherInterstitial.show(
   context: context,
   adUnitId: 'level_complete',
   closeDelay: const Duration(seconds: 3),
+  onAdLoaded: () => print('Ad loaded!'),
 );`}
+              />
+            </div>
+            <div className="bg-zinc-50 dark:bg-black/50 p-6 rounded-xl border border-zinc-200 dark:border-white/5 flex flex-col">
+              <h3 className="text-lg font-semibold text-amber-600 dark:text-amber-400 mb-3 flex-none">React Native</h3>
+              <CodeBlock
+                language="tsx"
+                title="React Native"
+                code={`import { AdTogether, AdTogetherBanner, AdTogetherInterstitial } from '@adtogether/react-native-sdk';
+
+// Initialize
+AdTogether.initialize({ appId: '${userData?.apiKeys?.[0] || userData?.apiKey || 'YOUR_APP_ID'}' });
+
+// Banner Ad
+<AdTogetherBanner 
+  adUnitId="home_banner" 
+  onAdLoaded={() => console.log('Ad loaded!')}
+/>
+
+// Interstitial Ad
+const [showAd, setShowAd] = useState(false);
+<AdTogetherInterstitial
+  adUnitId="level_complete"
+  isOpen={showAd}
+  onClose={() => setShowAd(false)}
+  onAdLoaded={() => console.log('Ad loaded!')}
+/>`}
               />
             </div>
             <div className="bg-zinc-50 dark:bg-black/50 p-6 rounded-xl border border-zinc-200 dark:border-white/5 flex flex-col">
               <h3 className="text-lg font-semibold text-amber-600 dark:text-amber-400 mb-3 flex-none">iOS (SwiftUI)</h3>
               <CodeBlock
                 language="swift"
+                title="iOS (SwiftUI)"
                 code={`import AdTogether
 
 // Initialize
 AdTogether.initialize(appId: "${userData?.apiKeys?.[0] || userData?.apiKey || 'YOUR_APP_ID'}")
 
 // Banner Ad
-AdTogetherView(adUnitID: "home_banner")
-    .frame(height: 50)
+AdTogetherView(
+    adUnitID: "home_banner",
+    onAdLoaded: { print("Ad loaded!") }
+)
+.frame(height: 50)
 
 // Interstitial Ad
 Button("Show Interstitial") {
@@ -722,15 +769,17 @@ Button("Show Interstitial") {
 }
 .fullScreenCover(isPresented: $showAd) {
     AdTogetherInterstitialView(
-        adUnitID: "level_complete"
+        adUnitID: "level_complete",
+        onAdLoaded: { print("Ad loaded!") }
     ) { showAd = false }
 }`}
               />
             </div>
             <div className="bg-zinc-50 dark:bg-black/50 p-6 rounded-xl border border-zinc-200 dark:border-white/5 flex flex-col">
-              <h3 className="text-lg font-semibold text-amber-600 dark:text-amber-400 mb-3 flex-none">Android (View/XML)</h3>
+              <h3 className="text-lg font-semibold text-amber-600 dark:text-amber-400 mb-3 flex-none">Android (Compose)</h3>
               <CodeBlock
                 language="kotlin"
+                title="Android (Compose)"
                 code={`import com.adtogether.sdk.AdTogether
 import com.adtogether.sdk.views.AdTogetherView
 import com.adtogether.sdk.views.AdTogetherInterstitial
@@ -738,17 +787,54 @@ import com.adtogether.sdk.views.AdTogetherInterstitial
 // Initialize
 AdTogether.initialize(context, "${userData?.apiKeys?.[0] || userData?.apiKey || 'YOUR_APP_ID'}")
 
-// Banner Ad (XML)
-val adView = AdTogetherView(context)
-adView.loadAd("home_banner")
+// Banner Ad
+AdTogetherView(
+    adUnitId = "home_banner",
+    onAdLoaded = { println("Ad loaded!") }
+)
 
-// Interstitial Ad (Compose)
-AdTogetherInterstitial(
-    adUnitId = "level_complete",
-    closeDelay = 3,
-    onDismiss = { showAd = false }
-)`}
+// Interstitial Ad
+if (showAd) {
+    AdTogetherInterstitial(
+        adUnitId = "level_complete",
+        closeDelay = 3,
+        onAdLoaded = { println("Ad loaded!") },
+        onDismiss = { showAd = false }
+    )
+}`}
               />
+            </div>
+            <div className="bg-zinc-50 dark:bg-black/50 p-6 rounded-xl border border-zinc-200 dark:border-white/5 flex flex-col">
+              <h3 className="text-lg font-semibold text-amber-600 dark:text-amber-400 mb-3 flex-none">HTML / Script Tag</h3>
+              <CodeBlock
+                language="html"
+                title="CDN / Script Tag"
+                code={`<!-- Add to <head> -->
+<script src="https://adtogether.relaxsoftwareapps.com/sdk.js" defer></script>
+
+<!-- Place where you want the ad -->
+<div 
+  data-ad-unit="home_banner" 
+  style="width: 100%; max-width: 320px; min-height: 50px;"
+></div>`}
+              />
+            </div>
+            <div className="bg-zinc-50 dark:bg-black/50 p-6 rounded-xl border border-zinc-200 dark:border-white/5 flex flex-col md:col-span-2">
+              <h3 className="text-lg font-semibold text-amber-600 dark:text-amber-400 mb-3 flex-none">REST API (Custom Integration)</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <CodeBlock
+                  language="bash"
+                  title="1. Fetch Ad (GET)"
+                  code={`curl -X GET "https://adtogether.relaxsoftwareapps.com/api/ads/serve?country=global"`}
+                />
+                <CodeBlock
+                  language="bash"
+                  title="2. Track Impression (POST)"
+                  code={`curl -X POST "https://adtogether.relaxsoftwareapps.com/api/ads/impression" \\
+  -H "Content-Type: application/json" \\
+  -d '{"adId": "AD_ID_FROM_SERVING", "token": "TOKEN_FROM_SERVING"}'`}
+                />
+              </div>
             </div>
           </div>
         </div>

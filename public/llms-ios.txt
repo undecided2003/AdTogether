@@ -1,0 +1,120 @@
+# AdTogether Native iOS SDK — LLM Integration Reference
+
+**Package:** `AdTogether`
+**Distribution:** Swift Package Manager (SPM)
+**Targets:** iOS 15+, iPadOS 15+
+**Frameworks:** SwiftUI, UIKit
+
+> **Only for pure Swift/UIKit apps.** If you're using Flutter, use SDK #3 (Flutter SDK) instead.
+
+### Install via SPM
+
+In Xcode: **File → Add Packages** → enter the repository URL:
+
+```
+https://github.com/undecided2003/AdTogether.git
+```
+
+Or add directly to `Package.swift`:
+
+```swift
+.package(url: "https://github.com/undecided2003/AdTogether.git", from: "0.1.8")
+```
+
+### Initialize
+
+```swift
+import AdTogether
+
+@main
+struct MyApp: App {
+    init() {
+        AdTogether.initialize(appId: "YOUR_APP_ID")
+    }
+
+    var body: some Scene {
+        WindowGroup { ContentView() }
+    }
+}
+```
+
+**`AdTogether.initialize()` signature:**
+```swift
+public static func initialize(
+    appId: String,
+    baseUrl: String? = nil,       // Override API base URL (optional)
+    allowSelfAds: Bool = true
+)
+```
+
+### Banner Ad (SwiftUI)
+
+```swift
+import AdTogether
+
+struct ContentView: View {
+    var body: some View {
+        VStack {
+            Text("My App")
+            AdTogetherView(adUnitID: "YOUR_AD_UNIT_ID") {
+                print("Ad loaded!")
+            }
+            .frame(height: 50)
+        }
+    }
+}
+```
+
+**`AdTogetherView` init:**
+```swift
+public init(
+    adUnitID: String, 
+    onAdLoaded: (() -> Void)? = nil,
+    onAdFailedToLoad: ((Error) -> Void)? = nil
+)
+```
+
+### Interstitial Ad (SwiftUI)
+
+```swift
+import AdTogether
+
+struct ContentView: View {
+    @State private var showAd = false
+
+    var body: some View {
+        VStack {
+            Text("My App")
+
+            Button("Show Interstitial") {
+                showAd = true
+            }
+            .fullScreenCover(isPresented: $showAd) {
+                AdTogetherInterstitialView(adUnitID: "YOUR_AD_UNIT_ID") {
+                    showAd = false
+                } onAdLoaded: {
+                    print("Interstitial loaded")
+                }
+            }
+        }
+    }
+}
+```
+
+**`AdTogetherInterstitialView` init:**
+```swift
+public init(
+    adUnitID: String,
+    closeDelay: Int = 3,           // Seconds before close button appears
+    onDismiss: @escaping () -> Void,
+    onAdLoaded: (() -> Void)? = nil,
+    onAdFailedToLoad: ((Error) -> Void)? = nil
+)
+```
+
+> **Key naming difference:** iOS uses `adUnitID` (capital "ID"), not `adUnitId`.
+
+### iOS-Specific Notes
+
+- Request **App Tracking Transparency (ATT)** permissions before initializing the SDK for personalized ad tracking.
+- Add `NSUserTrackingUsageDescription` to `Info.plist` with a human-readable explanation.

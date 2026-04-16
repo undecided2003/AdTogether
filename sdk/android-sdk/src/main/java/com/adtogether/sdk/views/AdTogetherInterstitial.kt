@@ -72,6 +72,7 @@ import kotlinx.coroutines.launch
 fun AdTogetherInterstitial(
     adUnitId: String,
     closeDelay: Int = 3,
+    onAdLoaded: (() -> Unit)? = null,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -95,6 +96,7 @@ fun AdTogetherInterstitial(
         val result = AdTogether.fetchAd(adUnitId, "interstitial")
         if (result != null) {
             adData = result
+            onAdLoaded?.invoke()
         } else {
             hasError = true
             onDismiss()

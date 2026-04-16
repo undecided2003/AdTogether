@@ -1,0 +1,101 @@
+# AdTogether React Native SDK — LLM Integration Reference
+
+**Package:** `@adtogether/react-native-sdk`
+**Distribution:** NPM
+**Targets:** React Native CLI apps, Expo apps (iOS + Android)
+
+> **This is a SEPARATE package from the Web SDK.** Do NOT import from `@adtogether/web-sdk` in React Native code.
+
+### Install
+
+```bash
+npm install @adtogether/react-native-sdk
+# or
+yarn add @adtogether/react-native-sdk
+```
+
+### Initialize
+
+```typescript
+import { AdTogether } from '@adtogether/react-native-sdk';
+
+// Call once before rendering any ad components
+AdTogether.initialize({ appId: 'YOUR_APP_ID' });
+```
+
+**`AdTogether.initialize()` accepts:**
+```typescript
+interface AdTogetherOptions {
+  appId?: string;    // Your registered app ID (preferred)
+  apiKey?: string;   // Alternative name for appId
+  baseUrl?: string;  // Override API base URL (optional)
+  allowSelfAds?: boolean; // Show own ads as fallback (default: true)
+}
+```
+
+### Banner Ad
+
+```tsx
+import { AdTogetherBanner } from '@adtogether/react-native-sdk';
+import { View, Text } from 'react-native';
+
+function MyScreen() {
+  return (
+    <View style={{ flex: 1 }}>
+      <Text>My App Content</Text>
+
+      <AdTogetherBanner
+        adUnitId="YOUR_AD_UNIT_ID"
+        onAdLoaded={() => console.log('Banner loaded!')}
+        onAdFailedToLoad={(error) => console.error('Banner error:', error)}
+      />
+    </View>
+  );
+}
+```
+
+**`<AdTogetherBanner>` props:**
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `adUnitId` | `string` | **required** | Ad placement identifier |
+| `theme` | `'dark' \| 'light' \| 'auto'` | `'auto'` | Color scheme |
+| `onAdLoaded` | `() => void` | — | Fires when ad is fetched |
+| `onAdFailedToLoad` | `(error: Error) => void` | — | Fires on fetch failure |
+| `style` | `StyleProp<ViewStyle>` | — | React Native styles |
+
+### Interstitial Ad
+
+```tsx
+import { useState } from 'react';
+import { View, Button } from 'react-native';
+import { AdTogetherInterstitial } from '@adtogether/react-native-sdk';
+
+function MyScreen() {
+  const [showAd, setShowAd] = useState(false);
+
+  return (
+    <View style={{ flex: 1, justifyContent: 'center' }}>
+      <Button title="Show Interstitial" onPress={() => setShowAd(true)} />
+
+      <AdTogetherInterstitial
+        adUnitId="YOUR_AD_UNIT_ID"
+        isOpen={showAd}
+        onClose={() => setShowAd(false)}
+        closeDelay={5}
+        onAdLoaded={() => console.log('Interstitial loaded')}
+      />
+    </View>
+  );
+}
+```
+
+**`<AdTogetherInterstitial>` props:**
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `adUnitId` | `string` | **required** | Ad placement identifier |
+| `isOpen` | `boolean` | **required** | Controls visibility |
+| `onClose` | `() => void` | **required** | Called when user closes |
+| `closeDelay` | `number` | `3` | Seconds before close button appears |
+| `theme` | `'dark' \| 'light' \| 'auto'` | `'auto'` | Color scheme |
+| `onAdLoaded` | `() => void` | — | Fires when ad is fetched |
+| `onAdFailedToLoad` | `(error: Error) => void` | — | Fires on fetch failure |
