@@ -84,10 +84,11 @@ mavenPublishing {
     // Configures the publishing to Central Portal
     publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
     
-    // Automatic signing
-    signAllPublications()
+    // Automatic signing - only if credentials are provided
+    if (project.hasProperty("signing.keyId") || System.getenv("SIGNING_KEY") != null) {
+        signAllPublications()
+    }
     
     // Configure the Android Library variant
     configure(AndroidSingleVariantLibrary("release"))
 }
-

@@ -73,10 +73,12 @@ fun AdTogetherInterstitial(
     adUnitId: String,
     closeDelay: Int = 3,
     onAdLoaded: (() -> Unit)? = null,
+    onAdFailedToLoad: ((String) -> Unit)? = null,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     if (!AdTogether.assertInitialized()) {
+        onAdFailedToLoad?.invoke("SDK not initialized")
         onDismiss()
         return
     }
@@ -99,6 +101,7 @@ fun AdTogetherInterstitial(
             onAdLoaded?.invoke()
         } else {
             hasError = true
+            onAdFailedToLoad?.invoke("No ad available or network error")
             onDismiss()
         }
         isLoading = false

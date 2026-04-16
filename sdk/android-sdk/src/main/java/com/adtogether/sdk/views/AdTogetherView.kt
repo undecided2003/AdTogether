@@ -46,9 +46,13 @@ import kotlinx.coroutines.launch
 fun AdTogetherView(
     adUnitId: String,
     onAdLoaded: (() -> Unit)? = null,
+    onAdFailedToLoad: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    if (!AdTogether.assertInitialized()) return
+    if (!AdTogether.assertInitialized()) {
+        onAdFailedToLoad?.invoke("SDK not initialized")
+        return
+    }
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -65,6 +69,7 @@ fun AdTogetherView(
             onAdLoaded?.invoke()
         } else {
             hasError = true
+            onAdFailedToLoad?.invoke("No ad available or network error")
         }
         isLoading = false
     }
