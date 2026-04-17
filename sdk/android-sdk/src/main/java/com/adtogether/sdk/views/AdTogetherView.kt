@@ -40,8 +40,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.size
 import coil.compose.AsyncImage
+import com.adtogether.sdk.AdTogether
+import com.adtogether.sdk.models.AdModel
 import com.adtogether.sdk.models.AdSize
+import kotlinx.coroutines.launch
 
 @Composable
 fun AdTogetherView(
@@ -64,6 +68,7 @@ fun AdTogetherView(
     var adData by remember { mutableStateOf<AdModel?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var hasError by remember { mutableStateOf(false) }
+    var impressionTracked by remember { mutableStateOf(false) }
     var isVisible by remember { mutableStateOf(true) }
     
     if (!isVisible) return
