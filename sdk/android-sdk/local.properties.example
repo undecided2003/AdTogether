@@ -3,9 +3,9 @@
 # Copy these to your local.properties or set them as environment variables.
 # DO NOT commit this file with real secrets!
 
-# Sonatype OSSRH Credentials
-ossrhUsername=YOUR_SONATYPE_USERNAME
-ossrhPassword=YOUR_SONATYPE_PASSWORD
+# Sonatype Central Portal Credentials (Generate at https://central.sonatype.com/account)
+mavenCentralUsername=YOUR_SONATYPE_CENTRAL_TOKEN_USERNAME
+mavenCentralPassword=YOUR_SONATYPE_CENTRAL_TOKEN_PASSWORD
 
 # GPG Signing (for Maven Central)
 # You can use 'gpg --export-secret-keys --armor <KEY_ID>' to get the signingKey
@@ -15,8 +15,8 @@ ossrhPassword=YOUR_SONATYPE_PASSWORD
 signingKey=YOUR_GPG_PRIVATE_KEY_CONTENTS
 signingPassword=YOUR_GPG_PASSPHRASE
 
-# Alternatively, set these environment variables:
-# OSSRH_USERNAME
-# OSSRH_PASSWORD
+# Alternatively, set these environment variables (or ORG_GRADLE_PROJECT_... in CI):
+# ORG_GRADLE_PROJECT_mavenCentralUsername
+# ORG_GRADLE_PROJECT_mavenCentralPassword
 # SIGNING_KEY
 # SIGNING_PASSWORD

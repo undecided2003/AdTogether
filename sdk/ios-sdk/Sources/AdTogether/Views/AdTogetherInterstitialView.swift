@@ -25,6 +25,11 @@ public struct AdTogetherInterstitialView: View {
     
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.openURL) var openURL
+    @Environment(\.verticalSizeClass) var verticalSizeClass
+    
+    private var isLandscape: Bool {
+        return verticalSizeClass == .compact
+    }
     
     public init(adUnitID: String, closeDelay: Int = 3, onAdLoaded: (() -> Void)? = nil, onDismiss: @escaping () -> Void) {
         self.adUnitID = adUnitID
@@ -47,62 +52,125 @@ public struct AdTogetherInterstitialView: View {
             } else if hasError || ad == nil {
                 EmptyView()
             } else if let adModel = ad {
-                // Card
-                VStack(spacing: 0) {
-                    // Image
-                    if let imageUrlString = adModel.imageUrl, let imageUrl = URL(string: imageUrlString) {
-                        AsyncImage(url: imageUrl) { image in
-                            image.resizable()
-                                 .aspectRatio(16/9, contentMode: .fill)
-                        } placeholder: {
-                            Color.gray.opacity(0.2)
-                                .aspectRatio(16/9, contentMode: .fill)
-                        }
-                        .clipped()
-                        .onTapGesture { handleAdClick(ad: adModel) }
-                    }
-                    
-                    // Content
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack(alignment: .top) {
-                            Text(adModel.title)
-                                .font(.system(size: 18, weight: .bold))
-                                .foregroundColor(colorScheme == .dark ? .white : .primary)
-                                .lineLimit(1)
+                // Card Container
+                Group {
+                    if isLandscape {
+                        HStack(spacing: 0) {
+                            // Image Section
+                            if let imageUrlString = adModel.imageUrl, let imageUrl = URL(string: imageUrlString) {
+                                AsyncImage(url: imageUrl) { image in
+                                    image.resizable()
+                                         .aspectRatio(contentMode: .fill)
+                                } placeholder: {
+                                    Color.gray.opacity(0.2)
+                                }
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .clipped()
+                                .onTapGesture { handleAdClick(ad: adModel) }
+                            }
                             
-                            Spacer()
+                            // Content Section
+                            ScrollView(.vertical, showsIndicators: false) {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack(alignment: .top) {
+                                        Text(adModel.title)
+                                            .font(.system(size: 18, weight: .bold))
+                                            .foregroundColor(colorScheme == .dark ? .white : .primary)
+                                            .lineLimit(1)
+                                        
+                                        Spacer()
+                                        
+                                        Text("AD")
+                                            .font(.system(size: 10, weight: .bold))
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 3)
+                                            .background(Color.yellow)
+                                            .foregroundColor(.black)
+                                            .cornerRadius(4)
+                                    }
+                                    
+                                    Text(adModel.description)
+                                        .font(.system(size: 14))
+                                        .foregroundColor(colorScheme == .dark ? .gray : .secondary)
+                                        .lineLimit(3)
+                                        .multilineTextAlignment(.leading)
+                                    
+                                    // CTA Button
+                                    Button(action: { handleAdClick(ad: adModel) }) {
+                                        Text("Learn More →")
+                                            .font(.system(size: 14, weight: .bold))
+                                            .foregroundColor(.black)
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 14)
+                                            .background(Color.yellow)
+                                            .cornerRadius(12)
+                                    }
+                                    .padding(.top, 8)
+                                }
+                                .padding(20)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .onTapGesture { handleAdClick(ad: adModel) }
+                        }
+                        .frame(maxWidth: 720, maxHeight: 320)
+                    } else {
+                        VStack(spacing: 0) {
+                            // Image
+                            if let imageUrlString = adModel.imageUrl, let imageUrl = URL(string: imageUrlString) {
+                                AsyncImage(url: imageUrl) { image in
+                                    image.resizable()
+                                         .aspectRatio(16/9, contentMode: .fill)
+                                } placeholder: {
+                                    Color.gray.opacity(0.2)
+                                        .aspectRatio(16/9, contentMode: .fill)
+                                }
+                                .clipped()
+                                .onTapGesture { handleAdClick(ad: adModel) }
+                            }
                             
-                            Text("AD")
-                                .font(.system(size: 10, weight: .bold))
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 3)
-                                .background(Color.yellow)
-                                .foregroundColor(.black)
-                                .cornerRadius(4)
+                            // Content
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack(alignment: .top) {
+                                    Text(adModel.title)
+                                        .font(.system(size: 18, weight: .bold))
+                                        .foregroundColor(colorScheme == .dark ? .white : .primary)
+                                        .lineLimit(1)
+                                    
+                                    Spacer()
+                                    
+                                    Text("AD")
+                                        .font(.system(size: 10, weight: .bold))
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 3)
+                                        .background(Color.yellow)
+                                        .foregroundColor(.black)
+                                        .cornerRadius(4)
+                                }
+                                
+                                Text(adModel.description)
+                                    .font(.system(size: 14))
+                                    .foregroundColor(colorScheme == .dark ? .gray : .secondary)
+                                    .lineLimit(3)
+                                    .multilineTextAlignment(.leading)
+                                
+                                // CTA Button
+                                Button(action: { handleAdClick(ad: adModel) }) {
+                                    Text("Learn More →")
+                                        .font(.system(size: 14, weight: .bold))
+                                        .foregroundColor(.black)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 14)
+                                        .background(Color.yellow)
+                                        .cornerRadius(12)
+                                }
+                                .padding(.top, 8)
+                            }
+                            .padding(20)
+                            .onTapGesture { handleAdClick(ad: adModel) }
                         }
-                        
-                        Text(adModel.description)
-                            .font(.system(size: 14))
-                            .foregroundColor(colorScheme == .dark ? .gray : .secondary)
-                            .lineLimit(3)
-                            .multilineTextAlignment(.leading)
-                        
-                        // CTA Button
-                        Button(action: { handleAdClick(ad: adModel) }) {
-                            Text("Learn More →")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(.black)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
-                                .background(Color.yellow)
-                                .cornerRadius(12)
-                        }
-                        .padding(.top, 8)
+                        .frame(maxWidth: 480)
                     }
-                    .padding(20)
-                    .onTapGesture { handleAdClick(ad: adModel) }
                 }
-                .frame(maxWidth: 480)
                 .background(colorScheme == .dark ? Color(red: 0.12, green: 0.16, blue: 0.22) : Color.white)
                 .cornerRadius(20)
                 .shadow(color: Color.black.opacity(0.4), radius: 40, x: 0, y: 20)

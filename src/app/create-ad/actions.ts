@@ -1,160 +1,117 @@
 "use server";
 
-import puppeteer from 'puppeteer';
+import * as cheerio from 'cheerio';
 import { adminDb } from '@/lib/firebase-admin';
 
 const DEEPSEEK_URL = "https://api.deepseek.com/chat/completions"; 
 
-// Helper function to extract website text using Puppeteer
+// Helper function to extract website text using fetch and cheerio
 async function scrapeWebsiteContent(url: string) {
-  let browser = null;
-
   try {
-    console.log('🚀 Launching Puppeteer...');
-
-    browser = await puppeteer.launch({
-      headless: true,
+    console.log(`📡 Fetching URL: ${url}`);
+    
+    // Add a reasonable timeout using standard fetch AbortController
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    
+    // Add common user-agent to bypass basic blocks
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+      },
+      signal: controller.signal
     });
-
-    const page = await browser.newPage();
-
-    // Set realistic viewport and user agent
-    await page.setViewport({ width: 1920, height: 1080 });
-    await page.setUserAgent(
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    );
-
-    // Block unnecessary resources
-    await page.setRequestInterception(true);
-    page.on('request', (request) => {
-      const resourceType = request.resourceType();
-      if (['image', 'stylesheet', 'font', 'media'].includes(resourceType)) {
-        request.abort();
-      } else {
-        request.continue();
-      }
-    });
-
-    console.log(`📡 Navigating to: ${url}`);
-
-    await page.goto(url, {
-      waitUntil: 'networkidle0',
-      timeout: 30000,
-    });
-
-    console.log('⏳ Waiting for content...');
-
-    try {
-      await page.waitForSelector('body', { timeout: 5000 });
-    } catch (e) {
-      console.log('⚠️ Body selector timeout, continuing');
+    
+    clearTimeout(timeout);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-
-    // Additional wait for JavaScript
-    await new Promise(resolve => setTimeout(resolve, 3000));
-
+    
+    const html = await response.text();
     console.log('📝 Extracting content...');
-
-    const content = await page.evaluate(() => {
-      const contentSelectors = [
-        '.property-list', '.rental-list', '.listings', '.properties',
-        '[class*="listing"]', '[class*="property"]', '[class*="rental"]',
-        'main', '[role="main"]', '.main-content', '#main-content',
-        '.content', '#content', 'article', 'body',
-      ];
-
-      let bestContent: HTMLElement | null = null;
-      let maxLength = 0;
-
-      for (const selector of contentSelectors) {
-        try {
-          const elem = document.querySelector(selector) as HTMLElement;
-          if (elem) {
-            const text = elem.innerText || elem.textContent || '';
-            if (text.length > maxLength) {
-              maxLength = text.length;
-              bestContent = elem;
-            }
-          }
-        } catch (e) {
-          continue;
+    
+    const $ = cheerio.load(html);
+    
+    // Remote unwanted script/style elements
+    $('script, style, noscript, nav, header, footer, iframe, embed, object, .menu, .navigation, .sidebar').remove();
+    
+    let bestContent = '';
+    let maxLength = 0;
+    
+    // Try to find the main content
+    const contentSelectors = [
+      'main', '[role="main"]', '.main-content', '#main-content',
+      'article', '.content', '#content', 'body'
+    ];
+    
+    for (const selector of contentSelectors) {
+      const elem = $(selector);
+      if (elem.length > 0) {
+        const text = elem.text() || '';
+        if (text.length > maxLength) {
+          maxLength = text.length;
+          bestContent = text;
         }
       }
-
-      if (!bestContent) return 'No content found';
-
-      const clone = bestContent.cloneNode(true) as HTMLElement;
-
-      // Remove unwanted elements
-      const unwantedSelectors = [
-        'script', 'style', 'noscript', 'nav', 'header', 'footer',
-        '.menu', '.navigation', '.nav', '.header', '.footer', '.sidebar',
-        '[role="navigation"]', '[role="banner"]', '[role="contentinfo"]',
-        'iframe', 'embed', 'object',
-      ];
-
-      for (const selector of unwantedSelectors) {
-        try {
-          clone.querySelectorAll(selector).forEach(el => {
-            if (el?.parentNode) el.parentNode.removeChild(el);
-          });
-        } catch (e) {
-          continue;
-        }
-      }
-
-      let text = clone.innerText || clone.textContent || '';
-      text = text
-        .replace(/\s+/g, ' ')
-        .replace(/Menu\s+(Home|For Rent|For Sale|Contact|About|Login)+(\s+\1)*/gi, '')
-        .replace(/©.*?(rights reserved|All Rights Reserved)/gi, '')
-        .replace(/\(\d{3}\)\s*\d{3}-\d{4}/g, '')
-        .trim();
-
-      // Find an image
-      let foundImageUrl = null;
-      const ogImage = document.querySelector('meta[property="og:image"]');
-      if (ogImage && (ogImage as HTMLMetaElement).content) foundImageUrl = (ogImage as HTMLMetaElement).content;
+    }
+    
+    if (!bestContent) {
+      bestContent = $('body').text() || 'No content found';
+    }
+    
+    let text = bestContent
+      .replace(/\s+/g, ' ')
+      .replace(/Menu\s+(Home|For Rent|For Sale|Contact|About|Login)+(\s+\1)*/gi, '')
+      .replace(/©.*?(rights reserved|All Rights Reserved)/gi, '')
+      .trim();
       
-      if (!foundImageUrl) {
-        const twitterImage = document.querySelector('meta[name="twitter:image"]');
-        if (twitterImage && (twitterImage as HTMLMetaElement).content) foundImageUrl = (twitterImage as HTMLMetaElement).content;
-      }
-      
-      if (!foundImageUrl) {
-        const imgs = Array.from(document.querySelectorAll('img'));
-        for (const img of imgs) {
-          if (img.width > 200 && img.height > 200 && img.src) {
-            foundImageUrl = img.src;
-            break;
-          }
-        }
-      }
-
-      return { text, imageUrl: foundImageUrl };
-    });
-
-    if (typeof content === 'string' || !content.text) {
-      console.log(`⚠️ Scraping result: ${content}`);
-      throw new Error('No content found on page');
+    // Find an image
+    let foundImageUrl = null;
+    
+    function isValidImage(url: string | undefined): boolean {
+      if (!url) return false;
+      const lower = url.toLowerCase();
+      // Skip local development URLs that shouldn't be in production meta tags
+      if (lower.includes('localhost') || lower.includes('127.0.0.1')) return false;
+      // Skip SVGs as they are usually small icons/badges (even inside query params like _next/image?url=...svg&w=...)
+      if (lower.includes('.svg')) return false;
+      // Skip badges
+      if (lower.includes('badge') || lower.includes('app-store') || lower.includes('google-play')) return false;
+      return true;
     }
 
-    console.log(`✅ Scraped ${content.text.length} characters`);
-
-    await browser.close();
-    browser = null;
-
-    return content;
+    const ogImage = $('meta[property="og:image"]').attr('content');
+    if (isValidImage(ogImage)) {
+      foundImageUrl = ogImage;
+    } 
+    
+    if (!foundImageUrl) {
+      const twitterImage = $('meta[name="twitter:image"]').attr('content');
+      if (isValidImage(twitterImage)) {
+        foundImageUrl = twitterImage;
+      }
+    }
+    
+    if (!foundImageUrl) {
+      const imgs = $('img').toArray();
+      
+      for (const img of imgs) {
+        const src = $(img).attr('src');
+        if (isValidImage(src)) {
+          foundImageUrl = src;
+          break;
+        }
+      }
+    }
+    
+    return { text, imageUrl: foundImageUrl };
+    
   } catch (error: any) {
     console.error('❌ Scraping error:', error.message);
-    if (browser) {
-      try {
-        await browser.close();
-      } catch (e) {
-        console.error('Failed to close browser:', e);
-      }
-    }
-    throw error;
+    throw new Error('Failed to scrape content. Ensure the URL is accessible.');
   }
 }
 

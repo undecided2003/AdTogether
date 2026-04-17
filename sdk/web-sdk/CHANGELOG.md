@@ -1,3 +1,9 @@
+## 0.1.8
+
+* **Feature**: Added `onAdLoaded` and `onAdFailedToLoad` callback support to React components.
+* **Responsive**: Improved responsiveness for both Banner and Interstitial ad components.
+* **Standardization**: Updated API signatures to match the unified AdTogether SDK standard.
+
 ## 0.1.7
 
 * Documentation improvements.

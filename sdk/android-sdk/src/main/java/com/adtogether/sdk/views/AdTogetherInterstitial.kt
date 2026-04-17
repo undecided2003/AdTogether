@@ -2,6 +2,11 @@ package com.adtogether.sdk.views
 
 import android.content.Intent
 import android.net.Uri
+import android.content.res.Configuration
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -93,6 +98,9 @@ fun AdTogetherInterstitial(
     var canClose by remember { mutableStateOf(false) }
     var countdown by remember { mutableIntStateOf(closeDelay) }
 
+    val configuration = LocalContext.current.resources.configuration
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
     // Fetch ad
     LaunchedEffect(adUnitId) {
         val result = AdTogether.fetchAd(adUnitId, "interstitial")
@@ -150,8 +158,8 @@ fun AdTogetherInterstitial(
 
                 Box(
                     modifier = Modifier
-                        .widthIn(max = 480.dp)
-                        .padding(horizontal = 20.dp)
+                        .widthIn(max = if (isLandscape) 720.dp else 480.dp)
+                        .padding(horizontal = if (isLandscape) 40.dp else 20.dp)
                 ) {
                     Surface(
                         modifier = Modifier
@@ -160,88 +168,178 @@ fun AdTogetherInterstitial(
                         color = containerColor,
                         shape = RoundedCornerShape(20.dp)
                     ) {
-                        Column {
-                            // Image
-                            if (!ad.imageUrl.isNullOrEmpty()) {
-                                AsyncImage(
-                                    model = ad.imageUrl,
-                                    contentDescription = ad.title,
-                                    contentScale = ContentScale.Crop,
+                        if (isLandscape) {
+                            Row(modifier = Modifier.heightIn(max = 320.dp)) {
+                                // Image
+                                if (!ad.imageUrl.isNullOrEmpty()) {
+                                    AsyncImage(
+                                        model = ad.imageUrl,
+                                        contentDescription = ad.title,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxHeight()
+                                            .clickable {
+                                                coroutineScope.launch { AdTogether.trackClick(ad.id, ad.token) }
+                                                ad.clickUrl?.let { url ->
+                                                    try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } catch (_: Exception) {}
+                                                }
+                                            }
+                                    )
+                                }
+
+                                // Content
+                                Column(
                                     modifier = Modifier
-                                        .fillMaxWidth()
-                                        .aspectRatio(16f / 9f)
+                                        .weight(1f)
+                                        .fillMaxHeight()
+                                        .verticalScroll(rememberScrollState())
+                                        .padding(20.dp)
                                         .clickable {
                                             coroutineScope.launch { AdTogether.trackClick(ad.id, ad.token) }
                                             ad.clickUrl?.let { url ->
                                                 try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } catch (_: Exception) {}
                                             }
                                         }
-                                )
-                            }
-
-                            // Content
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(20.dp)
-                                    .clickable {
-                                        coroutineScope.launch { AdTogether.trackClick(ad.id, ad.token) }
-                                        ad.clickUrl?.let { url ->
-                                            try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } catch (_: Exception) {}
+                                ) {
+                                    Row(verticalAlignment = Alignment.Top) {
+                                        Text(
+                                            text = ad.title,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 18.sp,
+                                            color = textColor,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .background(Color(0xFFFFC107), RoundedCornerShape(4.dp))
+                                                .padding(horizontal = 6.dp, vertical = 3.dp)
+                                        ) {
+                                            Text("AD", fontWeight = FontWeight.Bold, fontSize = 10.sp, color = Color.Black)
                                         }
                                     }
-                            ) {
-                                Row(verticalAlignment = Alignment.Top) {
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+
                                     Text(
-                                        text = ad.title,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 18.sp,
-                                        color = textColor,
-                                        maxLines = 1,
+                                        text = ad.description,
+                                        fontSize = 14.sp,
+                                        color = descColor,
+                                        maxLines = 3,
                                         overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.weight(1f)
+                                        lineHeight = 21.sp
                                     )
-                                    Box(
-                                        modifier = Modifier
-                                            .background(Color(0xFFFFC107), RoundedCornerShape(4.dp))
-                                            .padding(horizontal = 6.dp, vertical = 3.dp)
+
+                                    Spacer(modifier = Modifier.height(16.dp))
+
+                                    // CTA
+                                    Button(
+                                        onClick = {
+                                            coroutineScope.launch { AdTogether.trackClick(ad.id, ad.token) }
+                                            ad.clickUrl?.let { url ->
+                                                try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } catch (_: Exception) {}
+                                            }
+                                        },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B))
                                     ) {
-                                        Text("AD", fontWeight = FontWeight.Bold, fontSize = 10.sp, color = Color.Black)
+                                        Text(
+                                            "Learn More →",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 14.sp,
+                                            color = Color.Black,
+                                            modifier = Modifier.padding(vertical = 6.dp)
+                                        )
                                     }
                                 }
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                Text(
-                                    text = ad.description,
-                                    fontSize = 14.sp,
-                                    color = descColor,
-                                    maxLines = 3,
-                                    overflow = TextOverflow.Ellipsis,
-                                    lineHeight = 21.sp
-                                )
-
-                                Spacer(modifier = Modifier.height(16.dp))
-
-                                // CTA
-                                Button(
-                                    onClick = {
-                                        coroutineScope.launch { AdTogether.trackClick(ad.id, ad.token) }
-                                        ad.clickUrl?.let { url ->
-                                            try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } catch (_: Exception) {}
-                                        }
-                                    },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B))
-                                ) {
-                                    Text(
-                                        "Learn More →",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp,
-                                        color = Color.Black,
-                                        modifier = Modifier.padding(vertical = 6.dp)
+                            }
+                        } else {
+                            Column {
+                                // Image
+                                if (!ad.imageUrl.isNullOrEmpty()) {
+                                    AsyncImage(
+                                        model = ad.imageUrl,
+                                        contentDescription = ad.title,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .aspectRatio(16f / 9f)
+                                            .clickable {
+                                                coroutineScope.launch { AdTogether.trackClick(ad.id, ad.token) }
+                                                ad.clickUrl?.let { url ->
+                                                    try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } catch (_: Exception) {}
+                                                }
+                                            }
                                     )
+                                }
+
+                                // Content
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(20.dp)
+                                        .clickable {
+                                            coroutineScope.launch { AdTogether.trackClick(ad.id, ad.token) }
+                                            ad.clickUrl?.let { url ->
+                                                try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } catch (_: Exception) {}
+                                            }
+                                        }
+                                ) {
+                                    Row(verticalAlignment = Alignment.Top) {
+                                        Text(
+                                            text = ad.title,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 18.sp,
+                                            color = textColor,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .background(Color(0xFFFFC107), RoundedCornerShape(4.dp))
+                                                .padding(horizontal = 6.dp, vertical = 3.dp)
+                                        ) {
+                                            Text("AD", fontWeight = FontWeight.Bold, fontSize = 10.sp, color = Color.Black)
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    Text(
+                                        text = ad.description,
+                                        fontSize = 14.sp,
+                                        color = descColor,
+                                        maxLines = 3,
+                                        overflow = TextOverflow.Ellipsis,
+                                        lineHeight = 21.sp
+                                    )
+
+                                    Spacer(modifier = Modifier.height(16.dp))
+
+                                    // CTA
+                                    Button(
+                                        onClick = {
+                                            coroutineScope.launch { AdTogether.trackClick(ad.id, ad.token) }
+                                            ad.clickUrl?.let { url ->
+                                                try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } catch (_: Exception) {}
+                                            }
+                                        },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B))
+                                    ) {
+                                        Text(
+                                            "Learn More →",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 14.sp,
+                                            color = Color.Black,
+                                            modifier = Modifier.padding(vertical = 6.dp)
+                                        )
+                                    }
                                 }
                             }
                         }

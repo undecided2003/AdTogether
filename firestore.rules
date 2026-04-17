@@ -1,27 +1,22 @@
 rules_version = '2';
 
 service cloud.firestore {
+
   match /databases/{database}/documents {
-    
-    // User profile data: only the owner can read or write
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+    match /{collectionName}/{document=**}{
+
+      allow read: if collectionName != "config"
+
+      allow write: if true 
+
     }
-    
-    // Ads: Only owners can manage their own ad creatives.
-    // Serving and tracking ads is handled via API routes using Admin privileges.
-    match /ads/{adId} {
-      // For creating a new ad, ensure the ownerUid matches the authenticated user
-      allow create: if request.auth != null && request.resource.data.ownerUid == request.auth.uid;
-      
-      // For reading, updating, or deleting, ensure the existing document belongs to the user
-      allow read, update, delete: if request.auth != null && resource.data.ownerUid == request.auth.uid;
+    match /config/{document=**} {
+
+      allow read: if request.auth != null;
+
     }
 
-    // Explicitly deny all other access
-    match /{document=**} {
-      allow read, write: if false;
-    }
   }
-}
 
+}

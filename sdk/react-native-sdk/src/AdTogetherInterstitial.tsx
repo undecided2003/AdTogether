@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Modal, SafeAreaView, useColorScheme, Linking } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Modal, SafeAreaView, useColorScheme, Linking, useWindowDimensions, ScrollView } from 'react-native';
 import { AdTogether } from './AdTogether';
 import { AdModel } from './types';
 
@@ -27,6 +27,8 @@ export const AdTogetherInterstitial: React.FC<AdTogetherInterstitialProps> = ({
   const [hasError, setHasError] = useState(false);
   const [timeLeft, setTimeLeft] = useState(closeDelay);
   const systemColorScheme = useColorScheme();
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
   
   const impressionTrackedRef = useRef(false);
 
@@ -115,27 +117,33 @@ export const AdTogetherInterstitial: React.FC<AdTogetherInterstitialProps> = ({
           )}
         </View>
 
-        <TouchableOpacity activeOpacity={0.9} style={styles.content} onPress={handlePress}>
-          <View style={styles.imageWrapper}>
-            {adData.imageUrl ? (
-              <Image source={{ uri: adData.imageUrl }} style={styles.image} resizeMode="contain" />
-            ) : (
-              <View style={[styles.imagePlaceholder, { backgroundColor: isDarkMode ? '#1F2937' : '#E5E7EB' }]} />
-            )}
-          </View>
-          
-          <View style={styles.textWrapper}>
-            <View style={styles.adBadge}>
-              <Text style={styles.adBadgeText}>Advertisement</Text>
+        <View style={[styles.content, isLandscape && styles.contentLandscape]}>
+          <TouchableOpacity activeOpacity={0.9} style={[styles.card, isLandscape && styles.cardLandscape]} onPress={handlePress}>
+            <View style={[styles.imageWrapper, isLandscape && styles.imageWrapperLandscape]}>
+              {adData.imageUrl ? (
+                <Image source={{ uri: adData.imageUrl }} style={styles.image} resizeMode={isLandscape ? "cover" : "contain"} />
+              ) : (
+                <View style={[styles.imagePlaceholder, { backgroundColor: isDarkMode ? '#1F2937' : '#E5E7EB' }]} />
+              )}
             </View>
-            <Text style={[styles.title, { color: textColor }]}>{adData.title}</Text>
-            <Text style={[styles.description, { color: descColor }]}>{adData.description}</Text>
             
-            <View style={styles.ctaButton}>
-              <Text style={styles.ctaText}>Learn More</Text>
-            </View>
-          </View>
-        </TouchableOpacity>
+            <ScrollView 
+              style={isLandscape ? styles.scrollContentLandscape : styles.scrollContent} 
+              contentContainerStyle={[styles.textWrapper, isLandscape && styles.textWrapperLandscape]}
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.adBadge}>
+                <Text style={styles.adBadgeText}>Advertisement</Text>
+              </View>
+              <Text style={[styles.title, { color: textColor }]}>{adData.title}</Text>
+              <Text style={[styles.description, { color: descColor }]}>{adData.description}</Text>
+              
+              <View style={styles.ctaButton}>
+                <Text style={styles.ctaText}>Learn More</Text>
+              </View>
+            </ScrollView>
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
     </Modal>
   );
@@ -165,6 +173,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  contentLandscape: {
+    padding: 16,
+  },
+  card: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  cardLandscape: {
+    flexDirection: 'row',
+    flex: 1,
+    maxWidth: 800,
+    width: '100%',
+  },
   imageWrapper: {
     width: '100%',
     aspectRatio: 1,
@@ -174,6 +195,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 20,
     elevation: 5,
+  },
+  imageWrapperLandscape: {
+    flex: 1,
+    aspectRatio: undefined,
+    height: '100%',
+    marginBottom: 0,
+    marginRight: 24,
   },
   image: {
     width: '100%',
@@ -185,9 +213,22 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 16,
   },
+  scrollContent: {
+    width: '100%',
+    flexGrow: 0,
+  },
+  scrollContentLandscape: {
+    flex: 1,
+    height: '100%',
+  },
   textWrapper: {
     alignItems: 'center',
     width: '100%',
+    paddingBottom: 20,
+  },
+  textWrapperLandscape: {
+    justifyContent: 'center',
+    minHeight: '100%',
   },
   adBadge: {
     backgroundColor: '#FBBF24',

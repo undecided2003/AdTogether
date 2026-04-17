@@ -4,7 +4,7 @@ import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
 plugins {
     id("com.android.library") version "8.5.2"
     id("org.jetbrains.kotlin.android") version "1.9.24"
-    id("com.vanniktech.maven.publish") version "0.28.0"
+    id("com.vanniktech.maven.publish") version "0.30.0"
 }
 
 android {
@@ -54,7 +54,7 @@ dependencies {
 
 mavenPublishing {
     // Defines the coordinates
-    coordinates("com.adtogether", "sdk", "0.1.8")
+    coordinates("com.relaxsoftwareapps.adtogether", "sdk", "0.1.8")
     
     // Configures the POM
     pom {
@@ -91,4 +91,13 @@ mavenPublishing {
     
     // Configure the Android Library variant
     configure(AndroidSingleVariantLibrary("release"))
+}
+
+publishing {
+    repositories {
+        maven {
+            name = "StagingLocal"
+            url = uri(layout.buildDirectory.dir("stagingLocalRepository"))
+        }
+    }
 }

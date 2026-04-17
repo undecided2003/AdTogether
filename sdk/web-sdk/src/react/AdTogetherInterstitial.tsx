@@ -188,12 +188,40 @@ export const AdTogetherInterstitial: React.FC<AdTogetherInterstitialProps> = ({
           from { opacity: 0; transform: scale(0.9); }
           to { opacity: 1; transform: scale(1); }
         }
+        .adtogether-interstitial-card {
+          display: flex;
+          flex-direction: column;
+        }
+        .adtogether-interstitial-img-wrapper {
+          width: 100%;
+        }
+        
+        @media (orientation: landscape) and (max-height: 600px) {
+          .adtogether-interstitial-card {
+            flex-direction: row;
+            max-height: 90vh;
+          }
+          .adtogether-interstitial-img-wrapper {
+            width: 50%;
+            flex-shrink: 0;
+            display: flex;
+          }
+          .adtogether-interstitial-img-wrapper img {
+            height: 100% !important;
+            aspect-ratio: auto !important;
+          }
+          .adtogether-interstitial-content {
+            width: 50%;
+            overflow-y: auto;
+          }
+        }
       `}</style>
 
       {isLoading ? (
         <div style={{ color: '#fff', fontSize: '18px' }}>Loading Ad...</div>
       ) : adData ? (
         <div
+          className="adtogether-interstitial-card"
           style={{
             position: 'relative',
             maxWidth: '800px',
@@ -253,6 +281,7 @@ export const AdTogetherInterstitial: React.FC<AdTogetherInterstitialProps> = ({
           {/* Ad Image */}
           {adData.imageUrl && (
             <div
+              className="adtogether-interstitial-img-wrapper"
               style={{ cursor: 'pointer', position: 'relative' }}
               onClick={handleAdClick}
             >
@@ -271,6 +300,7 @@ export const AdTogetherInterstitial: React.FC<AdTogetherInterstitialProps> = ({
 
           {/* Ad Content */}
           <div
+            className="adtogether-interstitial-content"
             style={{ padding: '20px', cursor: 'pointer' }}
             onClick={handleAdClick}
           >

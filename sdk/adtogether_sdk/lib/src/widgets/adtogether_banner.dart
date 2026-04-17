@@ -111,32 +111,30 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
         onTap: _onAdClicked,
         child: MouseRegion(
           cursor: SystemMouseCursors.click,
-          child: Container(
-            width: widget.size.width == double.infinity
-                ? double.infinity
-                : widget.size.width,
-            height: widget.size.height == double.infinity
-                ? null
-                : widget.size.height,
-            decoration: BoxDecoration(
-              color: bgColor,
-              border: Border.all(color: borderColor),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 10,
-                  offset: Offset(0, 4),
-                ),
-              ],
+          child: Material(
+            type: MaterialType.transparency,
+            child: Container(
+              width: widget.size.width == double.infinity
+                  ? double.infinity
+                  : widget.size.width,
+              height: widget.size.height == double.infinity
+                  ? null
+                  : widget.size.height,
+              decoration: BoxDecoration(
+                color: bgColor,
+                border: Border.all(color: borderColor),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: _buildAdLayout(context, textColor, descColor),
             ),
-            clipBehavior: Clip.antiAlias,
-            child:
-                widget.size.height == 50 ||
-                    widget.size.height == 60 ||
-                    widget.size.height == 90
-                ? _buildHorizontalLayout(textColor, descColor)
-                : _buildFluidVerticalLayout(textColor, descColor),
           ),
         ),
       ),
@@ -216,6 +214,28 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
     );
   }
 
+  /// Selects the appropriate layout based on ad size and orientation.
+  Widget _buildAdLayout(
+      BuildContext context, Color textColor, Color descColor) {
+    final isFixedHeight = widget.size.height == 50 ||
+        widget.size.height == 60 ||
+        widget.size.height == 90;
+
+    if (isFixedHeight) {
+      return _buildHorizontalLayout(textColor, descColor);
+    }
+
+    // For fluid/large sizes, switch to horizontal in landscape
+    final screenSize = MediaQuery.of(context).size;
+    final isLandscape = screenSize.width > screenSize.height;
+
+    if (isLandscape) {
+      return _buildFluidHorizontalLayout(textColor, descColor);
+    }
+
+    return _buildFluidVerticalLayout(textColor, descColor);
+  }
+
   Widget _buildFluidVerticalLayout(Color textColor, Color descColor) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -223,24 +243,29 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
       children: [
         Stack(
           children: [
-            AspectRatio(
-              aspectRatio: 16 / 9,
-              child: _adData!.imageUrl != null
-                  ? Image.network(
-                      _adData!.imageUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Icon(
-                        Icons.image_not_supported,
-                        color: Colors.grey,
-                      ),
-                    )
-                  : Container(color: Colors.grey.withValues(alpha: 0.2)),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 250),
+              child: AspectRatio(
+                aspectRatio: 16 / 9,
+                child: _adData!.imageUrl != null
+                    ? Image.network(
+                        _adData!.imageUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(
+                          Icons.image_not_supported,
+                          color: Colors.grey,
+                        ),
+                      )
+                    : Container(color: Colors.grey.withValues(alpha: 0.2)),
+              ),
             ),
             Positioned(
               top: 8,
               right: 8,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(4),
@@ -283,6 +308,83 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
           ),
         ),
       ],
+    );
+  }
+
+  /// Horizontal layout for fluid banners in landscape mode.
+  Widget _buildFluidHorizontalLayout(Color textColor, Color descColor) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (_adData!.imageUrl != null)
+            Expanded(
+              flex: 4,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.network(
+                    _adData!.imageUrl!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                      Icons.image_not_supported,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'AD',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          Expanded(
+            flex: 6,
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    _adData!.title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: textColor,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _adData!.description,
+                    style: TextStyle(fontSize: 14, color: descColor),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
