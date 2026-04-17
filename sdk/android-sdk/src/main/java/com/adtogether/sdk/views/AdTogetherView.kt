@@ -15,7 +15,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -38,15 +41,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.adtogether.sdk.AdTogether
-import com.adtogether.sdk.models.AdModel
-import kotlinx.coroutines.launch
+import com.adtogether.sdk.models.AdSize
 
 @Composable
 fun AdTogetherView(
     adUnitId: String,
+    size: AdSize = AdSize.FLUID,
+    showCloseButton: Boolean = false,
     onAdLoaded: (() -> Unit)? = null,
     onAdFailedToLoad: ((String) -> Unit)? = null,
+    onAdClosed: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     if (!AdTogether.assertInitialized()) {
@@ -60,7 +64,9 @@ fun AdTogetherView(
     var adData by remember { mutableStateOf<AdModel?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var hasError by remember { mutableStateOf(false) }
-    var impressionTracked by remember { mutableStateOf(false) }
+    var isVisible by remember { mutableStateOf(true) }
+    
+    if (!isVisible) return
 
     LaunchedEffect(adUnitId) {
         val result = AdTogether.fetchAd(adUnitId)
@@ -75,7 +81,8 @@ fun AdTogetherView(
     }
 
     if (isLoading) {
-        Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        val loadingModifier = if (size.isFluid) modifier.fillMaxWidth() else modifier
+        Box(modifier = loadingModifier, contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
         return
@@ -120,64 +127,150 @@ fun AdTogetherView(
         color = containerColor,
         shape = RoundedCornerShape(12.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, textColor.copy(alpha = 0.1f), RoundedCornerShape(12.dp)),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            
-            // Image
-            if (!ad.imageUrl.isNullOrEmpty()) {
-                AsyncImage(
-                    model = ad.imageUrl,
-                    contentDescription = ad.title,
-                    contentScale = ContentScale.Crop,
+        Box {
+            if (size.isFluid) {
+                // Card Layout for Fluid ads
+                Column(
                     modifier = Modifier
-                        .aspectRatio(1f)
-                        .clip(RoundedCornerShape(topStart = 12.dp, bottomStart = 12.dp))
-                )
-            }
+                        .fillMaxWidth()
+                        .border(1.dp, textColor.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
+                ) {
+                    // Image Header
+                    if (!ad.imageUrl.isNullOrEmpty()) {
+                        Box {
+                            AsyncImage(
+                                model = ad.imageUrl,
+                                contentDescription = ad.title,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .aspectRatio(1.77f) // 16:9
+                                    .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+                            )
 
-            // Text content
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(12.dp)
-            ) {
-                Row(verticalAlignment = Alignment.Top) {
-                    Text(
-                        text = ad.title,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        color = textColor,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Box(
-                        modifier = Modifier
-                            .background(Color(0xFFFFC107), RoundedCornerShape(4.dp))
-                            .padding(horizontal = 4.dp, vertical = 2.dp)
+                            // Badge
+                            Box(
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .align(Alignment.TopEnd)
+                                    .background(Color(0xFFFFC107), RoundedCornerShape(4.dp))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "AD",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 10.sp,
+                                    color = Color.Black
+                                )
+                            }
+                        }
+                    }
+
+                    // Info Section
+                    Column(
+                        modifier = Modifier.padding(12.dp)
                     ) {
                         Text(
-                            text = "AD",
+                            text = ad.title,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 8.sp,
-                            color = Color.Black
+                            fontSize = 16.sp,
+                            color = textColor,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = ad.description,
+                            fontSize = 14.sp,
+                            color = descColor,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
+            } else {
+                // Standard Horizontal Banner Layout
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, textColor.copy(alpha = 0.1f), RoundedCornerShape(12.dp)),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Image
+                    if (!ad.imageUrl.isNullOrEmpty()) {
+                        AsyncImage(
+                            model = ad.imageUrl,
+                            contentDescription = ad.title,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .width(80.dp)
+                                .aspectRatio(1f)
+                                .clip(RoundedCornerShape(topStart = 12.dp, bottomStart = 12.dp))
+                        )
+                    }
 
-                Text(
-                    text = ad.description,
-                    fontSize = 12.sp,
-                    color = descColor,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
+                    // Text content
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(12.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.Top) {
+                            Text(
+                                text = ad.title,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = textColor,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Box(
+                                modifier = Modifier
+                                    .background(Color(0xFFFFC107), RoundedCornerShape(4.dp))
+                                    .padding(horizontal = 4.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "AD",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 8.sp,
+                                    color = Color.Black
+                                )
+                            }
+                        }
+
+                        Text(
+                            text = ad.description,
+                            fontSize = 12.sp,
+                            color = descColor,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                }
+            }
+
+            if (showCloseButton) {
+                Box(
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .align(Alignment.TopEnd)
+                        .background(Color.Black.copy(alpha = 0.4f), RoundedCornerShape(50.dp))
+                        .clickable {
+                            isVisible = false
+                            onAdClosed?.invoke()
+                        }
+                        .padding(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Close",
+                        tint = Color.White,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
             }
         }
     }

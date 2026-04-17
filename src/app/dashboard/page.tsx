@@ -681,6 +681,7 @@ AdTogether.initialize({ appId: '${userData?.apiKeys?.[0] || userData?.apiKey || 
   adUnitId="home_banner" 
   theme="dark" 
   onAdLoaded={() => console.log('Ad loaded!')}
+  onAdFailedToLoad={(e) => console.error(e)}
 />
 
 // Interstitial Ad
@@ -690,7 +691,8 @@ const [showAd, setShowAd] = useState(false);
   isOpen={showAd}
   onClose={() => setShowAd(false)}
   closeDelay={3}
-  onAdLoaded={() => console.log('Ad loaded!')}
+  onAdLoaded={() => console.log('Ad loaded!')},
+  onAdFailedToLoad={(e) => console.error(e)}
 />`} 
               />
             </div>
@@ -709,6 +711,7 @@ AdTogetherBanner(
   adUnitId: 'home_banner',
   size: AdSize.banner,
   onAdLoaded: () => print('Ad loaded!'),
+  onAdFailedToLoad: (error) => print('Error: $error'),
 )
 
 // Interstitial Ad
@@ -717,6 +720,7 @@ AdTogetherInterstitial.show(
   adUnitId: 'level_complete',
   closeDelay: const Duration(seconds: 3),
   onAdLoaded: () => print('Ad loaded!'),
+  onAdFailedToLoad: (error) => print('Error: $error'),
 );`}
               />
             </div>
@@ -734,6 +738,7 @@ AdTogether.initialize({ appId: '${userData?.apiKeys?.[0] || userData?.apiKey || 
 <AdTogetherBanner 
   adUnitId="home_banner" 
   onAdLoaded={() => console.log('Ad loaded!')}
+  onAdFailedToLoad={(e) => console.error(e)}
 />
 
 // Interstitial Ad
@@ -743,6 +748,7 @@ const [showAd, setShowAd] = useState(false);
   isOpen={showAd}
   onClose={() => setShowAd(false)}
   onAdLoaded={() => console.log('Ad loaded!')}
+  onAdFailedToLoad={(e) => console.error(e)}
 />`}
               />
             </div>
@@ -759,7 +765,8 @@ AdTogether.initialize(appId: "${userData?.apiKeys?.[0] || userData?.apiKey || 'Y
 // Banner Ad
 AdTogetherView(
     adUnitID: "home_banner",
-    onAdLoaded: { print("Ad loaded!") }
+    onAdLoaded: { print("Ad loaded!") },
+    onAdFailedToLoad: { error in print("Error: \(error)") }
 )
 .frame(height: 50)
 
@@ -770,7 +777,9 @@ Button("Show Interstitial") {
 .fullScreenCover(isPresented: $showAd) {
     AdTogetherInterstitialView(
         adUnitID: "level_complete",
-        onAdLoaded: { print("Ad loaded!") }
+        closeDelay: 3,
+        onAdLoaded: { print("Ad loaded!") },
+        onAdFailedToLoad: { error in print("Error: \(error)") }
     ) { showAd = false }
 }`}
               />
@@ -790,7 +799,8 @@ AdTogether.initialize(context, "${userData?.apiKeys?.[0] || userData?.apiKey || 
 // Banner Ad
 AdTogetherView(
     adUnitId = "home_banner",
-    onAdLoaded = { println("Ad loaded!") }
+    onAdLoaded = { println("Ad loaded!") },
+    onAdFailedToLoad = { println("Error: $it") }
 )
 
 // Interstitial Ad

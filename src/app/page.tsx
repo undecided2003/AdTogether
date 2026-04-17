@@ -24,6 +24,7 @@ export default function MyComponent() {
       <AdTogetherBanner 
         adUnitId="YOUR_AD_UNIT_ID" 
         onAdLoaded={() => console.log('Banner loaded!')} 
+        onAdFailedToLoad={(e) => console.error(e)}
       />
 
       {/* Earn 5 credits by displaying an interstitial ad */}
@@ -47,7 +48,7 @@ export default function MyComponent() {
       <div className="flex flex-col lg:flex-row items-center gap-16 px-6">
         <div className="flex-1 space-y-8">
           <div className="inline-flex font-mono text-xs tracking-wider text-amber-700 dark:text-[#FFCE2A] uppercase border border-amber-300 dark:border-[#FFCE2A]/30 bg-amber-100 dark:bg-[#FFCE2A]/10 px-3 py-1 rounded">
-            v0.1.10 Now Available
+            v0.1.12 Now Available
           </div>
 
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-zinc-900 dark:text-white leading-[1.1] uppercase">

@@ -153,12 +153,18 @@ class _InterstitialDialogState extends State<_InterstitialDialog>
     final screenSize = MediaQuery.of(context).size;
     final isLandscape = screenSize.width > screenSize.height;
 
-    return Center(
-      child: _isLoading
-          ? const CircularProgressIndicator(color: Colors.amber)
-          : _hasError || _adData == null
-              ? const SizedBox.shrink()
-              : AnimatedScale(
+    return DefaultTextStyle(
+      style: TextStyle(
+        decoration: TextDecoration.none,
+        color: textColor,
+        fontSize: 14,
+      ),
+      child: Center(
+        child: _isLoading
+            ? const CircularProgressIndicator(color: Colors.amber)
+            : _hasError || _adData == null
+                ? const SizedBox.shrink()
+                : AnimatedScale(
                   scale: 1.0,
                   duration: const Duration(milliseconds: 300),
                   child: Container(
@@ -232,6 +238,7 @@ class _InterstitialDialogState extends State<_InterstitialDialog>
                     ),
                   ),
                 ),
+      ),
     );
   }
 

@@ -9,6 +9,8 @@ import '../models/ad_model.dart';
 class AdTogetherBanner extends StatefulWidget {
   final String adUnitId;
   final AdSize size;
+  final bool showCloseButton;
+  final VoidCallback? onAdClosed;
   final VoidCallback? onAdLoaded;
   final Function(String)? onAdFailedToLoad;
 
@@ -16,6 +18,8 @@ class AdTogetherBanner extends StatefulWidget {
     super.key,
     required this.adUnitId,
     this.size = AdSize.fluid,
+    this.showCloseButton = false,
+    this.onAdClosed,
     this.onAdLoaded,
     this.onAdFailedToLoad,
   });
@@ -29,6 +33,7 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
   bool _isLoading = true;
   bool _hasError = false;
   bool _impressionTracked = false;
+  bool _isVisible = true;
 
   @override
   void initState() {
@@ -80,6 +85,10 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_isVisible) {
+      return const SizedBox.shrink();
+    }
+
     if (_isLoading) {
       return SizedBox(
         width: widget.size.width == double.infinity ? null : widget.size.width,
@@ -104,15 +113,19 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
         ? const Color(0xFF9CA3AF)
         : const Color(0xFF6B7280);
 
-    return VisibilityDetector(
-      key: Key('adtogether_banner_${widget.adUnitId}_${_adData!.id}'),
-      onVisibilityChanged: _onVisibilityChanged,
-      child: GestureDetector(
-        onTap: _onAdClicked,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: Material(
-            type: MaterialType.transparency,
+    return DefaultTextStyle(
+      style: TextStyle(
+        decoration: TextDecoration.none,
+        color: textColor,
+        fontSize: 14,
+      ),
+      child: VisibilityDetector(
+        key: Key('adtogether_banner_${widget.adUnitId}_${_adData!.id}'),
+        onVisibilityChanged: _onVisibilityChanged,
+        child: GestureDetector(
+          onTap: _onAdClicked,
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
             child: Container(
               width: widget.size.width == double.infinity
                   ? double.infinity
@@ -122,18 +135,46 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
                   : widget.size.height,
               decoration: BoxDecoration(
                 color: bgColor,
-                border: Border.all(color: borderColor),
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: const [
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
                   BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 10,
-                    offset: Offset(0, 4),
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 15,
+                    offset: const Offset(0, 6),
                   ),
                 ],
               ),
               clipBehavior: Clip.antiAlias,
-              child: _buildAdLayout(context, textColor, descColor),
+              child: Stack(
+                children: [
+                  _buildAdLayout(context, textColor, descColor),
+                  if (widget.showCloseButton)
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _isVisible = false;
+                          });
+                          widget.onAdClosed?.call();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.4),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            size: 16,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
@@ -244,7 +285,7 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
         Stack(
           children: [
             ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 250),
+              constraints: const BoxConstraints(maxHeight: 300),
               child: AspectRatio(
                 aspectRatio: 16 / 9,
                 child: _adData!.imageUrl != null

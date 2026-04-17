@@ -15,6 +15,7 @@ public struct AdTogetherInterstitialView: View {
     public let closeDelay: Int
     public let onDismiss: () -> Void
     public let onAdLoaded: (() -> Void)?
+    public let onAdFailedToLoad: ((Error) -> Void)?
     
     @State private var ad: AdModel?
     @State private var isLoading = true
@@ -31,11 +32,18 @@ public struct AdTogetherInterstitialView: View {
         return verticalSizeClass == .compact
     }
     
-    public init(adUnitID: String, closeDelay: Int = 3, onAdLoaded: (() -> Void)? = nil, onDismiss: @escaping () -> Void) {
+    public init(
+        adUnitID: String, 
+        closeDelay: Int = 3, 
+        onAdLoaded: (() -> Void)? = nil, 
+        onAdFailedToLoad: ((Error) -> Void)? = nil,
+        onDismiss: @escaping () -> Void
+    ) {
         self.adUnitID = adUnitID
         self.closeDelay = closeDelay
         self.onDismiss = onDismiss
         self.onAdLoaded = onAdLoaded
+        self.onAdFailedToLoad = onAdFailedToLoad
         self._countdown = State(initialValue: closeDelay)
     }
     
@@ -229,6 +237,7 @@ public struct AdTogetherInterstitialView: View {
                 case .failure(let error):
                     AdTogether.shared.logger.error("Failed to load interstitial: \(error.localizedDescription)")
                     self.hasError = true
+                    self.onAdFailedToLoad?(error)
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                         onDismiss()
                     }

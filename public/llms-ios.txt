@@ -18,7 +18,7 @@ https://github.com/undecided2003/AdTogether.git
 Or add directly to `Package.swift`:
 
 ```swift
-.package(url: "https://github.com/undecided2003/AdTogether.git", from: "0.1.8")
+.package(url: "https://github.com/undecided2003/AdTogether.git", from: "0.1.12")
 ```
 
 ### Initialize

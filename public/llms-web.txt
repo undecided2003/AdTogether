@@ -1,5 +1,7 @@
 # AdTogether Web SDK — LLM Integration Reference
 
+**Version:** 0.1.12
+
 **Package:** `@adtogether/web-sdk`
 **Distribution:** NPM (for React/Next.js) or CDN script tag (for plain HTML)
 **Targets:** Websites, SPAs, SSR frameworks (React, Next.js, Vue, HTML)

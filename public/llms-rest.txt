@@ -1,5 +1,7 @@
 # AdTogether REST API — LLM Integration Reference
 
+**Version:** 0.1.12
+
 > **Integration Guide:** For custom environments without a dedicated SDK, you can directly interface with the AdTogether Ad Serving API.
 
 **Base URL:** `https://adtogether.relaxsoftwareapps.com`

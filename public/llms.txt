@@ -1,5 +1,7 @@
 # AdTogether — LLM Integration Reference
 
+**Version:** 0.1.12
+
 **"Show an ad, get an ad shown"**
 *The reciprocal ad exchange to increase conversions and grow your app's audience.*
 
@@ -19,7 +21,7 @@ To prevent context bleeding and hallucination, **please read the specific instru
 | 2 | **React Native SDK** | `@adtogether/react-native-sdk` | Read `llms-react-native.txt` | React Native (iOS + Android), Expo |
 | 3 | **Flutter SDK** | `adtogether_sdk` | Read `llms-flutter.txt` | Android + iOS + Web (single Dart package) |
 | 4 | **Native iOS SDK** | `AdTogether` (Swift) | Read `llms-ios.txt` | SwiftUI, UIKit |
-| 5 | **Native Android SDK** | `com.adtogether:sdk` | Read `llms-android.txt` | Jetpack Compose, XML Views |
+| 5 | **Native Android SDK** | `com.adtogether:sdk` | Read `llms-android.txt` | Jetpack Compose |
 | 6 | **REST API** | Direct API calls | Read `llms-rest.txt` | Custom backend integrations |
 
 ### Decision Tree

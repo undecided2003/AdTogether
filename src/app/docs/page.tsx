@@ -623,7 +623,7 @@ AdTogetherInterstitial.show(
               <CodeBlock title="Package.swift">
 {`.package(
   url: "https://github.com/undecided2003/AdTogether.git",
-  from: "0.1.8"
+  from: "0.1.12"
 )`}
               </CodeBlock>
 
@@ -652,9 +652,10 @@ struct ContentView: View {
             Text("My App")
             
             // Banner Ad
-            AdTogetherView(adUnitID: "YOUR_AD_UNIT_ID") {
-                print("Ad loaded!")
-            }
+            AdTogetherView(
+                adUnitID: "YOUR_AD_UNIT_ID",
+                onAdLoaded: { print("Ad loaded!") }
+            )
             .frame(height: 50)
             
             // Interstitial Ad
@@ -662,11 +663,11 @@ struct ContentView: View {
                 showAd = true
             }
             .fullScreenCover(isPresented: $showAd) {
-                AdTogetherInterstitialView(adUnitID: "YOUR_AD_UNIT_ID") {
-                    showAd = false
-                } onAdLoaded: {
-                    print("Interstitial loaded!")
-                }
+                AdTogetherInterstitialView(
+                    adUnitID: "YOUR_AD_UNIT_ID",
+                    closeDelay: 3,
+                    onAdLoaded: { print("Interstitial loaded!") }
+                ) { showAd = false }
             }
         }
     }
@@ -709,7 +710,7 @@ struct ContentView: View {
               </p>
               <CodeBlock title="build.gradle.kts">
 {`dependencies {
-    implementation("com.adtogether:sdk:0.1.8")
+    implementation("com.adtogether:sdk:0.1.12")
 }`}
               </CodeBlock>
 

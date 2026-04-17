@@ -1,5 +1,7 @@
 # AdTogether React Native SDK — LLM Integration Reference
 
+**Version:** 0.1.12
+
 **Package:** `@adtogether/react-native-sdk`
 **Distribution:** NPM
 **Targets:** React Native CLI apps, Expo apps (iOS + Android)

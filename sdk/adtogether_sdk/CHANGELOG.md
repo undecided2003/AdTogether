@@ -1,3 +1,8 @@
+## 0.1.11
+
+* **Fix**: Resolved "yellow underline" rendering issue in both Banner and Interstitial widgets by ensuring correct theme inheritance.
+* **Layout**: Improved landscape mode constraints and scrollable area handling for Interstitial ads on small screens.
+
 ## 0.1.9
 
 * **Feature**: Added `onAdLoaded` and `onAdFailedToLoad` callback support to both `AdTogetherBanner` and `AdTogetherInterstitial`.

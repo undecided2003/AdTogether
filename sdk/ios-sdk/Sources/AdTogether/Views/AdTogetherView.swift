@@ -3,6 +3,7 @@ import SafariServices
 
 public struct AdTogetherView: View {
     public let adUnitID: String
+    public let size: AdSize
     
     @State private var ad: AdModel?
     @State private var isLoading = true
@@ -11,13 +12,21 @@ public struct AdTogetherView: View {
     @State private var isHovering = false
     
     private let onAdLoaded: (() -> Void)?
+    private let onAdFailedToLoad: ((Error) -> Void)?
     
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.openURL) var openURL
     
-    public init(adUnitID: String, onAdLoaded: (() -> Void)? = nil) {
+    public init(
+        adUnitID: String, 
+        size: AdSize = .fluid, 
+        onAdLoaded: (() -> Void)? = nil,
+        onAdFailedToLoad: ((Error) -> Void)? = nil
+    ) {
         self.adUnitID = adUnitID
+        self.size = size
         self.onAdLoaded = onAdLoaded
+        self.onAdFailedToLoad = onAdFailedToLoad
     }
     
     public var body: some View {
@@ -32,46 +41,92 @@ public struct AdTogetherView: View {
                 Button(action: {
                     handleAdClick(ad: adModel)
                 }) {
-                    HStack(spacing: 0) {
-                        // Image Section
-                        if let imageUrlString = adModel.imageUrl, let imageUrl = URL(string: imageUrlString) {
-                            AsyncImage(url: imageUrl) { image in
-                                image.resizable()
-                                     .aspectRatio(contentMode: .fill)
-                            } placeholder: {
-                                Color.gray.opacity(0.2)
+                    if size.isFluid {
+                        // Vertical Card Layout for Fluid ads
+                        VStack(alignment: .leading, spacing: 0) {
+                            // Image Header
+                            if let imageUrlString = adModel.imageUrl, let imageUrl = URL(string: imageUrlString) {
+                                ZStack(alignment: .topTrailing) {
+                                    AsyncImage(url: imageUrl) { image in
+                                        image.resizable()
+                                             .aspectRatio(1.77, contentMode: .fill)
+                                    } placeholder: {
+                                        Color.gray.opacity(0.2)
+                                             .aspectRatio(1.77, contentMode: .fill)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .clipped()
+                                    
+                                    // Badge
+                                    Text("AD")
+                                        .font(.system(size: 10, weight: .bold))
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Color.yellow)
+                                        .foregroundColor(.black)
+                                        .cornerRadius(4)
+                                        .padding(8)
+                                }
                             }
-                            .frame(width: 80)
-                            .clipped()
-                        }
-                        
-                        // Text Section
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack(alignment: .top) {
+                            
+                            // Content
+                            VStack(alignment: .leading, spacing: 4) {
                                 Text(adModel.title)
-                                    .font(.system(size: 14, weight: .bold))
+                                    .font(.system(size: 16, weight: .bold))
                                     .foregroundColor(colorScheme == .dark ? .white : .primary)
                                     .lineLimit(1)
                                 
-                                Spacer()
-                                
-                                Text("AD")
-                                    .font(.system(size: 9, weight: .bold))
-                                    .padding(.horizontal, 4)
-                                    .padding(.vertical, 2)
-                                    .background(Color.yellow)
-                                    .foregroundColor(.black)
-                                    .cornerRadius(4)
+                                Text(adModel.description)
+                                    .font(.system(size: 14))
+                                    .foregroundColor(colorScheme == .dark ? .gray : .secondary)
+                                    .lineLimit(2)
+                                    .multilineTextAlignment(.leading)
+                            }
+                            .padding(12)
+                        }
+                    } else {
+                        // Standard Horizontal Banner Layout
+                        HStack(spacing: 0) {
+                            // Image Section
+                            if let imageUrlString = adModel.imageUrl, let imageUrl = URL(string: imageUrlString) {
+                                AsyncImage(url: imageUrl) { image in
+                                    image.resizable()
+                                         .aspectRatio(contentMode: .fill)
+                                } placeholder: {
+                                    Color.gray.opacity(0.2)
+                                }
+                                .frame(width: 80, height: 80)
+                                .clipped()
                             }
                             
-                            Text(adModel.description)
-                                .font(.system(size: 12))
-                                .foregroundColor(colorScheme == .dark ? .gray : .secondary)
-                                .lineLimit(2)
-                                .multilineTextAlignment(.leading)
+                            // Text Section
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack(alignment: .top) {
+                                    Text(adModel.title)
+                                        .font(.system(size: 14, weight: .bold))
+                                        .foregroundColor(colorScheme == .dark ? .white : .primary)
+                                        .lineLimit(1)
+                                    
+                                    Spacer()
+                                    
+                                    Text("AD")
+                                        .font(.system(size: 9, weight: .bold))
+                                        .padding(.horizontal, 4)
+                                        .padding(.vertical, 2)
+                                        .background(Color.yellow)
+                                        .foregroundColor(.black)
+                                        .cornerRadius(4)
+                                }
+                                
+                                Text(adModel.description)
+                                    .font(.system(size: 12))
+                                    .foregroundColor(colorScheme == .dark ? .gray : .secondary)
+                                    .lineLimit(2)
+                                    .multilineTextAlignment(.leading)
+                            }
+                            .padding(12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -118,6 +173,7 @@ public struct AdTogetherView: View {
                 case .failure(let error):
                     AdTogether.shared.logger.error("Failed to load ad: \(error.localizedDescription)")
                     self.hasError = true
+                    self.onAdFailedToLoad?(error)
                 }
             }
         }

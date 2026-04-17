@@ -13,7 +13,7 @@ Add to your module-level `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.adtogether:sdk:0.1.8")
+    implementation("com.adtogether:sdk:0.1.12")
 }
 ```
 
@@ -41,7 +41,7 @@ Register `MyApp` in `AndroidManifest.xml`:
 fun initialize(
     context: Context,
     appId: String,
-    baseUrl: String? = null,       // Override API base URL (optional)
+    baseUrl: String? = null,
     allowSelfAds: Boolean = true
 )
 ```
@@ -71,8 +71,11 @@ fun MainScreen() {
 @Composable
 fun AdTogetherView(
     adUnitId: String,
+    size: AdSize = AdSize.FLUID,
+    showCloseButton: Boolean = false,
     onAdLoaded: (() -> Unit)? = null,
     onAdFailedToLoad: ((String) -> Unit)? = null,
+    onAdClosed: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 )
 ```
@@ -118,17 +121,10 @@ fun AdTogetherInterstitial(
 )
 ```
 
-### Display a Banner (XML Layout)
-
-```xml
-<com.adtogether.sdk.AdTogetherBannerView
-    android:id="@+id/adView"
-    android:layout_width="match_parent"
-    android:layout_height="50dp"
-    app:adUnitId="YOUR_AD_UNIT_ID" />
-```
-
 ### Android-Specific Notes
+
+- **XML Layout Support**: If you are using classic XML views, you can bridge the Compose view using `ComposeView` into your XML layout. Native XML `AdTogetherBannerView` is coming soon.
+- **ProGuard/R8**: If using ProGuard/R8, add the following keep rule:
 
 - If using ProGuard/R8, add the following keep rule:
   ```
