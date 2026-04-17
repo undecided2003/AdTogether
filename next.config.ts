@@ -4,7 +4,8 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   serverExternalPackages: [
     'lightningcss',
-    'puppeteer'
+    'puppeteer',
+    'firebase-admin'
   ],
   webpack: (config: any, { isServer }: { isServer: boolean }) => {
     if (isServer) {

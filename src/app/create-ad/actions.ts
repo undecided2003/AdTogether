@@ -140,10 +140,19 @@ export async function generateAdContent(clickUrl: string) {
         const absoluteImageUrl = new URL(imageUrl, clickUrl).toString();
         
         const imgRes = await fetch(absoluteImageUrl);
+        console.log(`📸 Image fetch status: ${imgRes.status}`);
         if (imgRes.ok) {
            imageMimeType = imgRes.headers.get('content-type') || 'image/jpeg';
            const arrayBuffer = await imgRes.arrayBuffer();
            base64Image = Buffer.from(arrayBuffer).toString('base64');
+           console.log(`🖼️ Scraped image size: ${Math.round(base64Image.length / 1024)} KB`);
+           
+           // Limit base64 size to avoid exceeding server action response limits
+           if (base64Image.length > 1024 * 1024) {
+             console.log("⚠️ Scraped image too large (>1MB), skipping base64 return.");
+             base64Image = null;
+             imageMimeType = null;
+           }
         }
       } catch (e) {
         console.error("Failed to fetch scraped image", e);
@@ -211,10 +220,16 @@ export async function generateAdContent(clickUrl: string) {
     
     let parsed;
     try {
-      parsed = JSON.parse(jsonStr);
+      // Robust JSON detection
+      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        parsed = JSON.parse(jsonMatch[0]);
+      } else {
+        parsed = JSON.parse(jsonStr);
+      }
     } catch (e) {
-      console.error("Failed to parse JSON response:", jsonStr);
-      throw new Error("Failed to parse AI output");
+      console.error("Failed to parse AI response:", jsonStr);
+      throw new Error(`AI generated invalid format: ${jsonStr.substring(0, 50)}...`);
     }
     
     return { 

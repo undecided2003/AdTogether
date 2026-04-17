@@ -93,7 +93,7 @@ export default function CreateAdPage() {
         setError(res.error || "Failed to auto-generate content");
       }
     } catch (err: any) {
-      setError("An error occurred during generation");
+      setError(err?.message || "An error occurred during generation");
     } finally {
       setIsGenerating(false);
     }

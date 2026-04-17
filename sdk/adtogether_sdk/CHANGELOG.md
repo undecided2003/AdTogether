@@ -1,3 +1,8 @@
+## 0.1.13
+
+* **Sync**: Version parity across all AdTogether SDKs.
+* **Maintenance**: Sync with updated underlying Android and iOS native components.
+
 ## 0.1.12
 
 * **Feature**: Added `showCloseButton` to `AdTogetherBanner`.

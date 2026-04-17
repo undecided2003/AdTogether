@@ -1,6 +1,4 @@
-// Bypass Turbopack and Webpack static analysis completely
-// so that firebase-admin is loaded at runtime in the Node.js environment
-const admin = eval("require('firebase-admin')");
+import admin from 'firebase-admin';
 
 let app;
 try {

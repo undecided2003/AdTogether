@@ -1,3 +1,8 @@
+## 0.1.13
+
+* **Fix**: Resolved compilation errors in Jetpack Compose views (missing `sp` import and state variables).
+* **Sync**: Version parity across all AdTogether SDKs.
+
 ## 0.1.12
 
 * **Feature**: Added `showCloseButton` to `AdTogetherBanner`.
