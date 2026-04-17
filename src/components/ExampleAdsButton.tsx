@@ -74,7 +74,7 @@ export default function ExampleAdsButton() {
           <div className="flex justify-between items-center mb-5">
             <div className="flex flex-col">
               <span className="text-[10px] font-bold text-amber-500 dark:text-amber-400 uppercase tracking-widest leading-none mb-1">Live SDK Preview</span>
-              <span className="text-sm font-bold text-zinc-900 dark:text-white">AdTogether Web Core</span>
+              <span className="text-sm font-bold text-zinc-900 dark:text-white">AdTogether Web Core v0.1.10</span>
             </div>
             <button 
               onClick={() => setShowPopover(false)} 
@@ -91,7 +91,7 @@ export default function ExampleAdsButton() {
           
           <div className="mt-5 pt-4 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-center gap-2">
             <div className="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
-            <p className="text-[10px] text-zinc-400 dark:text-zinc-600 font-medium">SDK active and connected to mainnet</p>
+            <p className="text-[10px] text-zinc-400 dark:text-zinc-600 font-medium">SDK v0.1.10 active and connected to mainnet</p>
           </div>
         </div>
       )}

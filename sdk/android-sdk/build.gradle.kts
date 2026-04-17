@@ -54,7 +54,7 @@ dependencies {
 
 mavenPublishing {
     // Defines the coordinates
-    coordinates("com.relaxsoftwareapps.adtogether", "sdk", "0.1.10")
+    coordinates("com.relaxsoftwareapps.adtogether", "sdk", "0.1.11")
     
     // Configures the POM
     pom {
@@ -85,7 +85,9 @@ mavenPublishing {
     publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
     
     // Automatic signing - only if credentials are provided
-    if (project.hasProperty("signing.keyId") || System.getenv("SIGNING_KEY") != null) {
+    if (project.hasProperty("signing.keyId") || 
+        project.hasProperty("signingKeyId") ||
+        System.getenv("SIGNING_KEY") != null) {
         signAllPublications()
     }
     

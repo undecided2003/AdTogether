@@ -1,7 +1,7 @@
-## 0.1.10
+## 0.1.11
 
-* **Feature**: Added `onAdLoaded` and `onAdFailedToLoad` callback support to both `AdTogetherView` (Banner) and `AdTogetherInterstitial`.
-* **Responsive**: Implemented orientation-aware layouts for Interstitial ads to prevent overflow in landscape mode.
+* **Fix**: Enabled GPG signing for Maven Central publication.
+* **Feature**: Added `AdTogetherBanner` alias for cross-platform naming parity.
 * **Standardization**: Updated API signatures to match the unified AdTogether SDK standard across all platforms.
 
 ## 0.1.7
