@@ -1,4 +1,4 @@
-## 0.1.9
+## 0.1.10
 
 * **Feature**: Added `onAdLoaded` and `onAdFailedToLoad` callback support to both `AdTogetherView` (Banner) and `AdTogetherInterstitial`.
 * **Responsive**: Implemented orientation-aware layouts for Interstitial ads to prevent overflow in landscape mode.

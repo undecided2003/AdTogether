@@ -1,6 +1,6 @@
 # AdTogether Android SDK
 
-[![Maven Central](https://img.shields.io/maven-central/v/com.adtogether/sdk)](https://central.sonatype.com/namespace/com.adtogether)
+[![Maven Central](https://img.shields.io/maven-central/v/com.relaxsoftwareapps.adtogether/sdk)](https://central.sonatype.com/namespace/com.relaxsoftwareapps.adtogether)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 <p align="center">
@@ -36,7 +36,7 @@ Add the dependency to your app-level `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.adtogether:sdk:0.1.7")
+    implementation("com.relaxsoftwareapps.adtogether:sdk:0.1.10")
 }
 ```
 
@@ -59,10 +59,11 @@ class MyApplication : Application() {
 
 ```kotlin
 import androidx.compose.foundation.layout.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.adtogether.sdk.views.AdTogetherView
+import com.adtogether.sdk.views.AdTogetherBanner
+import com.adtogether.sdk.views.AdTogetherInterstitial
 
 @Composable
 fun MainScreen() {
@@ -77,19 +78,18 @@ fun MainScreen() {
         Spacer(modifier = Modifier.weight(1f))
 
         // Display the AdTogether Banner
-        AdTogetherView(
+        AdTogetherBanner(
             adUnitId = "YOUR_AD_UNIT_ID",
             onAdLoaded = { println("Banner loaded!") },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(50.dp)
+                .height(80.dp)
         )
 
         // Show Interstitial Ad
         if (showAd) {
             AdTogetherInterstitial(
                 adUnitId = "YOUR_INTERSTITIAL_UNIT_ID",
-                closeDelay = 5,
                 onAdLoaded = { println("Interstitial loaded!") },
                 onDismiss = { showAd = false }
             )

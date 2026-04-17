@@ -1,6 +1,6 @@
 {
   "name": "@adtogether/react-native-sdk",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "The official AdTogether React Native SDK — reciprocal ad exchange to increase conversions and grow your audience.",
   "main": "lib/commonjs/index.js",
   "module": "lib/module/index.js",
