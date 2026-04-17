@@ -1,4 +1,4 @@
-## 0.1.8
+## 0.1.9
 
 * **Feature**: Added `onAdLoaded` and `onAdFailedToLoad` callback support to React components.
 * **Responsive**: Improved responsiveness for both Banner and Interstitial ad components.

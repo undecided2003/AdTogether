@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
   spec.name         = "AdTogether"
-  spec.version      = "0.1.8"
+  spec.version      = "0.1.9"
   spec.summary      = "The official AdTogether iOS SDK — reciprocal ad exchange to increase conversions and grow your audience."
   spec.description  = <<-DESC
     AdTogether is an ad exchange platform. "Show an ad, get an ad shown." 
