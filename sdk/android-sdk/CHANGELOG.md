@@ -1,3 +1,9 @@
+## 0.1.12
+
+* **Feature**: Added `showCloseButton` to `AdTogetherBanner`.
+* **Standardization**: Support for `onAdLoaded` and `onAdFailedToLoad` with unified naming conventions.
+* **Layout**: Improved landscape mode responsiveness for banner and interstitial views.
+
 ## 0.1.11
 
 * **Fix**: Enabled GPG signing for Maven Central publication.

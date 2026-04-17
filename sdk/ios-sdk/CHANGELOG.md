@@ -1,3 +1,9 @@
+## 0.1.12
+
+* **Feature**: Added `showCloseButton` support to `AdTogetherView`.
+* **Standardization**: Support for `onAdLoaded` and `onAdFailedToLoad` across all platforms.
+* **Layout**: Enhanced safe area and landscape orientation handling for interstitial views.
+
 ## 0.1.9
 
 * **Feature**: Added `onAdLoaded` and `onAdFailedToLoad` callback support to both `AdTogetherBanner` and `AdTogetherInterstitial`.

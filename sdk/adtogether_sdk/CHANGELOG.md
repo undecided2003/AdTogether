@@ -1,3 +1,9 @@
+## 0.1.12
+
+* **Feature**: Added `showCloseButton` to `AdTogetherBanner`.
+* **Standardization**: Support for `onAdLoaded` and `onAdFailedToLoad` across all platform widgets.
+* **Layout**: Better responsive behavior in landscape mode for both Banner and Interstitial ads.
+
 ## 0.1.11
 
 * **Fix**: Resolved "yellow underline" rendering issue in both Banner and Interstitial widgets by ensuring correct theme inheritance.

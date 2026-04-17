@@ -1,3 +1,9 @@
+## 0.1.12
+
+* **Feature**: Added `showCloseButton` to `AdTogetherBanner`.
+* **Standardization**: Support for `onAdLoaded` and `onAdFailedToLoad` with unified naming conventions.
+* **Layout**: Enhanced responsiveness and safe area handling.
+
 ## 0.1.9
 
 * **Feature**: Added `onAdLoaded` and `onAdFailedToLoad` callback support to both `AdTogetherBanner` and `AdTogetherInterstitial`.

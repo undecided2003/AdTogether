@@ -105,7 +105,6 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
 
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDarkMode ? const Color(0xFF1F2937) : Colors.white;
-    final borderColor = isDarkMode ? Colors.white10 : Colors.black12;
     final textColor = isDarkMode
         ? const Color(0xFFF9FAFB)
         : const Color(0xFF111827);
@@ -162,7 +161,7 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.4),
+                            color: Colors.black.withValues(alpha: 0.4),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(

@@ -1,3 +1,9 @@
+## 0.1.12
+
+* **Feature**: Added `showCloseButton` to React components.
+* **Standardization**: Support for `onAdLoaded` and `onAdFailedToLoad` across all platforms.
+* **Layout**: Enhanced responsiveness and safety checks for ad rendering.
+
 ## 0.1.9
 
 * **Feature**: Added `onAdLoaded` and `onAdFailedToLoad` callback support to React components.
