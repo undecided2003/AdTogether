@@ -1,6 +1,6 @@
 # AdTogether Web SDK — LLM Integration Reference
 
-**Version:** 0.1.12
+**Version:** 0.1.13
 
 **Package:** `@adtogether/web-sdk`
 **Distribution:** NPM (for React/Next.js) or CDN script tag (for plain HTML)
@@ -26,12 +26,15 @@ if (typeof window !== 'undefined') {
 **`AdTogether.initialize()` accepts:**
 ```typescript
 interface AdTogetherOptions {
-  appId?: string;    // Your registered app ID (preferred)
-  apiKey?: string;   // Alternative name for appId
-  baseUrl?: string;  // Override API base URL (optional)
+  appId?: string;       // Your registered app ID (preferred)
+  apiKey?: string;      // Alternative name for appId
+  baseUrl?: string;     // Override API base URL (optional)
+  bundleId?: string;    // Explicit site identifier (optional, auto-detected from window.location.hostname)
   allowSelfAds?: boolean; // Show own ads as fallback (default: true)
 }
 ```
+
+**Auto-detected metadata:** The SDK automatically detects `bundleId` from `window.location.hostname`. Impression/click tracking payloads include `platform: "web"` and `environment: "development"|"production"` (based on `NODE_ENV`).
 
 ### React Components
 
@@ -55,7 +58,9 @@ export default function MyComponent() {
       {/* Banner Ad */}
       <AdTogetherBanner 
         adUnitId="YOUR_AD_UNIT_ID" 
+        showCloseButton={true}
         onAdLoaded={() => console.log('Ad loaded!')}
+        onAdClosed={() => console.log('User closed the ad')}
       />
 
       {/* Interstitial Ad */}
@@ -75,6 +80,8 @@ export default function MyComponent() {
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
 | `adUnitId` | `string` | **required** | Ad placement identifier |
+| `showCloseButton` | `boolean` | `false` | Show a dismissable close button overlay |
+| `onAdClosed` | `() => void` | — | Fires when user closes the ad |
 | `theme` | `'dark' \| 'light' \| 'auto'` | `'auto'` | Color scheme |
 | `width` | `number \| string` | `'100%'` | Container width |
 | `height` | `number \| string` | `'auto'` | Container height |

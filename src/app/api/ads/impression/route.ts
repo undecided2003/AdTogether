@@ -28,7 +28,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Too Many Requests' }, { status: 429, headers: corsHeaders });
     }
 
-    const { adId, token, apiKey, bundleId, country } = await request.json();
+    const { adId, token, apiKey, bundleId, country, platform, appName, environment } = await request.json();
+    
+    // Ignore local test traffic to prevent statistics skewing
+    if (environment === 'development' || environment === 'test') {
+      return NextResponse.json({ success: true, warning: 'ignored_test_traffic' }, { status: 200, headers: corsHeaders });
+    }
     
     const finalCountry = country || ipCountry;
     const tier = getCountryTier(finalCountry);
@@ -147,10 +152,14 @@ export async function POST(request: Request) {
       const originsMap = adData.origins || {};
       const currentSourceCount = originsMap[safeSourceId] || 0;
       originsMap[safeSourceId] = currentSourceCount + 1;
+      
+      const lastSeenMap = adData.lastSeenByOrigin || {};
+      lastSeenMap[safeSourceId] = new Date().toISOString();
 
       transaction.update(adRef, { 
         impressions: currentImpressions + 1,
-        origins: originsMap
+        origins: originsMap,
+        lastSeenByOrigin: lastSeenMap
       });
 
       // Only deduct credits if NOT a self-impression
@@ -182,13 +191,16 @@ export async function POST(request: Request) {
              
              // Build earnings log entry for publisher visibility
              const earningsLog = pData.earningsLog || {};
-             const logKey = adId;
+             const logKey = apiKey ? `${apiKey}_${adId}` : adId;
              const existing = earningsLog[logKey] || {};
              earningsLog[logKey] = {
+               adId: adId,
                adTitle: adData.title || 'Unknown Campaign',
                adImageUrl: adData.imageUrl || '',
                adType: adType,
                apiKey: apiKey || '',
+               platform: platform || existing.platform || '',
+               appName: appName || existing.appName || '',
                impressions: (existing.impressions || 0) + 1,
                clicks: existing.clicks || 0,
                creditsEarned: (existing.creditsEarned || 0) + creditCost,
@@ -204,13 +216,16 @@ export async function POST(request: Request) {
           const pData = pSnap.data();
           if (pData) {
              const earningsLog = pData.earningsLog || {};
-             const logKey = adId;
+             const logKey = apiKey ? `${apiKey}_${adId}` : adId;
              const existing = earningsLog[logKey] || {};
              earningsLog[logKey] = {
+               adId: adId,
                adTitle: adData.title || 'Unknown Campaign (Self)',
                adImageUrl: adData.imageUrl || '',
                adType: adType,
                apiKey: apiKey || '',
+               platform: platform || existing.platform || '',
+               appName: appName || existing.appName || '',
                impressions: (existing.impressions || 0) + 1,
                clicks: existing.clicks || 0,
                creditsEarned: existing.creditsEarned || 0, // No new credits

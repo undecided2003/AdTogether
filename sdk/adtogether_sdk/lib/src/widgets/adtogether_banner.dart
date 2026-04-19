@@ -43,7 +43,7 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
 
   Future<void> _fetchAd() async {
     try {
-      final ad = await AdTogether.fetchAd(widget.adUnitId);
+      final ad = await AdTogether.fetchAd(widget.adUnitId, adType: 'banner');
       if (mounted) {
         setState(() {
           _adData = ad;

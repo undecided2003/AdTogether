@@ -1,6 +1,6 @@
 # AdTogether React Native SDK — LLM Integration Reference
 
-**Version:** 0.1.12
+**Version:** 0.1.13
 
 **Package:** `@adtogether/react-native-sdk`
 **Distribution:** NPM
@@ -28,12 +28,22 @@ AdTogether.initialize({ appId: 'YOUR_APP_ID' });
 **`AdTogether.initialize()` accepts:**
 ```typescript
 interface AdTogetherOptions {
-  appId?: string;    // Your registered app ID (preferred)
-  apiKey?: string;   // Alternative name for appId
-  baseUrl?: string;  // Override API base URL (optional)
+  appId?: string;       // Your registered app ID (preferred)
+  apiKey?: string;      // Alternative name for appId
+  baseUrl?: string;     // Override API base URL (optional)
+  bundleId?: string;    // Explicit bundle/package ID (optional, auto-detected — see below)
   allowSelfAds?: boolean; // Show own ads as fallback (default: true)
 }
 ```
+
+**Bundle ID auto-detection:** The SDK automatically tries to detect `bundleId` using (in order):
+1. `expo-application` — works in Expo and bare RN with expo modules installed
+2. `react-native-device-info` — popular community module
+3. RN built-in `NativeModules.PlatformConstants` (Android only)
+
+If none of these are available, a `console.warn` is emitted. For best results, either provide `bundleId` manually in `initialize()` or install one of the supported packages.
+
+**Tracking metadata:** Impression/click tracking payloads include `platform` (from `Platform.OS`) and `environment: "development"|"production"` (based on `__DEV__`).
 
 ### Banner Ad
 
@@ -48,8 +58,10 @@ function MyScreen() {
 
       <AdTogetherBanner
         adUnitId="YOUR_AD_UNIT_ID"
+        showCloseButton={true}
         onAdLoaded={() => console.log('Banner loaded!')}
         onAdFailedToLoad={(error) => console.error('Banner error:', error)}
+        onAdClosed={() => console.log('User closed the ad')}
       />
     </View>
   );
@@ -60,6 +72,8 @@ function MyScreen() {
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
 | `adUnitId` | `string` | **required** | Ad placement identifier |
+| `showCloseButton` | `boolean` | `false` | Show a dismissable close button overlay |
+| `onAdClosed` | `() => void` | — | Fires when user closes the ad |
 | `theme` | `'dark' \| 'light' \| 'auto'` | `'auto'` | Color scheme |
 | `onAdLoaded` | `() => void` | — | Fires when ad is fetched |
 | `onAdFailedToLoad` | `(error: Error) => void` | — | Fires on fetch failure |

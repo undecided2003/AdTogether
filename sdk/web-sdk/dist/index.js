@@ -39,6 +39,11 @@ var AdTogether = class _AdTogether {
   static initialize(options) {
     const sdk = _AdTogether.shared;
     sdk.appId = options.apiKey || options.appId;
+    if (options.bundleId) {
+      sdk.bundleId = options.bundleId;
+    } else if (typeof window !== "undefined") {
+      sdk.bundleId = window.location.hostname;
+    }
     if (options.allowSelfAds !== void 0) {
       sdk.allowSelfAds = options.allowSelfAds;
     }
@@ -68,6 +73,9 @@ var AdTogether = class _AdTogether {
       }
       if (sdk.lastAdId) {
         url += `&exclude=${sdk.lastAdId}`;
+      }
+      if (sdk.bundleId) {
+        url += `&bundleId=${sdk.bundleId}`;
       }
       url += `&allowSelfAds=${sdk.allowSelfAds}`;
       if (typeof window !== "undefined") {
@@ -100,7 +108,11 @@ var AdTogether = class _AdTogether {
       body: JSON.stringify({
         adId,
         token,
-        apiKey: _AdTogether.shared.appId
+        apiKey: _AdTogether.shared.appId,
+        ..._AdTogether.shared.bundleId ? { bundleId: _AdTogether.shared.bundleId } : {},
+        // Send platform and environment to match Flutter SDK
+        platform: "web",
+        environment: typeof process !== "undefined" && process.env?.NODE_ENV === "development" ? "development" : "production"
       })
     }).catch(console.error);
   }

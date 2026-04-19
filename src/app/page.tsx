@@ -23,8 +23,10 @@ export default function MyComponent() {
       {/* Earn 1 credit by displaying a banner ad */}
       <AdTogetherBanner 
         adUnitId="YOUR_AD_UNIT_ID" 
+        showCloseButton={true}
         onAdLoaded={() => console.log('Banner loaded!')} 
         onAdFailedToLoad={(e) => console.error(e)}
+        onAdClosed={() => console.log('User closed the ad')}
       />
 
       {/* Earn 5 credits by displaying an interstitial ad */}
@@ -36,6 +38,7 @@ export default function MyComponent() {
         adUnitId="YOUR_AD_UNIT_ID"
         isOpen={showInterstitial}
         onClose={() => setShowInterstitial(false)}
+        closeDelay={3}
       />
     </div>
   );

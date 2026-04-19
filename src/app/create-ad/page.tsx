@@ -10,7 +10,7 @@ import { ArrowLeft, UploadCloud, Link as LinkIcon, Type, MapPin, X, Wand2, Loade
 import Link from "next/link";
 import { COUNTRIES } from "@/lib/countries";
 import { getCountryTier, getTierMultiplier } from "@/lib/country-tiers";
-import { generateAdContent, screenAdContent } from "./actions";
+// Use API routes instead of server actions for Firebase Cloud Functions compatibility
 export default function CreateAdPage() {
   const [user, setUser] = useState<User | null>(null);
   const [title, setTitle] = useState("");
@@ -65,20 +65,21 @@ export default function CreateAdPage() {
     setError("");
     
     try {
-      const res = await generateAdContent(clickUrl);
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clickUrl }),
+      });
+      const res = await response.json();
       if (res.success) {
         setTitle(res.title?.substring(0, 30) || "");
         setDescription(res.description?.substring(0, 90) || "");
         
         if (res.imageBase64 && res.imageMimeType) {
           try {
-            const byteCharacters = atob(res.imageBase64);
-            const byteNumbers = new Array(byteCharacters.length);
-            for (let i = 0; i < byteCharacters.length; i++) {
-              byteNumbers[i] = byteCharacters.charCodeAt(i);
-            }
-            const byteArray = new Uint8Array(byteNumbers);
-            const blob = new Blob([byteArray], { type: res.imageMimeType });
+            const dataUrl = `data:${res.imageMimeType};base64,${res.imageBase64}`;
+            const fetchedData = await fetch(dataUrl);
+            const blob = await fetchedData.blob();
             
             const extension = res.imageMimeType.split('/')[1] || 'jpg';
             const file = new File([blob], `scraped-image.${extension}`, { type: res.imageMimeType });
@@ -117,8 +118,13 @@ export default function CreateAdPage() {
     setError("");
 
     try {
-      // Screen Ad Content
-      const screeningRes = await screenAdContent(title, description, clickUrl);
+      // Screen Ad Content via API route
+      const screenResponse = await fetch('/api/screen', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, description, clickUrl }),
+      });
+      const screeningRes = await screenResponse.json();
       if (!screeningRes.success) {
         throw new Error(screeningRes.error || "Ad screening failed.");
       }

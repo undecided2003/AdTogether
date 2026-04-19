@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, useColorScheme, Linking } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, useColorScheme, Linking, Pressable } from 'react-native';
 import { AdTogether } from './AdTogether';
 import { AdModel } from './types';
 
@@ -7,6 +7,10 @@ export interface AdTogetherBannerProps {
   adUnitId: string;
   onAdLoaded?: () => void;
   onAdFailedToLoad?: (error: Error) => void;
+  /** Whether to show a close button on the banner */
+  showCloseButton?: boolean;
+  /** Callback when the user closes the ad */
+  onAdClosed?: () => void;
   /** Pass 'dark' to use dark mode, 'light' for light mode, or 'auto' (default) to respect system preference */
   theme?: 'dark' | 'light' | 'auto';
   style?: any;
@@ -16,12 +20,15 @@ export const AdTogetherBanner: React.FC<AdTogetherBannerProps> = ({
   adUnitId,
   onAdLoaded,
   onAdFailedToLoad,
+  showCloseButton = false,
+  onAdClosed,
   theme = 'auto',
   style,
 }) => {
   const [adData, setAdData] = useState<AdModel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const systemColorScheme = useColorScheme();
   
   const impressionTrackedRef = useRef(false);
@@ -66,6 +73,15 @@ export const AdTogetherBanner: React.FC<AdTogetherBannerProps> = ({
       Linking.openURL(adData.clickUrl).catch(console.error);
     }
   };
+
+  const handleClose = () => {
+    setIsVisible(false);
+    onAdClosed?.();
+  };
+
+  if (!isVisible) {
+    return null;
+  }
 
   if (isLoading) {
     return <View style={[styles.container, style]} />;
@@ -114,6 +130,17 @@ export const AdTogetherBanner: React.FC<AdTogetherBannerProps> = ({
           {adData.description}
         </Text>
       </View>
+      {showCloseButton && (
+        <Pressable
+          onPress={handleClose}
+          style={styles.closeButton}
+          hitSlop={8}
+          accessibilityLabel="Close ad"
+          accessibilityRole="button"
+        >
+          <Text style={styles.closeButtonText}>×</Text>
+        </Pressable>
+      )}
     </TouchableOpacity>
   );
 };
@@ -171,5 +198,23 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 12,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+  },
+  closeButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    lineHeight: 18,
   },
 });

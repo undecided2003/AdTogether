@@ -74,7 +74,7 @@ fun AdTogetherView(
     if (!isVisible) return
 
     LaunchedEffect(adUnitId) {
-        val result = AdTogether.fetchAd(adUnitId)
+        val result = AdTogether.fetchAd(adUnitId, "banner")
         if (result != null) {
             adData = result
             onAdLoaded?.invoke()

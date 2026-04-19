@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     const targetCountry = searchParams.get('country') || 'global';
     const adUnitId = searchParams.get('adUnitId');
     const apiKey = searchParams.get('apiKey');
-    const adType = searchParams.get('adType'); // 'banner' | 'interstitial' | null
+    const adType = searchParams.get('adType') || 'banner';
     const exclude = searchParams.get('exclude'); // ID of the last shown ad
     const bundleId = searchParams.get('bundleId'); // Optional from mobile SDKs
     const explicitSourceUrl = searchParams.get('sourceUrl'); // Explicitly passed by SDK
@@ -70,8 +70,9 @@ export async function GET(request: Request) {
       querySnapshot.forEach((doc: any) => {
         const data = doc.data();
         
-        // Filter by ad type if specified
-        if (adType && data.adType && data.adType !== adType) {
+        // Filter strictly by ad type
+        const adDataType = data.adType || 'banner';
+        if (adDataType !== adType) {
           return;
         }
 

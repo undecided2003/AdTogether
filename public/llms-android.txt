@@ -1,6 +1,8 @@
 # AdTogether Native Android SDK — LLM Integration Reference
 
-**Package:** `com.adtogether:sdk`
+**Version:** 0.1.13
+
+**Package:** `com.relaxsoftwareapps.adtogether:sdk`
 **Distribution:** Maven Central
 **Targets:** Android API 21+ (minSdk 21)
 **Frameworks:** Jetpack Compose, XML Views
@@ -13,7 +15,7 @@ Add to your module-level `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.adtogether:sdk:0.1.12")
+    implementation("com.relaxsoftwareapps.adtogether:sdk:0.1.13")
 }
 ```
 
@@ -41,12 +43,15 @@ Register `MyApp` in `AndroidManifest.xml`:
 fun initialize(
     context: Context,
     appId: String,
-    baseUrl: String? = null,
-    allowSelfAds: Boolean = true
+    baseUrl: String? = null,       // Override API base URL (optional)
+    allowSelfAds: Boolean = true,  // Show own ads as fallback (default: true)
+    bundleId: String? = null       // Explicit package ID (optional, auto-detected from context.packageName)
 )
 ```
 
 > **Key difference from other SDKs:** Android requires a `Context` as the first parameter.
+
+**Auto-detected metadata:** The SDK automatically detects `appName`, `appVersion`, and `bundleId` from the `PackageManager`. These are included in impression/click tracking payloads along with `platform: "android"` and `environment: "development"|"production"` (based on the app's debuggable flag).
 
 ### Banner Ad (Jetpack Compose)
 
@@ -60,7 +65,9 @@ fun MainScreen() {
         AdTogetherView(
             adUnitId = "YOUR_AD_UNIT_ID",
             modifier = Modifier.fillMaxWidth().height(50.dp),
-            onAdLoaded = { println("Ad loaded!") }
+            showCloseButton = true,
+            onAdLoaded = { println("Ad loaded!") },
+            onAdClosed = { println("User closed the ad") }
         )
     }
 }
@@ -79,6 +86,17 @@ fun AdTogetherView(
     modifier: Modifier = Modifier
 )
 ```
+
+**`AdTogetherView` parameters:**
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `adUnitId` | `String` | **required** | Ad placement identifier |
+| `size` | `AdSize` | `AdSize.FLUID` | Ad size preset (`FLUID`, `BANNER`, `LARGE_BANNER`, `MEDIUM_RECTANGLE`) |
+| `showCloseButton` | `Boolean` | `false` | Show a dismissable close button overlay |
+| `onAdLoaded` | `(() -> Unit)?` | — | Fires when ad data loads |
+| `onAdFailedToLoad` | `((String) -> Unit)?` | — | Fires on load failure |
+| `onAdClosed` | `(() -> Unit)?` | — | Fires when user closes the ad |
+| `modifier` | `Modifier` | `Modifier` | Jetpack Compose modifier |
 
 ### Interstitial Ad (Jetpack Compose)
 
@@ -125,8 +143,7 @@ fun AdTogetherInterstitial(
 
 - **XML Layout Support**: If you are using classic XML views, you can bridge the Compose view using `ComposeView` into your XML layout. Native XML `AdTogetherBannerView` is coming soon.
 - **ProGuard/R8**: If using ProGuard/R8, add the following keep rule:
-
-- If using ProGuard/R8, add the following keep rule:
   ```
   -keep class com.adtogether.sdk.** { *; }
   ```
+- **Tracking metadata**: All impression/click events automatically include `platform`, `environment`, `appName`, `appVersion`, and `bundleId`. No manual configuration needed.

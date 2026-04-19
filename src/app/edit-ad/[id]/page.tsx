@@ -9,7 +9,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { ArrowLeft, UploadCloud, Link as LinkIcon, Type, MapPin, X, Wand2, Loader2, Layout, Maximize2 } from "lucide-react";
 import Link from "next/link";
 import { COUNTRIES } from "@/lib/countries";
-import { generateAdContent } from "@/app/create-ad/actions";
+// Use API route instead of server action
 
 export default function EditAdPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -104,7 +104,12 @@ export default function EditAdPage() {
     setError("");
     
     try {
-      const res = await generateAdContent(clickUrl);
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clickUrl }),
+      });
+      const res = await response.json();
       if (res.success) {
         setTitle(res.title?.substring(0, 30) || "");
         setDescription(res.description?.substring(0, 90) || "");

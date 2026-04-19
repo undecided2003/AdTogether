@@ -26,7 +26,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Too Many Requests' }, { status: 429, headers: corsHeaders });
     }
 
-    const { adId, token, bundleId, apiKey } = await request.json();
+    const { adId, token, bundleId, apiKey, environment } = await request.json();
+
+    // Ignore local test traffic
+    if (environment === 'development' || environment === 'test') {
+      return NextResponse.json({ success: true, warning: 'ignored_test_traffic' }, { status: 200, headers: corsHeaders });
+    }
 
     if (!adId) {
       return NextResponse.json({ error: 'adId is required' }, { status: 400, headers: corsHeaders });
@@ -68,7 +73,8 @@ export async function POST(request: Request) {
     const adRef = db.collection('ads').doc(adId);
     await adRef.update({ 
       clicks: FieldValue.increment(1),
-      [`clicksByOrigin.${safeSourceId}`]: FieldValue.increment(1)
+      [`clicksByOrigin.${safeSourceId}`]: FieldValue.increment(1),
+      [`lastClickedByOrigin.${safeSourceId}`]: new Date().toISOString()
     }).catch(console.error);
 
     // Update publisher's earnings log with click count
@@ -88,9 +94,12 @@ export async function POST(request: Request) {
         const pubData = pubDoc.data();
         if (pubData) {
           const earningsLog = pubData.earningsLog || {};
-          if (earningsLog[adId]) {
-            earningsLog[adId].clicks = (earningsLog[adId].clicks || 0) + 1;
-            earningsLog[adId].lastUpdated = new Date().toISOString();
+          const logKey = apiKey ? `${apiKey}_${adId}` : adId;
+          const actualKey = earningsLog[logKey] ? logKey : (earningsLog[adId] ? adId : logKey);
+          
+          if (earningsLog[actualKey]) {
+            earningsLog[actualKey].clicks = (earningsLog[actualKey].clicks || 0) + 1;
+            earningsLog[actualKey].lastUpdated = new Date().toISOString();
             await publisherRef.update({ earningsLog });
           }
         }

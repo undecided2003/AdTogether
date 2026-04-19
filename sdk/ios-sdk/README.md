@@ -40,7 +40,7 @@ This SDK allows iOS developers to easily integrate AdTogether ads into their app
 ### CocoaPods
 
 ```ruby
-pod 'AdTogether', '~> 0.1.7'
+pod 'AdTogether', '~> 0.1.13'
 ```
 
 ### Initialize
@@ -53,7 +53,10 @@ import AdTogether
 @main
 struct MyApp: App {
     init() {
-        AdTogether.initialize(appId: "YOUR_APP_ID")
+        AdTogether.initialize(
+            appId: "YOUR_APP_ID"
+            // bundleId: "com.example.app" // optional: auto-detected from Bundle.main
+        )
     }
 
     var body: some Scene {
@@ -86,6 +89,8 @@ struct ContentView: View {
             // Banner Ad
             AdTogetherView(
                 adUnitID: "YOUR_BANNER_UNIT_ID",
+                showCloseButton: true,
+                onAdClosed: { print("Banner closed!") },
                 onAdLoaded: { print("Banner loaded!") }
             )
             .frame(height: 50)

@@ -1,6 +1,6 @@
 import {
   AdTogether
-} from "../chunk-7IJIBJD4.mjs";
+} from "../chunk-RW43ES42.mjs";
 
 // src/react/AdTogetherBanner.tsx
 import { useEffect, useRef, useState } from "react";
@@ -11,6 +11,8 @@ var AdTogetherBanner = ({
   style = {},
   onAdLoaded,
   onAdFailedToLoad,
+  showCloseButton = false,
+  onAdClosed,
   width = "100%",
   height = "auto",
   theme = "auto"
@@ -18,6 +20,7 @@ var AdTogetherBanner = ({
   const [adData, setAdData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(theme === "dark");
   const containerRef = useRef(null);
   const impressionTrackedRef = useRef(false);
@@ -34,7 +37,7 @@ var AdTogetherBanner = ({
   }, [theme]);
   useEffect(() => {
     let isMounted = true;
-    AdTogether.fetchAd(adUnitId).then((ad) => {
+    AdTogether.fetchAd(adUnitId, "banner").then((ad) => {
       if (isMounted) {
         setAdData(ad);
         setIsLoading(false);
@@ -76,6 +79,14 @@ var AdTogetherBanner = ({
       window.open(adData.clickUrl, "_blank", "noopener,noreferrer");
     }
   };
+  const handleClose = (e) => {
+    e.stopPropagation();
+    setIsVisible(false);
+    onAdClosed?.();
+  };
+  if (!isVisible) {
+    return null;
+  }
   if (isLoading) {
     return /* @__PURE__ */ jsx(
       "div",
@@ -110,6 +121,7 @@ var AdTogetherBanner = ({
         overflow: "hidden",
         cursor: "pointer",
         boxSizing: "border-box",
+        position: "relative",
         ...style
       },
       onMouseOver: (e) => {
@@ -142,7 +154,35 @@ var AdTogetherBanner = ({
             }, children: "AD" })
           ] }),
           /* @__PURE__ */ jsx("span", { style: { fontSize: "12px", color: descColor, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }, children: adData.description })
-        ] })
+        ] }),
+        showCloseButton && /* @__PURE__ */ jsx(
+          "button",
+          {
+            onClick: handleClose,
+            "aria-label": "Close ad",
+            style: {
+              position: "absolute",
+              top: "8px",
+              right: "8px",
+              width: "24px",
+              height: "24px",
+              borderRadius: "50%",
+              backgroundColor: "rgba(0, 0, 0, 0.4)",
+              border: "none",
+              color: "#fff",
+              fontSize: "14px",
+              fontWeight: "bold",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 0,
+              lineHeight: 1,
+              zIndex: 1
+            },
+            children: "\xD7"
+          }
+        )
       ]
     }
   );
@@ -295,10 +335,38 @@ var AdTogetherInterstitial = ({
           from { opacity: 0; transform: scale(0.9); }
           to { opacity: 1; transform: scale(1); }
         }
+        .adtogether-interstitial-card {
+          display: flex;
+          flex-direction: column;
+        }
+        .adtogether-interstitial-img-wrapper {
+          width: 100%;
+        }
+        
+        @media (orientation: landscape) and (max-height: 600px) {
+          .adtogether-interstitial-card {
+            flex-direction: row;
+            max-height: 90vh;
+          }
+          .adtogether-interstitial-img-wrapper {
+            width: 50%;
+            flex-shrink: 0;
+            display: flex;
+          }
+          .adtogether-interstitial-img-wrapper img {
+            height: 100% !important;
+            aspect-ratio: auto !important;
+          }
+          .adtogether-interstitial-content {
+            width: 50%;
+            overflow-y: auto;
+          }
+        }
       ` }),
         isLoading ? /* @__PURE__ */ jsx2("div", { style: { color: "#fff", fontSize: "18px" }, children: "Loading Ad..." }) : adData ? /* @__PURE__ */ jsxs2(
           "div",
           {
+            className: "adtogether-interstitial-card",
             style: {
               position: "relative",
               maxWidth: "800px",
@@ -354,6 +422,7 @@ var AdTogetherInterstitial = ({
               adData.imageUrl && /* @__PURE__ */ jsx2(
                 "div",
                 {
+                  className: "adtogether-interstitial-img-wrapper",
                   style: { cursor: "pointer", position: "relative" },
                   onClick: handleAdClick,
                   children: /* @__PURE__ */ jsx2(
@@ -374,6 +443,7 @@ var AdTogetherInterstitial = ({
               /* @__PURE__ */ jsxs2(
                 "div",
                 {
+                  className: "adtogether-interstitial-content",
                   style: { padding: "20px", cursor: "pointer" },
                   onClick: handleAdClick,
                   children: [

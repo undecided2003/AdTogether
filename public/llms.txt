@@ -1,6 +1,6 @@
 # AdTogether — LLM Integration Reference
 
-**Version:** 0.1.12
+**Version:** 0.1.13
 
 **"Show an ad, get an ad shown"**
 *The reciprocal ad exchange to increase conversions and grow your app's audience.*
@@ -16,7 +16,7 @@ AdTogether provides **5 separate SDKs**. Each SDK has its **own package name, im
 To prevent context bleeding and hallucination, **please read the specific instruction file** for the platform you are building for:
 
 | # | SDK Name | Package / Import | Instructions File | Targets |
-|---|----------|-----------------|-------------|---------|
+|---|----------|-----------------|-------------|---------| 
 | 1 | **Web SDK** | `@adtogether/web-sdk` | Read `llms-web.txt` | Websites, React, Next.js, Vue, plain HTML |
 | 2 | **React Native SDK** | `@adtogether/react-native-sdk` | Read `llms-react-native.txt` | React Native (iOS + Android), Expo |
 | 3 | **Flutter SDK** | `adtogether_sdk` | Read `llms-flutter.txt` | Android + iOS + Web (single Dart package) |
@@ -41,10 +41,23 @@ To prevent context bleeding and hallucination, **please read the specific instru
 | Feature | Web SDK | React Native SDK | Flutter SDK | iOS SDK | Android SDK |
 |---------|---------|-----------------|-------------|---------|-------------|
 | **Init call** | `AdTogether.initialize({ appId })` | `AdTogether.initialize({ appId })` | `await AdTogether.initialize(appId: ...)` | `AdTogether.initialize(appId: ...)` | `AdTogether.initialize(context, appId)` |
+| **bundleId** | Auto: `hostname` | Auto: expo-app / device-info / manual | Auto: `package_info_plus` | Auto: `Bundle.main` | Auto: `context.packageName` |
 | **Banner component** | `<AdTogetherBanner>` | `<AdTogetherBanner>` | `AdTogetherBanner()` widget | `AdTogetherView()` | `AdTogetherView()` composable |
+| **Banner close button** | `showCloseButton` + `onAdClosed` | `showCloseButton` + `onAdClosed` | `showCloseButton` + `onAdClosed` | `showCloseButton` + `onAdClosed` | `showCloseButton` + `onAdClosed` |
 | **Interstitial pattern** | `<AdTogetherInterstitial isOpen={...} onClose={...}>` | `<AdTogetherInterstitial isOpen={...} onClose={...}>` | `AdTogetherInterstitial.show(context: ..., adUnitId: ...)` | `.fullScreenCover { AdTogetherInterstitialView(...) }` | `if (show) { AdTogetherInterstitial(..., onDismiss = ...) }` |
 | **Ad unit ID param name** | `adUnitId` | `adUnitId` | `adUnitId` | `adUnitID` (capital ID) | `adUnitId` |
 | **Import** | `@adtogether/web-sdk` + `/react` | `@adtogether/react-native-sdk` | `package:adtogether_sdk/adtogether_sdk.dart` | `import AdTogether` | `import com.adtogether.sdk.*` |
+
+### Tracking Payload (all SDKs send these on impression/click)
+
+| Field | Web | React Native | Flutter | iOS | Android |
+|-------|-----|-------------|---------|-----|---------|
+| `adId` + `token` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `apiKey` + `bundleId` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `platform` | `"web"` | `Platform.OS` | auto | `#if os()` | `"android"` |
+| `environment` | `NODE_ENV` | `__DEV__` | auto | `#if DEBUG` | debuggable flag |
+| `appName` | — | — | ✅ | ✅ | ✅ |
+| `appVersion` | — | — | ✅ | ✅ | ✅ |
 
 ---
 
@@ -53,7 +66,10 @@ To prevent context bleeding and hallucination, **please read the specific instru
 - A valid `AD_UNIT_ID` looks like `unit_x8f9...` or a descriptive string like `home_bottom_banner`
 - A valid `API_KEY` / `APP_ID` looks like `at_k3m7...`
 - All SDKs communicate with the same REST API endpoints (`/api/ads/serve`, `/api/ads/impression`, `/api/ads/click`).
+- **Strict Type Enforcement:** The `/serve` API now requires an `adType` parameter (`banner` or `interstitial`). The SDK components (`AdTogetherBanner`, `AdTogetherInterstitial`) handle this automatically under the hood. Custom REST integrations must pass this explicitly.
 - **Initialization must happen BEFORE any ad rendering call** — place it in app startup logic.
 - The Web SDK and React Native SDK have nearly identical TypeScript APIs but are **completely separate packages** with different import paths. Never cross-import.
 - The Flutter SDK's interstitial uses an **imperative** `.show()` method. The Web/React Native SDKs use a **declarative** `<Component isOpen={...} />` pattern. Do not confuse these.
 - iOS uses `adUnitID` (capital "ID"). All other SDKs use `adUnitId` (lowercase "d").
+- **All SDKs now support `showCloseButton` and `onAdClosed` on banner ads.** This is a recent addition — older versions may not have it.
+- **All SDKs auto-detect `bundleId`** except React Native, which requires `expo-application` or `react-native-device-info` to be installed, or manual `bundleId` in init options.

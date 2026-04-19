@@ -45,7 +45,10 @@ Call `AdTogether.initialize()` before rendering any ad components. You can obtai
 ```typescript
 import { AdTogether } from '@adtogether/web-sdk';
 
-AdTogether.initialize({ appId: 'YOUR_APP_ID' });
+AdTogether.initialize({ 
+  appId: 'YOUR_APP_ID',
+  // bundleId: 'com.example.app' // optional: automatically detected from window.location.hostname
+});
 ```
 
 ## Usage
@@ -64,8 +67,10 @@ function MyApp() {
 
       <AdTogetherBanner
         adUnitId="home_bottom_banner"
+        showCloseButton={true}
         onAdLoaded={() => console.log('Banner loaded!')}
         onAdFailedToLoad={(error) => console.error('Banner error:', error)}
+        onAdClosed={() => console.log('Banner closed!')}
       />
     </div>
   );
@@ -77,6 +82,8 @@ function MyApp() {
 | Prop               | Type                    | Default   | Description |
 |--------------------|-------------------------|-----------|-------------|
 | `adUnitId`         | `string`                | **required** | Unique identifier for this ad placement. |
+| `showCloseButton`  | `boolean`               | `false`   | Show a dismissable close button overlay. |
+| `onAdClosed`       | `() => void`            | —         | Called when the user closes the ad. |
 | `width`            | `number \| string`      | `'100%'`  | Width of the ad element. |
 | `height`           | `number \| string`      | `'auto'`  | Height of the ad element. |
 | `theme`            | `'dark' \| 'light' \| 'auto'` | `'auto'` | Color scheme. `'auto'` follows system preference. |

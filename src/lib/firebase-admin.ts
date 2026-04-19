@@ -1,4 +1,4 @@
-import admin from 'firebase-admin';
+const admin = eval("require('firebase-admin')");
 
 let app;
 try {

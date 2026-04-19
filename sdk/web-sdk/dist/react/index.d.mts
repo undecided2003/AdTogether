@@ -6,6 +6,10 @@ interface AdTogetherBannerProps {
     style?: React.CSSProperties;
     onAdLoaded?: () => void;
     onAdFailedToLoad?: (error: Error) => void;
+    /** Whether to show a close button on the banner */
+    showCloseButton?: boolean;
+    /** Callback when the user closes the ad */
+    onAdClosed?: () => void;
     /** Width of the ad element. Defaults to '100%' */
     width?: number | string;
     /** Height of the ad element. Defaults to 'auto' */

@@ -1,5 +1,8 @@
 ## 0.1.13
 
+* **Feature**: Added `onAdClosed` callback support to banner components.
+* **Feature**: Improved automatic `bundleId` detection across all platforms.
+* **Security**: Hardened ad-serving logic to prevent payout fraud.
 * **Sync**: Version parity across all AdTogether SDKs.
 
 ## 0.1.12

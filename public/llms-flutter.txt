@@ -1,6 +1,6 @@
 # AdTogether Flutter SDK — LLM Integration Reference
 
-**Version:** 0.1.12
+**Version:** 0.1.13
 
 **Package:** `adtogether_sdk`
 **Distribution:** pub.dev
@@ -31,10 +31,12 @@ void main() async {
 static Future<void> initialize({
   required String appId,
   String? baseUrl,       // Override API base URL (optional)
-  String? bundleId,      // Explicit bundle/package ID (optional, auto-detected)
+  String? bundleId,      // Explicit bundle/package ID (optional, auto-detected via package_info_plus)
   bool allowSelfAds = true,
 })
 ```
+
+**Auto-detected metadata:** The SDK automatically detects `appName`, `appVersion`, and `bundleId` using the `package_info_plus` package. Impression/click tracking payloads include `platform` (e.g. `"android"`, `"ios"`, `"web"`), `environment: "development"|"production"`, `appName`, and `appVersion`.
 
 ### Banner Ad
 
@@ -51,8 +53,10 @@ class MyPage extends StatelessWidget {
           AdTogetherBanner(
             adUnitId: 'YOUR_AD_UNIT_ID',
             size: AdSize.banner,
+            showCloseButton: true,
             onAdLoaded: () => print('Ad loaded!'),
             onAdFailedToLoad: (error) => print('Error: $error'),
+            onAdClosed: () => print('User closed the ad'),
           ),
         ],
       ),
@@ -65,9 +69,11 @@ class MyPage extends StatelessWidget {
 | Param | Type | Default | Description |
 |-------|------|---------|-------------|
 | `adUnitId` | `String` | **required** | Ad placement identifier |
-| `size` | `AdSize` | `AdSize.fluid` | Ad size preset |
+| `size` | `AdSize` | `AdSize.fluid` | Ad size preset (`fluid`, `banner`, `largeBanner`, `mediumRectangle`) |
+| `showCloseButton` | `bool` | `false` | Show a dismissable close button overlay |
 | `onAdLoaded` | `VoidCallback?` | — | Fires when ad data loads |
 | `onAdFailedToLoad` | `Function(String)?` | — | Fires on load failure |
+| `onAdClosed` | `VoidCallback?` | — | Fires when user closes the ad |
 
 ### Interstitial Ad
 
@@ -101,3 +107,4 @@ static Future<void> show({
 - On **iOS**: Ensure `io.flutter.embedded_views_preview` is enabled in `Info.plist` if using older Flutter engines.
 - On **Flutter Web**: The SDK renders ads via `HtmlElementView` — no native plugin code runs. Ensure your web host serves the `sdk.js` script.
 - On **Android**: Platform Views are used. Minimum SDK version 19 required.
+- **Tracking metadata**: All impression/click events automatically include `platform`, `environment`, `appName`, `appVersion`, and `bundleId`. No manual configuration needed.

@@ -1,6 +1,6 @@
 # AdTogether REST API — LLM Integration Reference
 
-**Version:** 0.1.12
+**Version:** 0.1.13
 
 > **Integration Guide:** For custom environments without a dedicated SDK, you can directly interface with the AdTogether Ad Serving API.
 
@@ -9,8 +9,19 @@
 ### Fetch Ad
 
 ```bash
-curl -X GET "https://adtogether.relaxsoftwareapps.com/api/ads/serve?country=global&adUnitId=YOUR_AD_UNIT_ID&apiKey=YOUR_APP_ID"
+curl -X GET "https://adtogether.relaxsoftwareapps.com/api/ads/serve?country=global&adUnitId=YOUR_AD_UNIT_ID&adType=banner&apiKey=YOUR_APP_ID&bundleId=com.example.myapp&allowSelfAds=true"
 ```
+
+**Query parameters:**
+| Param | Required | Description |
+|-------|----------|-------------|
+| `adUnitId` | **yes** | Ad placement identifier |
+| `apiKey` | **yes** | Your registered app ID |
+| `country` | no | Country code or `"global"` (default) |
+| `bundleId` | no | Your app's bundle/package identifier |
+| `allowSelfAds` | no | Show own ads as fallback (default: `true`) |
+| `exclude` | no | Ad ID to exclude (for rotation) |
+| `adType` | no | Filter by `"banner"` or `"interstitial"` |
 
 Returns a JSON object:
 ```json
@@ -29,15 +40,44 @@ Returns a JSON object:
 ```bash
 curl -X POST "https://adtogether.relaxsoftwareapps.com/api/ads/impression" \
   -H "Content-Type: application/json" \
-  -d '{"adId": "ad_abc123", "token": "HMAC_TOKEN_FROM_SERVE_RESPONSE", "apiKey": "YOUR_APP_ID"}'
+  -d '{
+    "adId": "ad_abc123",
+    "token": "HMAC_TOKEN_FROM_SERVE_RESPONSE",
+    "apiKey": "YOUR_APP_ID",
+    "bundleId": "com.example.myapp",
+    "platform": "android",
+    "environment": "production",
+    "appName": "My App",
+    "appVersion": "1.2.3"
+  }'
 ```
-
-**Note:** The `token` field is required. It is an HMAC signature returned in the `/api/ads/serve` response. Requests without a valid token will be rejected.
 
 ### Track Click
 
 ```bash
 curl -X POST "https://adtogether.relaxsoftwareapps.com/api/ads/click" \
   -H "Content-Type: application/json" \
-  -d '{"adId": "ad_abc123", "token": "HMAC_TOKEN_FROM_SERVE_RESPONSE", "apiKey": "YOUR_APP_ID"}'
+  -d '{
+    "adId": "ad_abc123",
+    "token": "HMAC_TOKEN_FROM_SERVE_RESPONSE",
+    "apiKey": "YOUR_APP_ID",
+    "bundleId": "com.example.myapp",
+    "platform": "web",
+    "environment": "production"
+  }'
 ```
+
+### Tracking Payload Fields
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `adId` | **yes** | The ad ID from the serve response |
+| `token` | **yes** | HMAC signature from the serve response (requests without valid token are rejected) |
+| `apiKey` | **yes** | Your registered app ID |
+| `bundleId` | no | Your app's bundle/package identifier |
+| `platform` | no | Platform identifier (e.g. `"android"`, `"ios"`, `"web"`, `"macos"`) |
+| `environment` | no | `"development"` or `"production"` |
+| `appName` | no | Human-readable app name |
+| `appVersion` | no | App version string (e.g. `"1.2.3"`) |
+
+> **Note:** While only `adId`, `token`, and `apiKey` are strictly required, providing `bundleId`, `platform`, and `environment` enables richer analytics in your dashboard.

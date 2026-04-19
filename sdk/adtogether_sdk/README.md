@@ -39,7 +39,7 @@ Add the dependency to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  adtogether_sdk: ^0.1.7
+  adtogether_sdk: ^0.1.13
 ```
 
 Then run:
@@ -95,9 +95,11 @@ Widget build(BuildContext context) {
 
       AdTogetherBanner(
         adUnitId: 'home_bottom_banner',
+        showCloseButton: true,
         size: AdSize.banner,
         onAdLoaded: () => debugPrint('Banner loaded!'),
         onAdFailedToLoad: (error) => debugPrint('Banner error: $error'),
+        onAdClosed: () => debugPrint('Banner closed!'),
       ),
     ],
   );
@@ -110,6 +112,8 @@ Widget build(BuildContext context) {
 |--------------------|---------------------|--------------|-------------|
 | `adUnitId`         | `String`            | **required** | Unique identifier for this ad placement. |
 | `size`             | `AdSize`            | `AdSize.fluid` | The desired ad size. See [Supported Ad Sizes](#supported-ad-sizes). |
+| `showCloseButton`  | `bool`              | `false`      | Show a dismissable close button overlay. |
+| `onAdClosed`       | `VoidCallback?`     | `null`       | Called when the user closes the ad. |
 | `onAdLoaded`       | `VoidCallback?`     | `null`       | Called when the ad has been successfully fetched and rendered. |
 | `onAdFailedToLoad` | `Function(String)?` | `null`       | Called with an error message if the ad fails to load. |
 

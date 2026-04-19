@@ -36,7 +36,8 @@
       container.setAttribute('data-ad-loaded', 'true'); // mark as processing
 
       try {
-        const response = await fetch(`${baseUrl}/api/ads/serve?country=global`);
+        const adUnit = container.getAttribute('data-ad-unit') || 'unknown';
+        const response = await fetch(`${baseUrl}/api/ads/serve?country=global&adType=banner&adUnitId=${adUnit}`);
         if (!response.ok) {
           console.warn('AdTogether: No ads available.');
           continue;

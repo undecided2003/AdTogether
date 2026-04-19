@@ -1,6 +1,6 @@
 {
   "name": "adtogether",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@adtogether/web-sdk": "file:sdk/web-sdk",
-    "cheerio": "^1.2.0",
     "firebase": "^12.11.0",
     "firebase-admin": "^13.7.0",
     "lightningcss": "^1.32.0",

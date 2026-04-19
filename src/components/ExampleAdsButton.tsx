@@ -13,7 +13,9 @@ function ExampleAdPreview({ onShowInterstitial }: { onShowInterstitial: () => vo
         <div className="rounded-xl overflow-hidden border border-zinc-100 dark:border-white/5 bg-zinc-50 dark:bg-black/20">
           <AdTogetherBanner 
             adUnitId="example_banner" 
+            showCloseButton={true}
             className="w-full"
+            onAdClosed={() => console.log('Banner closed in preview')}
           />
         </div>
       </div>
@@ -42,7 +44,11 @@ export default function ExampleAdsButton() {
   useEffect(() => {
     try {
       // Use the project's default example key
-      AdTogether.initialize({ appId: 'at_f57425e89a9545eda1162baeedb78636' });
+      // Initialize the SDK with your App ID and Bundle ID
+      AdTogether.initialize({ 
+        appId: 'at_f57425e89a9545eda1162baeedb78636',
+        bundleId: 'com.adtogether.demo'
+      });
     } catch (e) {
       console.error('Error initializing AdTogether', e);
     }
@@ -74,7 +80,7 @@ export default function ExampleAdsButton() {
           <div className="flex justify-between items-center mb-5">
             <div className="flex flex-col">
               <span className="text-[10px] font-bold text-amber-500 dark:text-amber-400 uppercase tracking-widest leading-none mb-1">Live SDK Preview</span>
-              <span className="text-sm font-bold text-zinc-900 dark:text-white">AdTogether Web Core v0.1.10</span>
+              <span className="text-sm font-bold text-zinc-900 dark:text-white">AdTogether Web Core v0.1.12</span>
             </div>
             <button 
               onClick={() => setShowPopover(false)} 
@@ -89,9 +95,14 @@ export default function ExampleAdsButton() {
             setShowPopover(false);
           }} />
           
-          <div className="mt-5 pt-4 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-center gap-2">
-            <div className="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
-            <p className="text-[10px] text-zinc-400 dark:text-zinc-600 font-medium">SDK v0.1.10 active and connected to mainnet</p>
+          <div className="mt-5 pt-4 border-t border-zinc-100 dark:border-zinc-800 flex flex-col items-center gap-2 text-center">
+            <div className="flex items-center gap-2">
+              <div className="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
+              <p className="text-[10px] text-zinc-400 dark:text-zinc-600 font-medium whitespace-nowrap">SDK v0.1.12 active and connected</p>
+            </div>
+            <p className="text-[9px] text-zinc-400 dark:text-zinc-700 max-w-[240px] leading-relaxed">
+              * Analytics now include auto-detected bundleId, platform, and environment metadata for better tracking.
+            </p>
           </div>
         </div>
       )}
@@ -100,6 +111,7 @@ export default function ExampleAdsButton() {
         adUnitId="example_interstitial"
         isOpen={showInterstitial}
         onClose={() => setShowInterstitial(false)}
+        closeDelay={3}
       />
     </div>
   );

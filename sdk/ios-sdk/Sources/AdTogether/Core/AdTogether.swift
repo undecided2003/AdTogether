@@ -10,6 +10,9 @@ public final class AdTogether {
     private(set) var baseUrl: String = "https://adtogether.relaxsoftwareapps.com"
     private(set) var lastAdId: String?
     private(set) var allowSelfAds: Bool = true
+    private(set) var bundleId: String?
+    private(set) var appName: String?
+    private(set) var appVersion: String?
     
     let logger = Logger(subsystem: "com.adtogether.sdk", category: "Core")
     
@@ -19,12 +22,20 @@ public final class AdTogether {
     /// - Parameters:
     ///   - appId: Your registered application ID.
     ///   - baseUrl: (Optional) Override the base URL for testing purposes.
-    public static func initialize(appId: String, baseUrl: String? = nil, allowSelfAds: Bool = true) {
+    ///   - bundleId: (Optional) Override the app bundle identifier.
+    public static func initialize(appId: String, baseUrl: String? = nil, allowSelfAds: Bool = true, bundleId: String? = nil) {
         shared.appId = appId
         shared.allowSelfAds = allowSelfAds
         if let overrideUrl = baseUrl {
             shared.baseUrl = overrideUrl
         }
+        shared.bundleId = bundleId ?? Bundle.main.bundleIdentifier
+        
+        // Detect app name and version from Info.plist
+        shared.appName = Bundle.main.infoDictionary?[kCFBundleNameKey as String] as? String
+            ?? Bundle.main.infoDictionary?["CFBundleDisplayName"] as? String
+        shared.appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+        
         shared.logger.info("AdTogether SDK Initialized with App ID: \(appId)")
     }
     

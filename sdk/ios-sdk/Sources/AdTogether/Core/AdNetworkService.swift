@@ -10,7 +10,7 @@ internal class AdNetworkService {
         if let exclude = exclude {
             urlString += "&exclude=\(exclude)"
         }
-        if let bundleId = Bundle.main.bundleIdentifier {
+        if let bundleId = AdTogether.shared.bundleId {
             urlString += "&bundleId=\(bundleId)"
         }
         urlString += "&allowSelfAds=\(allowSelfAds)"
@@ -66,9 +66,31 @@ internal class AdNetworkService {
         if let apiKey = AdTogether.shared.appId {
             body["apiKey"] = apiKey
         }
-        if let bundleId = Bundle.main.bundleIdentifier {
+        if let bundleId = AdTogether.shared.bundleId {
             body["bundleId"] = bundleId
         }
+        // Send platform and app metadata to match Flutter SDK
+        #if os(iOS)
+        body["platform"] = "ios"
+        #elseif os(macOS)
+        body["platform"] = "macos"
+        #elseif os(tvOS)
+        body["platform"] = "tvos"
+        #elseif os(watchOS)
+        body["platform"] = "watchos"
+        #endif
+        if let appName = AdTogether.shared.appName {
+            body["appName"] = appName
+        }
+        if let appVersion = AdTogether.shared.appVersion {
+            body["appVersion"] = appVersion
+        }
+        #if DEBUG
+        body["environment"] = "development"
+        #else
+        body["environment"] = "production"
+        #endif
+        
         if let bodyData = try? JSONEncoder().encode(body) {
             request.httpBody = bodyData
             URLSession.shared.dataTask(with: request).resume()

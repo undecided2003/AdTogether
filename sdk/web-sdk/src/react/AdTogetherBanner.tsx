@@ -8,6 +8,10 @@ export interface AdTogetherBannerProps {
   style?: React.CSSProperties;
   onAdLoaded?: () => void;
   onAdFailedToLoad?: (error: Error) => void;
+  /** Whether to show a close button on the banner */
+  showCloseButton?: boolean;
+  /** Callback when the user closes the ad */
+  onAdClosed?: () => void;
   /** Width of the ad element. Defaults to '100%' */
   width?: number | string;
   /** Height of the ad element. Defaults to 'auto' */
@@ -22,6 +26,8 @@ export const AdTogetherBanner: React.FC<AdTogetherBannerProps> = ({
   style = {},
   onAdLoaded,
   onAdFailedToLoad,
+  showCloseButton = false,
+  onAdClosed,
   width = '100%',
   height = 'auto',
   theme = 'auto',
@@ -29,6 +35,7 @@ export const AdTogetherBanner: React.FC<AdTogetherBannerProps> = ({
   const [adData, setAdData] = useState<AdModel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(theme === 'dark');
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -52,7 +59,7 @@ export const AdTogetherBanner: React.FC<AdTogetherBannerProps> = ({
   useEffect(() => {
     let isMounted = true;
 
-    AdTogether.fetchAd(adUnitId)
+    AdTogether.fetchAd(adUnitId, 'banner')
       .then((ad) => {
         if (isMounted) {
           setAdData(ad);
@@ -104,6 +111,16 @@ export const AdTogetherBanner: React.FC<AdTogetherBannerProps> = ({
     }
   };
 
+  const handleClose = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering the ad click
+    setIsVisible(false);
+    onAdClosed?.();
+  };
+
+  if (!isVisible) {
+    return null;
+  }
+
   if (isLoading) {
     return (
       <div 
@@ -139,6 +156,7 @@ export const AdTogetherBanner: React.FC<AdTogetherBannerProps> = ({
         overflow: 'hidden',
         cursor: 'pointer',
         boxSizing: 'border-box',
+        position: 'relative',
         ...style,
       }}
       onMouseOver={(e) => {
@@ -179,6 +197,34 @@ export const AdTogetherBanner: React.FC<AdTogetherBannerProps> = ({
           {adData.description}
         </span>
       </div>
+      {showCloseButton && (
+        <button
+          onClick={handleClose}
+          aria-label="Close ad"
+          style={{
+            position: 'absolute',
+            top: '8px',
+            right: '8px',
+            width: '24px',
+            height: '24px',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+            border: 'none',
+            color: '#fff',
+            fontSize: '14px',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 0,
+            lineHeight: 1,
+            zIndex: 1,
+          }}
+        >
+          ×
+        </button>
+      )}
     </div>
   );
 };

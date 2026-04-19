@@ -22,7 +22,7 @@ internal object AdNetworkService {
             if (exclude != null) {
                 urlStr += "&exclude=$exclude"
             }
-            AdTogether.appContext?.packageName?.let {
+            AdTogether.bundleId?.let {
                 urlStr += "&bundleId=$it"
             }
             val url = URL(urlStr)
@@ -76,7 +76,16 @@ internal object AdNetworkService {
                 if (token != null) put("token", token)
                 put("apiKey", AdTogether.appId)
                 // Send the app package name for origin tracking
-                AdTogether.appContext?.packageName?.let { put("bundleId", it) }
+                AdTogether.bundleId?.let { put("bundleId", it) }
+                // Send platform and app metadata to match Flutter SDK
+                put("platform", "android")
+                AdTogether.appName?.let { put("appName", it) }
+                AdTogether.appVersion?.let { put("appVersion", it) }
+                val isDebug = try {
+                    val appInfo = AdTogether.appContext?.applicationInfo
+                    appInfo != null && (appInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
+                } catch (_: Exception) { false }
+                put("environment", if (isDebug) "development" else "production")
             }
             
             OutputStreamWriter(connection.outputStream).use { writer ->

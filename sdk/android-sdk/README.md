@@ -36,7 +36,7 @@ Add the dependency to your app-level `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.relaxsoftwareapps.adtogether:sdk:0.1.12")
+    implementation("com.relaxsoftwareapps.adtogether:sdk:0.1.13")
 }
 ```
 
@@ -50,7 +50,11 @@ import com.adtogether.sdk.AdTogether
 class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        AdTogether.initialize(context = this, appId = "YOUR_APP_ID")
+        AdTogether.initialize(
+            context = this, 
+            appId = "YOUR_APP_ID"
+            // bundleId = "com.example.app" // optional: auto-detected from Context
+        )
     }
 }
 ```
@@ -80,6 +84,8 @@ fun MainScreen() {
         // Display the AdTogether Banner
         AdTogetherBanner(
             adUnitId = "YOUR_AD_UNIT_ID",
+            showCloseButton = true,
+            onAdClosed = { println("Banner closed!") },
             onAdLoaded = { println("Banner loaded!") },
             modifier = Modifier
                 .fillMaxWidth()

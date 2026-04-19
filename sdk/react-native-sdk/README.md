@@ -46,7 +46,10 @@ Call `AdTogether.initialize()` before rendering any ad components. You can obtai
 ```typescript
 import { AdTogether } from '@adtogether/react-native-sdk';
 
-AdTogether.initialize({ appId: 'YOUR_APP_ID' });
+AdTogether.initialize({ 
+  appId: 'YOUR_APP_ID',
+  // bundleId: 'com.example.app' // optional: auto-detected when possible
+});
 ```
 
 ## Usage
@@ -66,8 +69,10 @@ function MyApp() {
 
       <AdTogetherBanner
         adUnitId="home_bottom_banner"
+        showCloseButton={true}
         onAdLoaded={() => console.log('Banner loaded!')}
         onAdFailedToLoad={(error) => console.error('Banner error:', error)}
+        onAdClosed={() => console.log('Banner closed!')}
       />
     </View>
   );
@@ -79,6 +84,8 @@ function MyApp() {
 | Prop               | Type                    | Default   | Description |
 |--------------------|-------------------------|-----------|-------------|
 | `adUnitId`         | `string`                | **required** | Unique identifier for this ad placement. |
+| `showCloseButton`  | `boolean`               | `false`   | Show a dismissable close button overlay. |
+| `onAdClosed`       | `() => void`            | —         | Called when the user closes the ad. |
 | `theme`            | `'dark' \| 'light' \| 'auto'` | `'auto'` | Color scheme. `'auto'` follows system preference. |
 | `onAdLoaded`       | `() => void`            | —         | Called when the ad has been successfully fetched and rendered. |
 | `onAdFailedToLoad` | `(error: Error) => void`| —         | Called if the ad fails to load. |

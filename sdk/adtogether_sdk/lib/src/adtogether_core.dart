@@ -1,12 +1,15 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
 import 'models/ad_model.dart';
 
 class AdTogether {
   static String? _appId;
   static String _baseUrl = 'https://adtogether.relaxsoftwareapps.com';
   static String? _bundleId;
+  static String? _appName;
+  static String? _appVersion;
   static bool _allowSelfAds = true;
 
   static Future<void> initialize({
@@ -20,24 +23,37 @@ class AdTogether {
       _baseUrl = baseUrl;
     }
     _allowSelfAds = allowSelfAds;
-    // Use the explicitly provided bundleId, or try to auto-detect
+    // Use the explicitly provided bundleId if present
     if (bundleId != null) {
       _bundleId = bundleId;
-    } else {
-      _bundleId = _detectBundleId();
     }
+    
+    // Always detect native package info to populate appName and version
+    await _detectPackageInfoAsync();
   }
 
-  /// Try to detect the bundle / package identifier on native platforms.
-  /// Returns null on web (Origin header handles tracking automatically).
-  static String? _detectBundleId() {
+  /// Try to detect the package info on native platforms.
+  static Future<void> _detectPackageInfoAsync() async {
     try {
-      // On native (iOS/Android), the package name is resolved from the
-      // platform's isolate name. For a more reliable bundle ID you can
-      // pass it explicitly via initialize(bundleId: ...).
-      return null; // Will rely on Origin header for web, explicit param for mobile
-    } catch (_) {
-      return null;
+      final PackageInfo packageInfo = await PackageInfo.fromPlatform();
+      _appName = packageInfo.appName;
+      _appVersion = packageInfo.version;
+      
+      if (_bundleId == null && packageInfo.packageName.isNotEmpty) {
+        _bundleId = packageInfo.packageName;
+      }
+    } catch (_) {}
+  }
+
+  static String get _platformName {
+    if (kIsWeb) return 'web';
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android: return 'android';
+      case TargetPlatform.iOS: return 'ios';
+      case TargetPlatform.macOS: return 'macos';
+      case TargetPlatform.windows: return 'windows';
+      case TargetPlatform.linux: return 'linux';
+      case TargetPlatform.fuchsia: return 'fuchsia';
     }
   }
 
@@ -65,6 +81,10 @@ class AdTogether {
           'token': token,
           'apiKey': _appId,
           if (_bundleId != null) 'bundleId': _bundleId,
+          if (_appName != null) 'appName': _appName,
+          if (_appVersion != null) 'appVersion': _appVersion,
+          'platform': _platformName,
+          'environment': kReleaseMode ? 'production' : 'development',
         }),
       );
     } catch (e) {
@@ -83,6 +103,10 @@ class AdTogether {
           'token': token,
           'apiKey': _appId,
           if (_bundleId != null) 'bundleId': _bundleId,
+          if (_appName != null) 'appName': _appName,
+          if (_appVersion != null) 'appVersion': _appVersion,
+          'platform': _platformName,
+          'environment': kReleaseMode ? 'production' : 'development',
         }),
       );
     } catch (e) {

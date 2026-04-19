@@ -3,6 +3,7 @@ import { AdModel, AdType, AdTogetherOptions } from './types';
 export class AdTogether {
   private static instance: AdTogether;
   private appId?: string;
+  private bundleId?: string;
   private allowSelfAds: boolean = true;
   public baseUrl: string = 'https://adtogether.relaxsoftwareapps.com';
 
@@ -19,6 +20,12 @@ export class AdTogether {
     const sdk = AdTogether.shared;
     sdk.appId = options.apiKey || options.appId;
     
+    if (options.bundleId) {
+      sdk.bundleId = options.bundleId;
+    } else if (typeof window !== 'undefined') {
+      sdk.bundleId = window.location.hostname;
+    }
+
     if (options.allowSelfAds !== undefined) {
       sdk.allowSelfAds = options.allowSelfAds;
     }
@@ -56,6 +63,9 @@ export class AdTogether {
       }
       if (sdk.lastAdId) {
         url += `&exclude=${sdk.lastAdId}`;
+      }
+      if (sdk.bundleId) {
+        url += `&bundleId=${sdk.bundleId}`;
       }
       
       // Pass allowSelfAds and source URL for smart serving
@@ -96,7 +106,11 @@ export class AdTogether {
       body: JSON.stringify({ 
         adId, 
         token, 
-        apiKey: AdTogether.shared.appId 
+        apiKey: AdTogether.shared.appId,
+        ...(AdTogether.shared.bundleId ? { bundleId: AdTogether.shared.bundleId } : {}),
+        // Send platform and environment to match Flutter SDK
+        platform: 'web',
+        environment: typeof process !== 'undefined' && process.env?.NODE_ENV === 'development' ? 'development' : 'production',
       }),
     }).catch(console.error);
   }

@@ -1,5 +1,7 @@
 # AdTogether Native iOS SDK — LLM Integration Reference
 
+**Version:** 0.1.13
+
 **Package:** `AdTogether`
 **Distribution:** Swift Package Manager (SPM)
 **Targets:** iOS 15+, iPadOS 15+
@@ -18,7 +20,7 @@ https://github.com/undecided2003/AdTogether.git
 Or add directly to `Package.swift`:
 
 ```swift
-.package(url: "https://github.com/undecided2003/AdTogether.git", from: "0.1.12")
+.package(url: "https://github.com/undecided2003/AdTogether.git", from: "0.1.13")
 ```
 
 ### Initialize
@@ -42,10 +44,13 @@ struct MyApp: App {
 ```swift
 public static func initialize(
     appId: String,
-    baseUrl: String? = nil,       // Override API base URL (optional)
-    allowSelfAds: Bool = true
+    baseUrl: String? = nil,        // Override API base URL (optional)
+    allowSelfAds: Bool = true,     // Show own ads as fallback (default: true)
+    bundleId: String? = nil        // Explicit bundle ID (optional, auto-detected from Bundle.main.bundleIdentifier)
 )
 ```
+
+**Auto-detected metadata:** The SDK automatically detects `appName` (from `CFBundleName`/`CFBundleDisplayName`), `appVersion` (from `CFBundleShortVersionString`), and `bundleId` (from `Bundle.main.bundleIdentifier`). These are included in impression/click tracking payloads along with `platform: "ios"` and `environment: "development"|"production"` (based on the `DEBUG` compiler flag).
 
 ### Banner Ad (SwiftUI)
 
@@ -56,9 +61,12 @@ struct ContentView: View {
     var body: some View {
         VStack {
             Text("My App")
-            AdTogetherView(adUnitID: "YOUR_AD_UNIT_ID") {
-                print("Ad loaded!")
-            }
+            AdTogetherView(
+                adUnitID: "YOUR_AD_UNIT_ID",
+                showCloseButton: true,
+                onAdLoaded: { print("Ad loaded!") },
+                onAdClosed: { print("User closed the ad") }
+            )
             .frame(height: 50)
         }
     }
@@ -68,11 +76,24 @@ struct ContentView: View {
 **`AdTogetherView` init:**
 ```swift
 public init(
-    adUnitID: String, 
+    adUnitID: String,
+    size: AdSize = .fluid,
+    showCloseButton: Bool = false,
     onAdLoaded: (() -> Void)? = nil,
-    onAdFailedToLoad: ((Error) -> Void)? = nil
+    onAdFailedToLoad: ((Error) -> Void)? = nil,
+    onAdClosed: (() -> Void)? = nil
 )
 ```
+
+**`AdTogetherView` parameters:**
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `adUnitID` | `String` | **required** | Ad placement identifier (**capital "ID"**) |
+| `size` | `AdSize` | `.fluid` | Ad size preset (`.fluid`, `.banner`, `.largeBanner`, `.mediumRectangle`) |
+| `showCloseButton` | `Bool` | `false` | Show a dismissable close button overlay |
+| `onAdLoaded` | `(() -> Void)?` | — | Fires when ad data loads |
+| `onAdFailedToLoad` | `((Error) -> Void)?` | — | Fires on load failure |
+| `onAdClosed` | `(() -> Void)?` | — | Fires when user closes the ad |
 
 ### Interstitial Ad (SwiftUI)
 
@@ -118,3 +139,4 @@ public init(
 
 - Request **App Tracking Transparency (ATT)** permissions before initializing the SDK for personalized ad tracking.
 - Add `NSUserTrackingUsageDescription` to `Info.plist` with a human-readable explanation.
+- **Tracking metadata**: All impression/click events automatically include `platform`, `environment`, `appName`, `appVersion`, and `bundleId`. No manual configuration needed.
