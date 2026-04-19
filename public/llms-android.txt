@@ -1,6 +1,6 @@
 # AdTogether Native Android SDK — LLM Integration Reference
 
-**Version:** 0.1.13
+**Version:** 0.1.14
 
 **Package:** `com.relaxsoftwareapps.adtogether:sdk`
 **Distribution:** Maven Central
@@ -15,7 +15,7 @@ Add to your module-level `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.relaxsoftwareapps.adtogether:sdk:0.1.13")
+    implementation("com.relaxsoftwareapps.adtogether:sdk:0.1.14")
 }
 ```
 

@@ -1,4 +1,4 @@
-## 0.1.13
+## 0.1.14
 
 * **Feature**: Added `onAdClosed` callback support to banner components.
 * **Feature**: Improved automatic `bundleId` detection across all platforms.
