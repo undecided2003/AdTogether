@@ -73,3 +73,27 @@ To prevent context bleeding and hallucination, **please read the specific instru
 - iOS uses `adUnitID` (capital "ID"). All other SDKs use `adUnitId` (lowercase "d").
 - **All SDKs now support `showCloseButton` and `onAdClosed` on banner ads.** This is a recent addition — older versions may not have it.
 - **All SDKs auto-detect `bundleId`** except React Native, which requires `expo-application` or `react-native-device-info` to be installed, or manual `bundleId` in init options.
+
+---
+
+## Technical Notes for AI Agents (Core Platform)
+
+### Hub/Dashboard Development (Next.js 16 + Firebase)
+The AdTogether hub incorporates several "working hacks" to overcome limitations of the Next.js/Firebase Hosting environment:
+
+1.  **Firebase Admin Bypass:** Avoid standard imports/bundling for `firebase-admin`. Instead, use `const admin = eval("require('firebase-admin')")`. This prevents Next.js from renaming or incorrectly mapping the module during the `standalone` build process, which otherwise causes "Module not found" errors in production Cloud Functions.
+2.  **Server Action Serialization:** While Next.js 16 supports Server Actions, they can be unreliable in the production Cloud Functions runtime (serialization issues). **Skill:** Prefer standard API routes (`/api/...`) and client-side `fetch()` for complex backend operations like scraping or AI generation.
+3.  **Lightweight Scraping:** Avoid heavy, ESM-only dependencies like `cheerio` or `puppeteer` in the backend if possible. They are prone to runtime crashes in Node.js 20 Cloud Functions due to module type conflicts. **Skill:** Use zero-dependency Regex-based extraction for HTML text and images.
+4.  **Auto-write Orchestration:**
+    - The client calls `/api/generate` to get title/description/image context.
+    - Images are returned as `imageBase64` to bypass CORS issues during preview.
+    - **Client Trick:** The client converts base64 to a `File` object for consistency with the manual upload path:
+      `const blob = await (await fetch('data:image/jpeg;base64,...')).blob();`
+5.  **Ad Screening:** Campaigns are screened via `/api/screen` (DeepSeek) during submission to ensure compliance with `AD_CONTENT_POLICY.md`.
+
+---
+
+## Live Code Reference for Agents
+- **SDK Setup Example:** Check `src/components/ExampleAdsButton.tsx` for correct initialization and component usage patterns.
+- **Auto-write Implementation:** Check `src/app/create-ad/page.tsx` (`handleGenerate`) for the client orchestration logic.
+- **Admin Configuration:** Check `src/lib/firebase-admin.ts` for the `eval("require(...)")` hack.
