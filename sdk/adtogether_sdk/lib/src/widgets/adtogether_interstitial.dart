@@ -145,10 +145,12 @@ class _InterstitialDialogState extends State<_InterstitialDialog>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? const Color(0xFF1F2937) : Colors.white;
-    final textColor =
-        isDark ? const Color(0xFFF9FAFB) : const Color(0xFF111827);
-    final descColor =
-        isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+    final textColor = isDark
+        ? const Color(0xFFF9FAFB)
+        : const Color(0xFF111827);
+    final descColor = isDark
+        ? const Color(0xFF9CA3AF)
+        : const Color(0xFF6B7280);
 
     final screenSize = MediaQuery.of(context).size;
     final isLandscape = screenSize.width > screenSize.height;
@@ -163,60 +165,44 @@ class _InterstitialDialogState extends State<_InterstitialDialog>
         child: _isLoading
             ? const CircularProgressIndicator(color: Colors.amber)
             : _hasError || _adData == null
-                ? const SizedBox.shrink()
-                : AnimatedScale(
-                  scale: 1.0,
-                  duration: const Duration(milliseconds: 300),
-                  child: Container(
-                    width: isLandscape
-                        ? screenSize.width * 0.85
-                        : screenSize.width * 0.9,
-                    constraints: BoxConstraints(
-                      maxWidth: isLandscape ? 720 : 480,
-                      maxHeight: screenSize.height * 0.9,
-                    ),
-                    decoration: BoxDecoration(
-                      color: bgColor,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.4),
-                          blurRadius: 40,
-                          offset: const Offset(0, 20),
-                        ),
-                      ],
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: Stack(
-                      children: [
-                        isLandscape
-                            ? _buildLandscapeLayout(textColor, descColor)
-                            : _buildPortraitLayout(textColor, descColor),
+            ? const SizedBox.shrink()
+            : AnimatedScale(
+                scale: 1.0,
+                duration: const Duration(milliseconds: 300),
+                child: Container(
+                  width: isLandscape
+                      ? screenSize.width * 0.85
+                      : screenSize.width * 0.9,
+                  constraints: BoxConstraints(
+                    maxWidth: isLandscape ? 720 : 480,
+                    maxHeight: screenSize.height * 0.9,
+                  ),
+                  decoration: BoxDecoration(
+                    color: bgColor,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.4),
+                        blurRadius: 40,
+                        offset: const Offset(0, 20),
+                      ),
+                    ],
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Stack(
+                    children: [
+                      isLandscape
+                          ? _buildLandscapeLayout(textColor, descColor)
+                          : _buildPortraitLayout(textColor, descColor),
 
-                        // Close / Countdown button
-                        Positioned(
-                          top: 12,
-                          right: 12,
-                          child: _canClose
-                              ? GestureDetector(
-                                  onTap: () => Navigator.of(context).pop(),
-                                  child: Container(
-                                    width: 36,
-                                    height: 36,
-                                    decoration: BoxDecoration(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.6),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: const Icon(
-                                      Icons.close,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                  ),
-                                )
-                              : Container(
+                      // Close / Countdown button
+                      Positioned(
+                        top: 12,
+                        right: 12,
+                        child: _canClose
+                            ? GestureDetector(
+                                onTap: () => Navigator.of(context).pop(),
+                                child: Container(
                                   width: 36,
                                   height: 36,
                                   decoration: BoxDecoration(
@@ -224,20 +210,35 @@ class _InterstitialDialogState extends State<_InterstitialDialog>
                                     shape: BoxShape.circle,
                                   ),
                                   alignment: Alignment.center,
-                                  child: Text(
-                                    '$_countdown',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
+                                  child: const Icon(
+                                    Icons.close,
+                                    color: Colors.white,
+                                    size: 20,
                                   ),
                                 ),
-                        ),
-                      ],
-                    ),
+                              )
+                            : Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.6),
+                                  shape: BoxShape.circle,
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  '$_countdown',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                      ),
+                    ],
                   ),
                 ),
+              ),
       ),
     );
   }
@@ -295,10 +296,7 @@ class _InterstitialDialogState extends State<_InterstitialDialog>
                 errorBuilder: (context, error, stackTrace) => Container(
                   color: Colors.grey.withValues(alpha: 0.2),
                   child: const Center(
-                    child: Icon(
-                      Icons.image_not_supported,
-                      color: Colors.grey,
-                    ),
+                    child: Icon(Icons.image_not_supported, color: Colors.grey),
                   ),
                 ),
               ),
@@ -362,11 +360,7 @@ class _InterstitialDialogState extends State<_InterstitialDialog>
             const SizedBox(height: 8),
             Text(
               _adData!.description,
-              style: TextStyle(
-                fontSize: 14,
-                color: descColor,
-                height: 1.5,
-              ),
+              style: TextStyle(fontSize: 14, color: descColor, height: 1.5),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
@@ -380,19 +374,14 @@ class _InterstitialDialogState extends State<_InterstitialDialog>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.amber,
                   foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 14,
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
                 child: const Text(
                   'Learn More →',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
               ),
             ),

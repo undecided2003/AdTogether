@@ -4,6 +4,9 @@ import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'models/ad_model.dart';
 
+/// The main entry point for the AdTogether SDK.
+///
+/// Use this class to initialize the SDK and fetch ads.
 class AdTogether {
   static String? _appId;
   static String _baseUrl = 'https://adtogether.relaxsoftwareapps.com';
@@ -12,6 +15,13 @@ class AdTogether {
   static String? _appVersion;
   static bool _allowSelfAds = true;
 
+  /// Initializes the AdTogether SDK.
+  ///
+  /// This must be called before using any AdTogether widgets.
+  /// [appId] is your registered App ID from the AdTogether Dashboard.
+  /// Optional [baseUrl] overrides the default API endpoint.
+  /// Optional [bundleId] specifies your app's package name/bundle ID.
+  /// [allowSelfAds] controls if your own app's ads can be shown within this app.
   static Future<void> initialize({
     required String appId,
     String? baseUrl,
@@ -27,7 +37,7 @@ class AdTogether {
     if (bundleId != null) {
       _bundleId = bundleId;
     }
-    
+
     // Always detect native package info to populate appName and version
     await _detectPackageInfoAsync();
   }
@@ -38,7 +48,7 @@ class AdTogether {
       final PackageInfo packageInfo = await PackageInfo.fromPlatform();
       _appName = packageInfo.appName;
       _appVersion = packageInfo.version;
-      
+
       if (_bundleId == null && packageInfo.packageName.isNotEmpty) {
         _bundleId = packageInfo.packageName;
       }
@@ -48,12 +58,18 @@ class AdTogether {
   static String get _platformName {
     if (kIsWeb) return 'web';
     switch (defaultTargetPlatform) {
-      case TargetPlatform.android: return 'android';
-      case TargetPlatform.iOS: return 'ios';
-      case TargetPlatform.macOS: return 'macos';
-      case TargetPlatform.windows: return 'windows';
-      case TargetPlatform.linux: return 'linux';
-      case TargetPlatform.fuchsia: return 'fuchsia';
+      case TargetPlatform.android:
+        return 'android';
+      case TargetPlatform.iOS:
+        return 'ios';
+      case TargetPlatform.macOS:
+        return 'macos';
+      case TargetPlatform.windows:
+        return 'windows';
+      case TargetPlatform.linux:
+        return 'linux';
+      case TargetPlatform.fuchsia:
+        return 'fuchsia';
     }
   }
 

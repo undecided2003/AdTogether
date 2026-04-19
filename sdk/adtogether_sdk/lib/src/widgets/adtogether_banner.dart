@@ -6,14 +6,30 @@ import '../adtogether_core.dart';
 import '../models/ad_size.dart';
 import '../models/ad_model.dart';
 
+/// A drop-in widget for displaying AdTogether banner ads.
+///
+/// It fetches an ad, renders it, and automatically tracks impressions
+/// when at least 50% of the widget is visible.
 class AdTogetherBanner extends StatefulWidget {
+  /// The unique identifier for this ad placement.
   final String adUnitId;
+
+  /// The desired ad size. Defaults to [AdSize.fluid].
   final AdSize size;
+
+  /// Whether to show a dismissable close button overlay.
   final bool showCloseButton;
+
+  /// Called when the user closes the ad.
   final VoidCallback? onAdClosed;
+
+  /// Called when the ad has been successfully fetched and rendered.
   final VoidCallback? onAdLoaded;
+
+  /// Called with an error message if the ad fails to load.
   final Function(String)? onAdFailedToLoad;
 
+  /// Creates a new [AdTogetherBanner].
   const AdTogetherBanner({
     super.key,
     required this.adUnitId,
@@ -256,8 +272,12 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
 
   /// Selects the appropriate layout based on ad size and orientation.
   Widget _buildAdLayout(
-      BuildContext context, Color textColor, Color descColor) {
-    final isFixedHeight = widget.size.height == 50 ||
+    BuildContext context,
+    Color textColor,
+    Color descColor,
+  ) {
+    final isFixedHeight =
+        widget.size.height == 50 ||
         widget.size.height == 60 ||
         widget.size.height == 90;
 
@@ -293,9 +313,9 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) =>
                             const Icon(
-                          Icons.image_not_supported,
-                          color: Colors.grey,
-                        ),
+                              Icons.image_not_supported,
+                              color: Colors.grey,
+                            ),
                       )
                     : Container(color: Colors.grey.withValues(alpha: 0.2)),
               ),
@@ -304,8 +324,7 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
               top: 8,
               right: 8,
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(4),
@@ -376,7 +395,9 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
                     right: 8,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(4),

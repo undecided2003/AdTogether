@@ -1,5 +1,9 @@
 # AdTogether SDK
 
+<p align="center">
+  <img src="doc/adtogether_logo.png" width="300" alt="AdTogether Logo">
+</p>
+
 [![Pub Version](https://img.shields.io/pub/v/adtogether_sdk)](https://pub.dev/packages/adtogether_sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Flutter](https://img.shields.io/badge/Platform-Flutter-02569B?logo=flutter)](https://flutter.dev)
@@ -39,7 +43,7 @@ Add the dependency to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  adtogether_sdk: ^0.1.14
+  adtogether_sdk: ^0.1.15
 ```
 
 Then run:

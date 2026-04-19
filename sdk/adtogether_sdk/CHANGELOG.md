@@ -1,3 +1,7 @@
+## 0.1.15
+
+* **Brand**: Added official AdTogether logo to package metadata and README.
+
 ## 0.1.14
 
 * **Feature**: Added `onAdClosed` callback support to banner components.
