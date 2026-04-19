@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:package_info_plus/package_info_plus.dart';
+import 'utils/platform_utils.dart';
 import 'models/ad_model.dart';
 
 /// The main entry point for the AdTogether SDK.
@@ -45,7 +45,8 @@ class AdTogether {
   /// Try to detect the package info on native platforms.
   static Future<void> _detectPackageInfoAsync() async {
     try {
-      final PackageInfo packageInfo = await PackageInfo.fromPlatform();
+      final AdPackageInfo packageInfo =
+          await PlatformInfoProvider.instance.getPackageInfo();
       _appName = packageInfo.appName;
       _appVersion = packageInfo.version;
 

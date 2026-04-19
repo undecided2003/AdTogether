@@ -1,3 +1,8 @@
+## 0.1.16
+
+* **Fix**: Achieved 100% WASM compatibility by isolating transitive `dart:io` dependencies.
+* **Fix**: Improved platform detection logic using conditional imports.
+
 ## 0.1.15
 
 * **Brand**: Added official AdTogether logo to package metadata and README.
