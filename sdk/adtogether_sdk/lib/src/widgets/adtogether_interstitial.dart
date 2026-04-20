@@ -192,8 +192,8 @@ class _InterstitialDialogState extends State<_InterstitialDialog>
                   child: Stack(
                     children: [
                       isLandscape
-                          ? _buildLandscapeLayout(textColor, descColor)
-                          : _buildPortraitLayout(textColor, descColor),
+                          ? _buildLandscapeLayout(textColor, descColor, isDark)
+                          : _buildPortraitLayout(textColor, descColor, isDark),
 
                       // Close / Countdown button
                       Positioned(
@@ -244,7 +244,7 @@ class _InterstitialDialogState extends State<_InterstitialDialog>
   }
 
   /// Portrait layout: image on top, content below (scrollable as safety net).
-  Widget _buildPortraitLayout(Color textColor, Color descColor) {
+  Widget _buildPortraitLayout(Color textColor, Color descColor, bool isDark) {
     return SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -254,12 +254,17 @@ class _InterstitialDialogState extends State<_InterstitialDialog>
           if (_adData!.imageUrl != null)
             GestureDetector(
               onTap: _onAdClicked,
-              child: AspectRatio(
-                aspectRatio: 16 / 9,
+              child: Container(
+                constraints: const BoxConstraints(maxHeight: 280),
+                color: isDark
+                    ? const Color(0xFF111827)
+                    : const Color(0xFFF3F4F6),
                 child: Image.network(
                   _adData!.imageUrl!,
-                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) => Container(
+                    height: 180,
                     color: Colors.grey.withValues(alpha: 0.2),
                     child: const Center(
                       child: Icon(
@@ -280,7 +285,7 @@ class _InterstitialDialogState extends State<_InterstitialDialog>
   }
 
   /// Landscape layout: image on left, content on right — fits short screens.
-  Widget _buildLandscapeLayout(Color textColor, Color descColor) {
+  Widget _buildLandscapeLayout(Color textColor, Color descColor, bool isDark) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -290,13 +295,16 @@ class _InterstitialDialogState extends State<_InterstitialDialog>
             flex: 5,
             child: GestureDetector(
               onTap: _onAdClicked,
-              child: Image.network(
-                _adData!.imageUrl!,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  color: Colors.grey.withValues(alpha: 0.2),
-                  child: const Center(
-                    child: Icon(Icons.image_not_supported, color: Colors.grey),
+              child: Container(
+                color: isDark ? const Color(0xFF111827) : const Color(0xFFF3F4F6),
+                child: Image.network(
+                  _adData!.imageUrl!,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: Colors.grey.withValues(alpha: 0.2),
+                    child: const Center(
+                      child: Icon(Icons.image_not_supported, color: Colors.grey),
+                    ),
                   ),
                 ),
               ),

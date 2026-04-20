@@ -1,3 +1,7 @@
+## 0.1.17
+
+* **Fix**: Updated interstitial ad image rendering to use `BoxFit.contain` with a background color instead of `BoxFit.cover`. This ensures ad images are no longer cropped and maintain their intended aspect ratio.
+
 ## 0.1.16
 
 * **Fix**: Achieved 100% WASM compatibility by isolating transitive `dart:io` dependencies.
