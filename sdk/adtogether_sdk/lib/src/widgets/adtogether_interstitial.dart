@@ -296,14 +296,19 @@ class _InterstitialDialogState extends State<_InterstitialDialog>
             child: GestureDetector(
               onTap: _onAdClicked,
               child: Container(
-                color: isDark ? const Color(0xFF111827) : const Color(0xFFF3F4F6),
+                color: isDark
+                    ? const Color(0xFF111827)
+                    : const Color(0xFFF3F4F6),
                 child: Image.network(
                   _adData!.imageUrl!,
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) => Container(
                     color: Colors.grey.withValues(alpha: 0.2),
                     child: const Center(
-                      child: Icon(Icons.image_not_supported, color: Colors.grey),
+                      child: Icon(
+                        Icons.image_not_supported,
+                        color: Colors.grey,
+                      ),
                     ),
                   ),
                 ),

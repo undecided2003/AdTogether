@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:ui' show PlatformDispatcher;
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'utils/platform_utils.dart';
@@ -46,8 +45,8 @@ class AdTogether {
   /// Try to detect the package info on native platforms.
   static Future<void> _detectPackageInfoAsync() async {
     try {
-      final AdPackageInfo packageInfo =
-          await PlatformInfoProvider.instance.getPackageInfo();
+      final AdPackageInfo packageInfo = await PlatformInfoProvider.instance
+          .getPackageInfo();
       _appName = packageInfo.appName;
       _appVersion = packageInfo.version;
 
