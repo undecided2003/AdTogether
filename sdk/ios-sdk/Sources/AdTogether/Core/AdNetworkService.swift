@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(UIKit)
+import UIKit
+#endif
 
 internal class AdNetworkService {
     
@@ -84,6 +87,16 @@ internal class AdNetworkService {
         }
         if let appVersion = AdTogether.shared.appVersion {
             body["appVersion"] = appVersion
+        }
+        // Detect country from device locale (no permissions needed)
+        if #available(iOS 16, macOS 13, tvOS 16, watchOS 9, *) {
+            if let regionCode = Locale.current.region?.identifier {
+                body["country"] = regionCode
+            }
+        } else {
+            if let regionCode = Locale.current.regionCode {
+                body["country"] = regionCode
+            }
         }
         #if DEBUG
         body["environment"] = "development"

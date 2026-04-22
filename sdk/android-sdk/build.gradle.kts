@@ -47,14 +47,14 @@ dependencies {
     
     // Network & Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-    implementation("org.json:json:20231013") 
+    // implementation("org.json:json:20231013") // Conflicts with Android built-in json
     implementation("io.coil-kt:coil-compose:2.5.0")
 }
 
 
 mavenPublishing {
     // Defines the coordinates
-    coordinates("com.relaxsoftwareapps.adtogether", "sdk", "0.1.22")
+    coordinates("com.relaxsoftwareapps.adtogether", "sdk", "0.1.23")
     
     // Configures the POM
     pom {

@@ -19,7 +19,13 @@ export async function POST(request: Request) {
     const reqHeaders = await headers();
     const ip = reqHeaders.get('x-forwarded-for') || reqHeaders.get('x-real-ip') || 'unknown';
     
-    const ipCountry = reqHeaders.get('x-vercel-ip-country') || null;
+    const ipCountry = reqHeaders.get('x-vercel-ip-country') 
+      || reqHeaders.get('x-appengine-country')
+      || reqHeaders.get('x-country-code')
+      || reqHeaders.get('x-client-geo-country')
+      || reqHeaders.get('cf-ipcountry')         // Cloudflare
+      || reqHeaders.get('x-country')
+      || null;
     
     // Extract origin for web tracking
     const originHeader = reqHeaders.get('origin') || reqHeaders.get('referer') || '';

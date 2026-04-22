@@ -2,6 +2,13 @@
   🚀 AdTogether
 </h1>
 
+> [!IMPORTANT]
+> **Developer Account Required**: Before integrating any SDKs, you must create a developer account at [https://adtogether.relaxsoftwareapps.com](https://adtogether.relaxsoftwareapps.com). Once registered, you can create your first campaign, generate an `appId`, and configure ad units. Integration will not work without a valid `appId`.
+
+<p align="center">
+  <img src="public/dashboard.png" width="800" alt="Developer Dashboard">
+</p>
+
 <p align="center">
   <strong>"Show an ad, get an ad shown"</strong><br>
   The Universal Ad Exchange & Reciprocal Marketing Platform
@@ -91,9 +98,9 @@ Detailed instructions are provided in each SDK's local `README.md`.
 
 - **Web integration:** `npm install @adtogether/web-sdk`
 - **React Native integration:** `npm install @adtogether/react-native-sdk`
-- **Android integration:** Implement `com.relaxsoftwareapps.adtogether:sdk:0.1.14` inside your `build.gradle.kts`.
+- **Android integration:** Implement `com.relaxsoftwareapps.adtogether:sdk:0.1.23` inside your `build.gradle.kts`.
 - **iOS integration:** Add the Swift Package through Xcode directly from this repository link.
-- **Flutter integration:** Run `flutter pub add adtogether_sdk:^0.1.14`.
+- **Flutter integration:** Run `flutter pub add adtogether_sdk:^0.1.23`.
 
 ---
 

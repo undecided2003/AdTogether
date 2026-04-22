@@ -102,6 +102,34 @@ var AdTogether = class _AdTogether {
   static trackClick(adId, token) {
     this.trackEvent("/api/ads/click", adId, token);
   }
+  /**
+   * Detect the user's country code from the browser locale.
+   * Uses Intl API (most reliable) with navigator.language as fallback.
+   * Returns an ISO 3166-1 alpha-2 code like "US", "DE", "JP", or null.
+   */
+  static detectCountry() {
+    try {
+      if (typeof Intl !== "undefined" && Intl.DateTimeFormat) {
+        const resolved = Intl.DateTimeFormat().resolvedOptions();
+        if (resolved.locale) {
+          const parts = resolved.locale.split("-");
+          if (parts.length >= 2) {
+            const region = parts[parts.length - 1].toUpperCase();
+            if (region.length === 2) return region;
+          }
+        }
+      }
+      if (typeof navigator !== "undefined" && navigator.language) {
+        const parts = navigator.language.split("-");
+        if (parts.length >= 2) {
+          const region = parts[parts.length - 1].toUpperCase();
+          if (region.length === 2) return region;
+        }
+      }
+    } catch (_) {
+    }
+    return null;
+  }
   static trackEvent(endpoint, adId, token) {
     if (!_AdTogether.shared.assertInitialized()) return;
     fetch(`${_AdTogether.shared.baseUrl}${endpoint}`, {
@@ -116,7 +144,8 @@ var AdTogether = class _AdTogether {
         ..._AdTogether.shared.bundleId ? { bundleId: _AdTogether.shared.bundleId } : {},
         // Send platform and environment to match Flutter SDK
         platform: "web",
-        environment: typeof process !== "undefined" && process.env?.NODE_ENV === "development" ? "development" : "production"
+        environment: typeof process !== "undefined" && process.env?.NODE_ENV === "development" ? "development" : "production",
+        country: _AdTogether.detectCountry()
       })
     }).catch(console.error);
   }

@@ -13,6 +13,19 @@ async function getNpmDownloads(pkg: string) {
   }
 }
 
+async function getPubDownloads(pkg: string) {
+  try {
+    const res = await fetch(`https://pub.dev/api/packages/${pkg}/score`, { next: { revalidate: 3600 } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.downloadCount30Days;
+  } catch (e) {
+    return null;
+  }
+}
+
+
+
 function SdkCard({ title, repoName, url, statLabel, statValue, icon }: { title: string, repoName: string, url: string, statLabel: string, statValue: React.ReactNode, icon: string }) {
   return (
     <a href={url} target="_blank" rel="noopener noreferrer" className="flex flex-col p-6 h-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0A0A0A] hover:border-amber-400 dark:hover:border-[#FFCE2A] transition-all group shadow-sm hover:shadow-md">
@@ -31,6 +44,7 @@ function SdkCard({ title, repoName, url, statLabel, statValue, icon }: { title: 
 export default async function Home() {
   const webSdkDownloads = await getNpmDownloads('@adtogether/web-sdk');
   const rnSdkDownloads = await getNpmDownloads('@adtogether/react-native-sdk');
+  const flutterDownloads = await getPubDownloads('adtogether_sdk');
   const formatNum = (num: number | null) => num !== null ? new Intl.NumberFormat('en-US').format(num) : null;
   const exampleCode = `"use client";
 import { useState } from 'react';
@@ -80,7 +94,7 @@ export default function MyComponent() {
       <div className="flex flex-col lg:flex-row items-center gap-16 px-6">
         <div className="flex-1 space-y-8">
           <div className="inline-flex font-mono text-xs tracking-wider text-amber-700 dark:text-[#FFCE2A] uppercase border border-amber-300 dark:border-[#FFCE2A]/30 bg-amber-100 dark:bg-[#FFCE2A]/10 px-3 py-1 rounded">
-            v0.1.12 Now Available
+            v0.1.23 Now Available
           </div>
 
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-zinc-900 dark:text-white leading-[1.1] uppercase">
@@ -187,24 +201,24 @@ export default function MyComponent() {
             title="Flutter" 
             repoName="adtogether_sdk" 
             url="https://pub.dev/packages/adtogether_sdk" 
-            statLabel="Registry"
-            statValue="pub.dev" 
+            statLabel="Downloads/mo"
+            statValue={formatNum(flutterDownloads)} 
             icon="💙" 
           />
           <SdkCard 
             title="Android" 
-            repoName="android-sdk" 
-            url="https://github.com/AdTogether" 
-            statLabel="Repository"
-            statValue="GitHub" 
+            repoName="com.relaxsoftwareapps.adtogether" 
+            url="https://central.sonatype.com/namespace/com.relaxsoftwareapps.adtogether" 
+            statLabel="Registry"
+            statValue="Maven Central" 
             icon="🤖" 
           />
           <SdkCard 
-            title="iOS" 
-            repoName="ios-sdk" 
-            url="https://github.com/AdTogether" 
-            statLabel="Repository"
-            statValue="GitHub" 
+            title="iOS & Swift" 
+            repoName="AdTogether" 
+            url="https://github.com/undecided2003/AdTogether" 
+            statLabel="Registry"
+            statValue="SPM / CocoaPods" 
             icon="🍎" 
           />
         </div>

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui' show PlatformDispatcher;
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'utils/platform_utils.dart';
@@ -85,6 +86,20 @@ class AdTogether {
 
   static String get baseUrl => _baseUrl;
 
+  /// Detect the user's country code from the device locale.
+  /// Returns an ISO 3166-1 alpha-2 code like "US", "DE", "JP", or null.
+  /// Uses PlatformDispatcher which requires no permissions.
+  static String? get _countryCode {
+    try {
+      final locale = PlatformDispatcher.instance.locale;
+      final country = locale.countryCode;
+      if (country != null && country.length == 2) {
+        return country.toUpperCase();
+      }
+    } catch (_) {}
+    return null;
+  }
+
   static String? _lastAdId;
 
   /// Internal method to track an impression
@@ -102,6 +117,7 @@ class AdTogether {
           if (_appVersion != null) 'appVersion': _appVersion,
           'platform': _platformName,
           'environment': kReleaseMode ? 'production' : 'development',
+          if (_countryCode != null) 'country': _countryCode,
         }),
       );
     } catch (e) {
@@ -124,6 +140,7 @@ class AdTogether {
           if (_appVersion != null) 'appVersion': _appVersion,
           'platform': _platformName,
           'environment': kReleaseMode ? 'production' : 'development',
+          if (_countryCode != null) 'country': _countryCode,
         }),
       );
     } catch (e) {

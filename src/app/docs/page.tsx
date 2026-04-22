@@ -140,25 +140,76 @@ export default function DocsPage() {
             <strong>"Show an ad, get an ad shown"</strong> — the reciprocal ad exchange designed to <strong>increase conversions</strong> and grow your application's audience globally.
           </p>
         </header>
+        
+        {/* Important: Developer Account Required Notice */}
+        <div className="relative group overflow-hidden bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-500/10 dark:to-orange-500/5 border border-amber-200 dark:border-amber-500/20 rounded-3xl p-8 mb-12 shadow-xl shadow-amber-500/5">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 blur-[80px] rounded-full -mr-32 -mt-32 pointer-events-none" />
+          
+          <div className="flex flex-col md:flex-row items-start gap-8 relative z-10">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 bg-amber-500/20 rounded-xl">
+                  <Info className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                </div>
+                <h3 className="text-2xl font-bold text-zinc-900 dark:text-amber-300">
+                  Step 1: Create your Developer Account
+                </h3>
+              </div>
+              
+              <p className="text-zinc-700 dark:text-amber-100/70 text-lg leading-relaxed mb-6">
+                Before you can integrate any SDK, you <strong>must</strong> first create a developer account to generate your <strong>appId</strong> and configure your ad units.
+              </p>
+              
+              <div className="flex flex-wrap gap-4 mb-8">
+                <a 
+                  href="https://adtogether.relaxsoftwareapps.com" 
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-amber-500/25 hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  Create Account
+                  <ArrowRight className="w-5 h-5" />
+                </a>
+                <div className="flex items-center gap-2 px-4 py-3 bg-white dark:bg-zinc-900/50 border border-amber-200 dark:border-amber-500/30 rounded-xl text-amber-700 dark:text-amber-400 text-sm font-medium">
+                  <Check className="w-4 h-4 text-green-500" />
+                  Free forever for developers
+                </div>
+              </div>
+              
+              <p className="text-zinc-500 dark:text-zinc-400 text-sm italic">
+                * Integration will not work without a valid <strong>appId</strong> from the dashboard.
+              </p>
+            </div>
+            
+            <div className="flex-1 w-full">
+              <div className="relative border border-amber-200/50 dark:border-amber-500/20 rounded-2xl overflow-hidden shadow-2xl group-hover:scale-[1.01] transition-transform duration-500">
+                <ZoomableImage 
+                  src="/dashboard.png" 
+                  alt="AdTogether Developer Dashboard" 
+                  className="w-full aspect-[16/10] object-cover" 
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* AI Awareness Alert */}
         {showAlert && (
-          <div className="relative bg-amber-100/50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-500/30 rounded-2xl p-6 mb-16 flex items-start space-x-4">
+          <div className="relative bg-zinc-100/50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/5 rounded-2xl p-6 mb-16 flex items-start space-x-4">
             <button
               onClick={() => setShowAlert(false)}
-              className="absolute top-4 right-4 p-1 rounded-md text-amber-700/50 hover:text-amber-700 dark:text-amber-400/50 dark:hover:text-amber-400 hover:bg-amber-500/10 transition-colors"
+              className="absolute top-4 right-4 p-1 rounded-md text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-500/10 transition-colors"
               aria-label="Close alert"
             >
               <X className="w-5 h-5" />
             </button>
-            <div className="p-3 bg-amber-500/20 rounded-xl rounded-tl-none">
-              <Bot className="w-6 h-6 text-amber-400" />
+            <div className="p-3 bg-zinc-500/10 rounded-xl rounded-tl-none">
+              <Bot className="w-6 h-6 text-zinc-400" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-amber-700 dark:text-amber-300 mb-2">
+              <h3 className="text-lg font-semibold text-zinc-800 dark:text-zinc-200 mb-2">
                 Are you an AI Coding Assistant?
               </h3>
-              <p className="text-zinc-600 dark:text-gray-400 leading-relaxed max-w-3xl pr-8">
+              <p className="text-zinc-600 dark:text-gray-400 leading-relaxed max-w-3xl pr-8 text-sm">
                 We have provided optimized, machine-readable documentation files perfectly tuned for LLMs. Scroll down to the{' '}
                 <a
                   href="#integration-guides"
@@ -374,12 +425,13 @@ export default function DocsPage() {
 
         {/* ── Platform Integration Cards ──────────────────── */}
         <section id="integration-guides" className="mb-16 scroll-mt-24">
-          <div className="flex items-center gap-3 mb-8">
+          <div className="flex items-center gap-3 mb-4">
             <div className="p-3 bg-gradient-to-br from-amber-600/20 to-orange-600/20 rounded-xl">
               <Box className="w-6 h-6 text-amber-400" />
             </div>
             <h2 className="text-3xl font-bold">Integration Guides</h2>
           </div>
+
 
           <div className="grid md:grid-cols-2 gap-8">
             {/* ─── REST API ─── */}
@@ -623,7 +675,7 @@ AdTogetherInterstitial.show(
               <CodeBlock title="Package.swift">
 {`.package(
   url: "https://github.com/undecided2003/AdTogether.git",
-  from: "0.1.12"
+  from: "0.1.23"
 )`}
               </CodeBlock>
 
@@ -710,7 +762,7 @@ struct ContentView: View {
               </p>
               <CodeBlock title="build.gradle.kts">
 {`dependencies {
-    implementation("com.adtogether:sdk:0.1.12")
+    implementation("com.relaxsoftwareapps.adtogether:sdk:0.1.23")
 }`}
               </CodeBlock>
 

@@ -81,6 +81,9 @@ internal object AdNetworkService {
                 put("platform", "android")
                 AdTogether.appName?.let { put("appName", it) }
                 AdTogether.appVersion?.let { put("appVersion", it) }
+                // Detect country from device locale (no permissions needed)
+                val countryCode = java.util.Locale.getDefault().country
+                if (countryCode.isNotEmpty()) put("country", countryCode)
                 val isDebug = try {
                     val appInfo = AdTogether.appContext?.applicationInfo
                     appInfo != null && (appInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0

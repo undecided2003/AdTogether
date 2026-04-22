@@ -51,10 +51,22 @@ export default function DashboardPage() {
   // Ad preview modal state
   const [previewAd, setPreviewAd] = useState<any | null>(null);
   
+  // Detailed metrics modal state
+  const [metricsModalAd, setMetricsModalAd] = useState<any | null>(null);
+  
   // Blocked ads per App ID state
   const [blockingAd, setBlockingAd] = useState<string | null>(null);
   
   const router = useRouter();
+  
+  const parseDateObj = (val: any) => {
+    if (!val) return null;
+    const d = val.time || val;
+    if (d.toDate) return d.toDate();
+    if (d.seconds) return new Date(d.seconds * 1000);
+    const parsed = new Date(d);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -258,6 +270,10 @@ export default function DashboardPage() {
 
   const ctr = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) : "0.00";
 
+  const totalAdShown = userData?.earningsLog ? Object.values(userData.earningsLog as Record<string, any>).reduce((sum: number, e: any) => sum + (e.impressions || 0), 0) : 0;
+  const totalCreditsEarned = userData?.earningsLog ? Object.values(userData.earningsLog as Record<string, any>).reduce((sum: number, e: any) => sum + (e.creditsEarned || 0), 0) : 0;
+  const totalApps = (userData?.apiKeys || (userData?.apiKey ? [userData.apiKey] : [])).length;
+
   if (loading) {
     return (
       <div className="flex-grow flex items-center justify-center">
@@ -365,6 +381,45 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Publisher Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        {/* Total Ads Shown (Publisher) */}
+        <div className="bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-3 bg-zinc-50 dark:bg-white/5 rounded-xl border border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-white">
+              <Monitor className="w-5 h-5" />
+            </div>
+            <h3 className="text-md font-medium text-zinc-700 dark:text-zinc-300">Ads Published</h3>
+          </div>
+          <p className="text-4xl font-bold text-zinc-900 dark:text-white mb-2">{totalAdShown.toLocaleString()}</p>
+          <p className="text-xs text-zinc-600 dark:text-zinc-400">Total ads shown on your apps</p>
+        </div>
+
+        {/* Total Credits Earned */}
+        <div className="bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-3 bg-green-50 dark:bg-green-500/10 rounded-xl border border-green-200 dark:border-green-500/20 text-green-600 dark:text-green-400">
+              <TrendingUp className="w-5 h-5" />
+            </div>
+            <h3 className="text-md font-medium text-zinc-700 dark:text-zinc-300">Total Earned</h3>
+          </div>
+          <p className="text-4xl font-bold text-green-600 dark:text-green-400 mb-2">+{totalCreditsEarned.toLocaleString()}</p>
+          <p className="text-xs text-zinc-600 dark:text-zinc-400">Credits earned from publishing</p>
+        </div>
+
+        {/* Total Apps */}
+        <div className="bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-3 bg-zinc-50 dark:bg-white/5 rounded-xl border border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-white">
+              <Smartphone className="w-5 h-5" />
+            </div>
+            <h3 className="text-md font-medium text-zinc-700 dark:text-zinc-300">Registered Apps</h3>
+          </div>
+          <p className="text-4xl font-bold text-zinc-900 dark:text-white mb-2">{totalApps.toLocaleString()}</p>
+          <p className="text-xs text-zinc-600 dark:text-zinc-400">Active App IDs</p>
+        </div>
+      </div>
+
       {/* Credit System Explanation */}
       <div className="mb-12 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-500/20 rounded-2xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 overflow-hidden relative shadow-sm">
         <div className="absolute -right-20 -top-20 w-64 h-64 bg-amber-500/10 blur-[80px] rounded-full pointer-events-none" />
@@ -448,6 +503,11 @@ export default function DashboardPage() {
                               <div className="font-semibold text-zinc-900 dark:text-white truncate text-sm">
                                 {entry.adTitle || 'Unknown Campaign'}
                               </div>
+                              {entry.adDescription && (
+                                <div className="text-xs mt-0.5 mb-1 truncate text-zinc-500 dark:text-zinc-400">
+                                  {entry.adDescription}
+                                </div>
+                              )}
                               <div className="flex items-center gap-2 mt-1">
                                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
                                   entry.adType === 'interstitial'
@@ -760,6 +820,23 @@ export default function DashboardPage() {
                             {appCampaigns.map(([adId, entry]) => {
                               const realAdId = entry.adId || adId;
                               const isBlocked = (userData?.blockedAdsByAppId?.[key] || []).includes(realAdId);
+
+                              const now = new Date();
+                              const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+                              const views24hArr = (entry.recentViews || []).filter((v: any) => {
+                                const d = parseDateObj(v);
+                                return d && d > last24h;
+                              });
+                              const clicks24hArr = (entry.recentClicks || []).filter((v: any) => {
+                                const d = parseDateObj(v);
+                                return d && d > last24h;
+                              });
+
+                              const views24h = views24hArr.length;
+                              const clicks24h = clicks24hArr.length;
+                              const credits24h = views24hArr.reduce((sum: number, v: any) => sum + (v.creditsEarned || 0), 0);
+
                               return (
                               <div key={adId} className={`flex items-center justify-between rounded-lg p-3 border transition-colors ${
                                 isBlocked
@@ -789,6 +866,11 @@ export default function DashboardPage() {
                                         </span>
                                       )}
                                     </div>
+                                    {entry.adDescription && (
+                                      <div className={`text-xs mt-0.5 mb-1 truncate ${isBlocked ? 'text-red-400/60 dark:text-red-500/60' : 'text-zinc-600 dark:text-zinc-400'}`}>
+                                        {entry.adDescription}
+                                      </div>
+                                    )}
                                     <div className="text-xs text-zinc-500 truncate">
                                       {isBlocked ? (
                                         <span className="text-red-500/80 dark:text-red-400/80">Blocked from this app</span>
@@ -799,9 +881,45 @@ export default function DashboardPage() {
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-3 shrink-0 text-right pl-2">
-                                  <div className="flex flex-col">
-                                    <span className={`text-sm font-bold ${isBlocked ? 'text-red-500/60 dark:text-red-400/60' : 'text-zinc-900 dark:text-white'}`}>{entry.impressions || 0}</span>
-                                    <span className="text-[10px] uppercase tracking-wider text-zinc-500">Views</span>
+                                  <div 
+                                    className="flex items-center gap-4 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 p-1.5 rounded-lg transition-colors"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setMetricsModalAd({ ...entry, adId: realAdId, fromAppKey: key });
+                                    }}
+                                    title="View detailed metrics"
+                                  >
+                                    <div className="flex flex-col border-r border-zinc-200 dark:border-white/10 pr-4 hidden sm:flex">
+                                      <span className="text-[9px] uppercase tracking-wider text-zinc-400 font-bold mb-0.5 text-center">Last 24h</span>
+                                      <div className="flex gap-3">
+                                        <div className="flex flex-col items-center">
+                                          <span className={`text-xs font-bold ${isBlocked ? 'text-red-500/60 dark:text-red-400/60' : 'text-zinc-900 dark:text-white'}`}>{views24h}</span>
+                                          <span className="text-[9px] uppercase tracking-wider text-zinc-500">Views</span>
+                                        </div>
+                                        <div className="flex flex-col items-center">
+                                          <span className={`text-xs font-bold ${isBlocked ? 'text-red-500/60 dark:text-red-400/60' : 'text-zinc-900 dark:text-white'}`}>{clicks24h}</span>
+                                          <span className="text-[9px] uppercase tracking-wider text-zinc-500">Clicks</span>
+                                        </div>
+                                        <div className="flex flex-col items-center">
+                                          <span className={`text-xs font-bold ${isBlocked ? 'text-red-500/60 dark:text-red-400/60' : 'text-green-600 dark:text-green-400'}`}>+{credits24h}</span>
+                                          <span className="text-[9px] uppercase tracking-wider text-zinc-500">Credits</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-3 sm:gap-4">
+                                      <div className="flex flex-col items-center">
+                                        <span className={`text-sm font-bold ${isBlocked ? 'text-red-500/60 dark:text-red-400/60' : 'text-zinc-900 dark:text-white'}`}>{entry.impressions || 0}</span>
+                                        <span className="text-[10px] uppercase tracking-wider text-zinc-500">Views</span>
+                                      </div>
+                                      <div className="flex flex-col items-center">
+                                        <span className={`text-sm font-bold ${isBlocked ? 'text-red-500/60 dark:text-red-400/60' : 'text-zinc-900 dark:text-white'}`}>{entry.clicks || 0}</span>
+                                        <span className="text-[10px] uppercase tracking-wider text-zinc-500">Clicks</span>
+                                      </div>
+                                      <div className="flex flex-col items-center hidden sm:flex">
+                                        <span className={`text-sm font-bold ${isBlocked ? 'text-red-500/60 dark:text-red-400/60' : 'text-green-600 dark:text-green-400'}`}>+{entry.creditsEarned || 0}</span>
+                                        <span className="text-[10px] uppercase tracking-wider text-zinc-500">Credits</span>
+                                      </div>
+                                    </div>
                                   </div>
                                   <button
                                     onClick={(e) => {
@@ -1101,12 +1219,48 @@ if (showAd) {
                   <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1 line-clamp-2">{ad.description}</p>
                   
                   <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-white/10 flex flex-col gap-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-zinc-500 dark:text-zinc-400">👁 {ad.impressions || 0}   👆 {ad.clicks || 0}</span>
-                      <a href={ad.clickUrl} target="_blank" rel="noreferrer" className="text-sm text-amber-600 dark:text-amber-400 hover:text-amber-500 dark:hover:text-amber-300">
-                        Preview Link →
-                      </a>
-                    </div>
+                    {(() => {
+                      const now = new Date();
+                      const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                      
+                      const allRecentViews = Object.values(ad.recentViewsByOrigin || {}).flat();
+                      const allRecentClicks = Object.values(ad.recentClicksByOrigin || {}).flat();
+
+                      const views24h = allRecentViews.filter((v: any) => {
+                        const d = parseDateObj(v);
+                        return d && d > last24h;
+                      }).length;
+
+                      const clicks24h = allRecentClicks.filter((v: any) => {
+                        const d = parseDateObj(v);
+                        return d && d > last24h;
+                      }).length;
+
+                      const creditCost = ad.adType === 'interstitial' ? 5 : 1;
+                      const creditsSpent24h = views24h * creditCost;
+
+                      return (
+                        <div className="flex flex-col gap-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-zinc-900 dark:text-white flex items-center gap-3">
+                              <span title="Lifetime Impressions">👁 {ad.impressions || 0}</span>
+                              <span title="Lifetime Clicks">👆 {ad.clicks || 0}</span>
+                            </span>
+                            <a href={ad.clickUrl} target="_blank" rel="noreferrer" className="text-sm text-amber-600 dark:text-amber-400 hover:text-amber-500 dark:hover:text-amber-300">
+                              Preview Link →
+                            </a>
+                          </div>
+                          <div className="text-[10px] uppercase tracking-wider text-zinc-400 dark:text-zinc-500 font-bold flex items-center gap-2">
+                            <span>Last 24h:</span>
+                            <span className="text-zinc-600 dark:text-zinc-300">{views24h} views</span>
+                            <span>•</span>
+                            <span className="text-zinc-600 dark:text-zinc-300">{clicks24h} clicks</span>
+                            <span>•</span>
+                            <span className="text-amber-600/80 dark:text-amber-400/80">{creditsSpent24h} credits</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                     {/* Traffic Sources */}
                     {(ad.origins && Object.keys(ad.origins).length > 0) && (
@@ -1434,6 +1588,11 @@ if (showAd) {
             <div className="p-5 space-y-4 overflow-y-auto">
               <div>
                 <h4 className="text-lg font-bold text-zinc-900 dark:text-white">{previewAd.adTitle || 'Unknown Campaign'}</h4>
+                {previewAd.adDescription && (
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1 mb-2 leading-relaxed">
+                    {previewAd.adDescription}
+                  </p>
+                )}
                 {previewAd.platform && (
                   <span className="inline-block mt-1 text-[10px] font-mono border border-zinc-200 dark:border-white/10 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-500">
                     {previewAd.platform}
@@ -1458,10 +1617,64 @@ if (showAd) {
               </div>
 
               {previewAd.lastUpdated && (
-                <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                <div className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
                   Last shown: {new Date(previewAd.lastUpdated).toLocaleDateString()} at {new Date(previewAd.lastUpdated).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                 </div>
               )}
+
+              {/* Recent Activity Log */}
+              <div>
+                <h4 className="text-sm font-bold text-zinc-900 dark:text-white mb-3 flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-zinc-400" />
+                  Recent Activity Log
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2 font-semibold">Recent Views</div>
+                    <div className="max-h-[200px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                      {previewAd.recentViews && previewAd.recentViews.length > 0 ? (
+                        previewAd.recentViews.slice().reverse().map((v: any, i: number) => {
+                          const timeStr = v.time ? new Date(v.time).toLocaleString() : 'Unknown Time';
+                          return (
+                            <div key={i} className="flex justify-between items-center text-sm text-zinc-700 dark:text-zinc-300 bg-zinc-50 dark:bg-white/5 border border-zinc-100 dark:border-white/5 px-3 py-2.5 rounded-lg truncate transition-colors hover:bg-zinc-100 dark:hover:bg-white/10">
+                              <span className="font-mono text-xs">{timeStr}</span>
+                              {v.region && v.region !== 'Unknown' && (
+                                <span className="ml-2 bg-black/5 dark:bg-white/10 text-zinc-600 dark:text-zinc-400 px-2 py-0.5 rounded font-bold tracking-wider text-[10px] uppercase">{v.region}</span>
+                              )}
+                            </div>
+                          )
+                        })
+                      ) : (
+                        <div className="text-sm text-zinc-500 italic p-6 text-center border border-dashed border-zinc-200 dark:border-white/10 rounded-xl bg-zinc-50/50 dark:bg-zinc-900/50">
+                          No recent views.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2 font-semibold">Recent Clicks</div>
+                    <div className="max-h-[200px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                      {previewAd.recentClicks && previewAd.recentClicks.length > 0 ? (
+                        previewAd.recentClicks.slice().reverse().map((v: any, i: number) => {
+                          const timeStr = v.time ? new Date(v.time).toLocaleString() : 'Unknown Time';
+                          return (
+                            <div key={i} className="flex justify-between items-center text-sm text-zinc-700 dark:text-zinc-300 bg-zinc-50 dark:bg-white/5 border border-zinc-100 dark:border-white/5 px-3 py-2.5 rounded-lg truncate transition-colors hover:bg-zinc-100 dark:hover:bg-white/10">
+                              <span className="font-mono text-xs">{timeStr}</span>
+                              {v.region && v.region !== 'Unknown' && (
+                                <span className="ml-2 bg-black/5 dark:bg-white/10 text-zinc-600 dark:text-zinc-400 px-2 py-0.5 rounded font-bold tracking-wider text-[10px] uppercase">{v.region}</span>
+                              )}
+                            </div>
+                          )
+                        })
+                      ) : (
+                        <div className="text-sm text-zinc-500 italic p-6 text-center border border-dashed border-zinc-200 dark:border-white/10 rounded-xl bg-zinc-50/50 dark:bg-zinc-900/50">
+                          No recent clicks.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               {/* Block/Unblock Button */}
               {previewAd.fromAppKey && (() => {
@@ -1486,6 +1699,96 @@ if (showAd) {
                   </button>
                 );
               })()}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Detailed Metrics Modal */}
+      {metricsModalAd && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setMetricsModalAd(null)}>
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-5 border-b border-zinc-200 dark:border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 dark:bg-blue-500/10 rounded-xl text-blue-600 dark:text-blue-400">
+                  <Activity className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Performance Metrics</h3>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{metricsModalAd.adTitle || 'Unknown Campaign'}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setMetricsModalAd(null)}
+                className="p-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-xl transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 overflow-y-auto">
+              <div className="grid grid-cols-2 gap-4 mb-2">
+                <div className="bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-white/10 rounded-xl p-4 text-center">
+                  <div className="text-2xl font-bold text-zinc-900 dark:text-white">{(metricsModalAd.impressions || 0).toLocaleString()}</div>
+                  <div className="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">Total Views</div>
+                </div>
+                <div className="bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-white/10 rounded-xl p-4 text-center">
+                  <div className="text-2xl font-bold text-zinc-900 dark:text-white">{(metricsModalAd.clicks || 0).toLocaleString()}</div>
+                  <div className="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">Total Clicks</div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-bold text-zinc-900 dark:text-white mb-3 flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-zinc-400" />
+                  Recent Activity Log
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2 font-semibold">Recent Views</div>
+                    <div className="max-h-[300px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                      {metricsModalAd.recentViews && metricsModalAd.recentViews.length > 0 ? (
+                        metricsModalAd.recentViews.slice().reverse().map((v: any, i: number) => {
+                          const timeStr = v.time ? new Date(v.time).toLocaleString() : 'Unknown Time';
+                          return (
+                            <div key={i} className="flex justify-between items-center text-sm text-zinc-700 dark:text-zinc-300 bg-zinc-50 dark:bg-white/5 border border-zinc-100 dark:border-white/5 px-3 py-2.5 rounded-lg truncate transition-colors hover:bg-zinc-100 dark:hover:bg-white/10">
+                              <span className="font-mono text-xs">{timeStr}</span>
+                              {v.region && v.region !== 'Unknown' && (
+                                <span className="ml-2 bg-black/5 dark:bg-white/10 text-zinc-600 dark:text-zinc-400 px-2 py-0.5 rounded font-bold tracking-wider text-[10px] uppercase">{v.region}</span>
+                              )}
+                            </div>
+                          )
+                        })
+                      ) : (
+                        <div className="text-sm text-zinc-500 italic p-6 text-center border border-dashed border-zinc-200 dark:border-white/10 rounded-xl bg-zinc-50/50 dark:bg-zinc-900/50">
+                          No recent views.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2 font-semibold">Recent Clicks</div>
+                    <div className="max-h-[300px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                      {metricsModalAd.recentClicks && metricsModalAd.recentClicks.length > 0 ? (
+                        metricsModalAd.recentClicks.slice().reverse().map((v: any, i: number) => {
+                          const timeStr = v.time ? new Date(v.time).toLocaleString() : 'Unknown Time';
+                          return (
+                            <div key={i} className="flex justify-between items-center text-sm text-zinc-700 dark:text-zinc-300 bg-zinc-50 dark:bg-white/5 border border-zinc-100 dark:border-white/5 px-3 py-2.5 rounded-lg truncate transition-colors hover:bg-zinc-100 dark:hover:bg-white/10">
+                              <span className="font-mono text-xs">{timeStr}</span>
+                              {v.region && v.region !== 'Unknown' && (
+                                <span className="ml-2 bg-black/5 dark:bg-white/10 text-zinc-600 dark:text-zinc-400 px-2 py-0.5 rounded font-bold tracking-wider text-[10px] uppercase">{v.region}</span>
+                              )}
+                            </div>
+                          )
+                        })
+                      ) : (
+                        <div className="text-sm text-zinc-500 italic p-6 text-center border border-dashed border-zinc-200 dark:border-white/10 rounded-xl bg-zinc-50/50 dark:bg-zinc-900/50">
+                          No recent clicks.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

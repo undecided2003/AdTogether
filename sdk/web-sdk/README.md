@@ -1,5 +1,12 @@
 # AdTogether Web SDK
 
+> [!IMPORTANT]
+> **Developer Account Required**: Before integrating the SDK, you must create a developer account at [https://adtogether.relaxsoftwareapps.com](https://adtogether.relaxsoftwareapps.com) to generate your `appId` and configure your ad units. Integration will not work without a valid `appId`.
+
+<p align="center">
+  <img src="../../public/dashboard.png" width="800" alt="Developer Dashboard">
+</p>
+
 [![npm version](https://img.shields.io/npm/v/@adtogether/web-sdk)](https://www.npmjs.com/package/@adtogether/web-sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 

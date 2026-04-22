@@ -95,6 +95,37 @@ export class AdTogether {
     this.trackEvent('/api/ads/click', adId, token);
   }
 
+  /**
+   * Detect the user's country code from the browser locale.
+   * Uses Intl API (most reliable) with navigator.language as fallback.
+   * Returns an ISO 3166-1 alpha-2 code like "US", "DE", "JP", or null.
+   */
+  private static detectCountry(): string | null {
+    try {
+      // Intl API gives the most reliable region
+      if (typeof Intl !== 'undefined' && Intl.DateTimeFormat) {
+        const resolved = Intl.DateTimeFormat().resolvedOptions();
+        // timeZone is like "America/New_York" — we can map it, but locale is simpler
+        if (resolved.locale) {
+          const parts = resolved.locale.split('-');
+          if (parts.length >= 2) {
+            const region = parts[parts.length - 1].toUpperCase();
+            if (region.length === 2) return region;
+          }
+        }
+      }
+      // Fallback: navigator.language (e.g. "en-US" -> "US")
+      if (typeof navigator !== 'undefined' && navigator.language) {
+        const parts = navigator.language.split('-');
+        if (parts.length >= 2) {
+          const region = parts[parts.length - 1].toUpperCase();
+          if (region.length === 2) return region;
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
   private static trackEvent(endpoint: string, adId: string, token?: string) {
     if (!AdTogether.shared.assertInitialized()) return;
     
@@ -111,6 +142,7 @@ export class AdTogether {
         // Send platform and environment to match Flutter SDK
         platform: 'web',
         environment: typeof process !== 'undefined' && process.env?.NODE_ENV === 'development' ? 'development' : 'production',
+        country: AdTogether.detectCountry(),
       }),
     }).catch(console.error);
   }

@@ -1,5 +1,12 @@
 # AdTogether Android SDK
 
+> [!IMPORTANT]
+> **Developer Account Required**: Before integrating the SDK, you must create a developer account at [https://adtogether.relaxsoftwareapps.com](https://adtogether.relaxsoftwareapps.com) to generate your `appId` and configure your ad units. Integration will not work without a valid `appId`.
+
+<p align="center">
+  <img src="../../public/dashboard.png" width="800" alt="Developer Dashboard">
+</p>
+
 [![Maven Central](https://img.shields.io/maven-central/v/com.relaxsoftwareapps.adtogether/sdk)](https://central.sonatype.com/namespace/com.relaxsoftwareapps.adtogether)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -36,7 +43,7 @@ Add the dependency to your app-level `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.relaxsoftwareapps.adtogether:sdk:0.1.14")
+    implementation("com.relaxsoftwareapps.adtogether:sdk:0.1.23")
 }
 ```
 

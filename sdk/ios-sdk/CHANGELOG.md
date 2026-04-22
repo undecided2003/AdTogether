@@ -1,5 +1,8 @@
-## 0.1.22
+## 0.1.23
 
+* **Sync**: Version parity across all AdTogether SDKs.
+
+## 0.1.22
 * **Brand**: Added "Powered by AdTogether" attribution to all Interstitial ad formats.
 * **Sync**: Unified versioning (0.1.20) across all AdTogether SDKs.
 

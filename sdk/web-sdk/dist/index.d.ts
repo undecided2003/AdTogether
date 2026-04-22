@@ -31,6 +31,12 @@ declare class AdTogether {
     static fetchAd(adUnitId: string, adType?: AdType): Promise<AdModel>;
     static trackImpression(adId: string, token?: string): void;
     static trackClick(adId: string, token?: string): void;
+    /**
+     * Detect the user's country code from the browser locale.
+     * Uses Intl API (most reliable) with navigator.language as fallback.
+     * Returns an ISO 3166-1 alpha-2 code like "US", "DE", "JP", or null.
+     */
+    private static detectCountry;
     private static trackEvent;
 }
 
