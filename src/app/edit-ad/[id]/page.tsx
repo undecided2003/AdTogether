@@ -421,7 +421,7 @@ export default function EditAdPage() {
                     <div className="p-8 flex flex-col items-center text-center space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
                       <div className="w-48 h-48 relative group">
                         <div className="absolute -inset-4 bg-purple-500/10 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <img src={preview!} alt="Interstitial Preview" className="w-full h-full rounded-2xl object-cover shadow-2xl relative z-10 border border-white/10" />
+                        <img src={preview!} alt="Interstitial Preview" className="w-full h-full rounded-2xl object-contain shadow-2xl relative z-10 border border-white/10 bg-zinc-100 dark:bg-zinc-800" />
                       </div>
                       <div className="space-y-2">
                         <h4 className="text-xl font-bold text-zinc-900 dark:text-white leading-tight">{title || "Campaign Title"}</h4>

@@ -2,7 +2,36 @@ import Link from 'next/link';
 import { CodeBlock } from '@/components/CodeBlock';
 import ExampleAdsButton from '@/components/ExampleAdsButton';
 
-export default function Home() {
+async function getNpmDownloads(pkg: string) {
+  try {
+    const res = await fetch(`https://api.npmjs.org/downloads/point/last-month/${pkg}`, { next: { revalidate: 3600 } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.downloads;
+  } catch (e) {
+    return null;
+  }
+}
+
+function SdkCard({ title, repoName, url, statLabel, statValue, icon }: { title: string, repoName: string, url: string, statLabel: string, statValue: React.ReactNode, icon: string }) {
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" className="flex flex-col p-6 h-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0A0A0A] hover:border-amber-400 dark:hover:border-[#FFCE2A] transition-all group shadow-sm hover:shadow-md">
+      <div className="text-3xl mb-4 grayscale opacity-80 group-hover:opacity-100 group-hover:grayscale-0 transition-all">{icon}</div>
+      <h4 className="text-lg font-bold text-zinc-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-[#FFCE2A] transition-colors">{title}</h4>
+      <p className="text-xs font-mono text-zinc-500 mt-1 truncate" title={repoName}>{repoName}</p>
+      
+      <div className="mt-auto pt-6 flex justify-between items-center text-sm border-t border-zinc-100 dark:border-zinc-800">
+        <span className="text-zinc-500">{statLabel}</span>
+        <span className="font-semibold text-zinc-900 dark:text-white bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-xs">{statValue ?? 'N/A'}</span>
+      </div>
+    </a>
+  );
+}
+
+export default async function Home() {
+  const webSdkDownloads = await getNpmDownloads('@adtogether/web-sdk');
+  const rnSdkDownloads = await getNpmDownloads('@adtogether/react-native-sdk');
+  const formatNum = (num: number | null) => num !== null ? new Intl.NumberFormat('en-US').format(num) : null;
   const exampleCode = `"use client";
 import { useState } from 'react';
 import { AdTogether } from '@adtogether/web-sdk';
@@ -125,6 +154,59 @@ export default function MyComponent() {
               A transparent value exchange. Earn credits by showing ads and spend them to promote your own. Different ad formats have different weights, ensuring a level playing field and fair value for apps of all sizes.
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* SDKs Section */}
+      <div className="px-6 space-y-8 pt-8">
+        <div className="flex flex-col md:flex-row justify-between items-end mb-10 border-b border-zinc-200 dark:border-zinc-800 pb-6">
+          <div>
+            <h2 className="text-3xl font-bold text-zinc-900 dark:text-white">SDK Repositories & Downloads</h2>
+            <p className="text-zinc-600 dark:text-zinc-400 mt-2 text-lg">Use our open-source SDKs for seamless native integration on any device.</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+          <SdkCard 
+            title="Web & React" 
+            repoName="@adtogether/web-sdk" 
+            url="https://www.npmjs.com/package/@adtogether/web-sdk" 
+            statLabel="Downloads/mo"
+            statValue={formatNum(webSdkDownloads)}
+            icon="🌐" 
+          />
+          <SdkCard 
+            title="React Native" 
+            repoName="@adtogether/react-native-sdk" 
+            url="https://www.npmjs.com/package/@adtogether/react-native-sdk" 
+            statLabel="Downloads/mo"
+            statValue={formatNum(rnSdkDownloads)}
+            icon="📱" 
+          />
+          <SdkCard 
+            title="Flutter" 
+            repoName="adtogether_sdk" 
+            url="https://pub.dev/packages/adtogether_sdk" 
+            statLabel="Registry"
+            statValue="pub.dev" 
+            icon="💙" 
+          />
+          <SdkCard 
+            title="Android" 
+            repoName="android-sdk" 
+            url="https://github.com/AdTogether" 
+            statLabel="Repository"
+            statValue="GitHub" 
+            icon="🤖" 
+          />
+          <SdkCard 
+            title="iOS" 
+            repoName="ios-sdk" 
+            url="https://github.com/AdTogether" 
+            statLabel="Repository"
+            statValue="GitHub" 
+            icon="🍎" 
+          />
         </div>
       </div>
     </div>

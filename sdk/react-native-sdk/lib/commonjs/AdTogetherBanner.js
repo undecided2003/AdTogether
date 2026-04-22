@@ -13,12 +13,15 @@ const AdTogetherBanner = ({
   adUnitId,
   onAdLoaded,
   onAdFailedToLoad,
+  showCloseButton = false,
+  onAdClosed,
   theme = 'auto',
   style
 }) => {
   const [adData, setAdData] = (0, _react.useState)(null);
   const [isLoading, setIsLoading] = (0, _react.useState)(true);
   const [hasError, setHasError] = (0, _react.useState)(false);
+  const [isVisible, setIsVisible] = (0, _react.useState)(true);
   const systemColorScheme = (0, _reactNative.useColorScheme)();
   const impressionTrackedRef = (0, _react.useRef)(false);
   (0, _react.useEffect)(() => {
@@ -56,6 +59,13 @@ const AdTogetherBanner = ({
       _reactNative.Linking.openURL(adData.clickUrl).catch(console.error);
     }
   };
+  const handleClose = () => {
+    setIsVisible(false);
+    onAdClosed?.();
+  };
+  if (!isVisible) {
+    return null;
+  }
   if (isLoading) {
     return /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
       style: [styles.container, style]
@@ -109,6 +119,16 @@ const AdTogetherBanner = ({
         numberOfLines: 2,
         children: adData.description
       })]
+    }), showCloseButton && /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Pressable, {
+      onPress: handleClose,
+      style: styles.closeButton,
+      hitSlop: 8,
+      accessibilityLabel: "Close ad",
+      accessibilityRole: "button",
+      children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+        style: styles.closeButtonText,
+        children: "\xD7"
+      })
     })]
   });
 };
@@ -169,6 +189,24 @@ const styles = _reactNative.StyleSheet.create({
   },
   description: {
     fontSize: 12
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1
+  },
+  closeButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    lineHeight: 18
   }
 });
 //# sourceMappingURL=AdTogetherBanner.js.map

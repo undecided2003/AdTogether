@@ -23,6 +23,11 @@ const AdTogetherInterstitial = ({
   const [hasError, setHasError] = (0, _react.useState)(false);
   const [timeLeft, setTimeLeft] = (0, _react.useState)(closeDelay);
   const systemColorScheme = (0, _reactNative.useColorScheme)();
+  const {
+    width,
+    height
+  } = (0, _reactNative.useWindowDimensions)();
+  const isLandscape = width > height;
   const impressionTrackedRef = (0, _react.useRef)(false);
   (0, _react.useEffect)(() => {
     if (!isOpen) return;
@@ -118,49 +123,63 @@ const AdTogetherInterstitial = ({
             children: "\u2715"
           })
         })
-      }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.TouchableOpacity, {
-        activeOpacity: 0.9,
-        style: styles.content,
-        onPress: handlePress,
-        children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
-          style: styles.imageWrapper,
-          children: adData.imageUrl ? /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Image, {
-            source: {
-              uri: adData.imageUrl
-            },
-            style: styles.image,
-            resizeMode: "contain"
-          }) : /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
-            style: [styles.imagePlaceholder, {
-              backgroundColor: isDarkMode ? '#1F2937' : '#E5E7EB'
-            }]
-          })
-        }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
-          style: styles.textWrapper,
+      }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
+        style: [styles.content, isLandscape && styles.contentLandscape],
+        children: /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.TouchableOpacity, {
+          activeOpacity: 0.9,
+          style: [styles.card, isLandscape && styles.cardLandscape],
+          onPress: handlePress,
           children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
-            style: styles.adBadge,
-            children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
-              style: styles.adBadgeText,
-              children: "Advertisement"
-            })
-          }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
-            style: [styles.title, {
-              color: textColor
+            style: [styles.imageWrapper, isLandscape && styles.imageWrapperLandscape, !isLandscape && {
+              backgroundColor: isDarkMode ? '#111827' : '#F3F4F6'
             }],
-            children: adData.title
-          }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
-            style: [styles.description, {
-              color: descColor
-            }],
-            children: adData.description
-          }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
-            style: styles.ctaButton,
-            children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
-              style: styles.ctaText,
-              children: "Learn More"
+            children: adData.imageUrl ? /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Image, {
+              source: {
+                uri: adData.imageUrl
+              },
+              style: [styles.image, !isLandscape && {
+                resizeMode: 'contain'
+              }],
+              resizeMode: isLandscape ? "cover" : "contain"
+            }) : /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
+              style: [styles.imagePlaceholder, {
+                backgroundColor: isDarkMode ? '#1F2937' : '#E5E7EB'
+              }]
             })
+          }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.ScrollView, {
+            style: isLandscape ? styles.scrollContentLandscape : styles.scrollContent,
+            contentContainerStyle: [styles.textWrapper, isLandscape && styles.textWrapperLandscape],
+            showsVerticalScrollIndicator: false,
+            children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
+              style: styles.adBadge,
+              children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                style: styles.adBadgeText,
+                children: "Advertisement"
+              })
+            }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+              style: [styles.title, {
+                color: textColor
+              }],
+              children: adData.title
+            }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+              style: [styles.description, {
+                color: descColor
+              }],
+              children: adData.description
+            }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
+              style: styles.ctaButton,
+              children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                style: styles.ctaText,
+                children: "Learn More"
+              })
+            }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+              style: [styles.poweredBy, {
+                color: isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'
+              }],
+              children: "Powered by AdTogether"
+            })]
           })]
-        })]
+        })
       })]
     })
   });
@@ -190,10 +209,25 @@ const styles = _reactNative.StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center'
   },
+  contentLandscape: {
+    padding: 16
+  },
+  card: {
+    width: '100%',
+    alignItems: 'center'
+  },
+  cardLandscape: {
+    flexDirection: 'row',
+    flex: 1,
+    maxWidth: 800,
+    width: '100%'
+  },
   imageWrapper: {
     width: '100%',
-    aspectRatio: 1,
+    maxHeight: 300,
     marginBottom: 32,
+    borderRadius: 16,
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -202,6 +236,13 @@ const styles = _reactNative.StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 20,
     elevation: 5
+  },
+  imageWrapperLandscape: {
+    flex: 1,
+    aspectRatio: undefined,
+    height: '100%',
+    marginBottom: 0,
+    marginRight: 24
   },
   image: {
     width: '100%',
@@ -213,9 +254,22 @@ const styles = _reactNative.StyleSheet.create({
     height: '100%',
     borderRadius: 16
   },
+  scrollContent: {
+    width: '100%',
+    flexGrow: 0
+  },
+  scrollContentLandscape: {
+    flex: 1,
+    height: '100%'
+  },
   textWrapper: {
     alignItems: 'center',
-    width: '100%'
+    width: '100%',
+    paddingBottom: 20
+  },
+  textWrapperLandscape: {
+    justifyContent: 'center',
+    minHeight: '100%'
   },
   adBadge: {
     backgroundColor: '#FBBF24',
@@ -254,6 +308,12 @@ const styles = _reactNative.StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold'
+  },
+  poweredBy: {
+    fontSize: 10,
+    textAlign: 'center',
+    marginTop: 12,
+    letterSpacing: 0.3
   }
 });
 //# sourceMappingURL=AdTogetherInterstitial.js.map

@@ -282,7 +282,7 @@ export const AdTogetherInterstitial: React.FC<AdTogetherInterstitialProps> = ({
           {adData.imageUrl && (
             <div
               className="adtogether-interstitial-img-wrapper"
-              style={{ cursor: 'pointer', position: 'relative' }}
+              style={{ cursor: 'pointer', position: 'relative', backgroundColor: isDarkMode ? '#111827' : '#F3F4F6' }}
               onClick={handleAdClick}
             >
               <img
@@ -290,8 +290,8 @@ export const AdTogetherInterstitial: React.FC<AdTogetherInterstitialProps> = ({
                 alt={adData.title}
                 style={{
                   width: '100%',
-                  aspectRatio: '16/9',
-                  objectFit: 'cover',
+                  maxHeight: '350px',
+                  objectFit: 'contain',
                   display: 'block',
                 }}
               />
@@ -348,6 +348,18 @@ export const AdTogetherInterstitial: React.FC<AdTogetherInterstitialProps> = ({
             >
               Learn More →
             </button>
+            <p
+              style={{
+                marginTop: '12px',
+                marginBottom: 0,
+                fontSize: '10px',
+                color: isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
+                textAlign: 'center',
+                letterSpacing: '0.3px',
+              }}
+            >
+              Powered by AdTogether
+            </p>
           </div>
         </div>
       ) : null}

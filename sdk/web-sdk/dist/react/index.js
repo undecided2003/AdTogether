@@ -542,7 +542,7 @@ var AdTogetherInterstitial = ({
                 "div",
                 {
                   className: "adtogether-interstitial-img-wrapper",
-                  style: { cursor: "pointer", position: "relative" },
+                  style: { cursor: "pointer", position: "relative", backgroundColor: isDarkMode ? "#111827" : "#F3F4F6" },
                   onClick: handleAdClick,
                   children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
                     "img",
@@ -551,8 +551,8 @@ var AdTogetherInterstitial = ({
                       alt: adData.title,
                       style: {
                         width: "100%",
-                        aspectRatio: "16/9",
-                        objectFit: "cover",
+                        maxHeight: "350px",
+                        objectFit: "contain",
                         display: "block"
                       }
                     }
@@ -606,6 +606,20 @@ var AdTogetherInterstitial = ({
                           handleAdClick();
                         },
                         children: "Learn More \u2192"
+                      }
+                    ),
+                    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+                      "p",
+                      {
+                        style: {
+                          marginTop: "12px",
+                          marginBottom: 0,
+                          fontSize: "10px",
+                          color: isDarkMode ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)",
+                          textAlign: "center",
+                          letterSpacing: "0.3px"
+                        },
+                        children: "Powered by AdTogether"
                       }
                     )
                   ]

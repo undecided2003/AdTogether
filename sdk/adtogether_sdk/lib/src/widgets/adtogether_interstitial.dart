@@ -393,6 +393,17 @@ class _InterstitialDialogState extends State<_InterstitialDialog>
                 ),
               ),
             ),
+            const SizedBox(height: 12),
+            Center(
+              child: Text(
+                'Powered by AdTogether',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: textColor.withValues(alpha: 0.3),
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ),
           ],
         ),
       ),

@@ -254,6 +254,17 @@ fun AdTogetherInterstitial(
                                             modifier = Modifier.padding(vertical = 6.dp)
                                         )
                                     }
+
+                                    Spacer(modifier = Modifier.height(12.dp))
+
+                                    Text(
+                                        text = "Powered by AdTogether",
+                                        fontSize = 10.sp,
+                                        color = descColor.copy(alpha = 0.4f),
+                                        letterSpacing = 0.3.sp,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                    )
                                 }
                             }
                         } else {
@@ -263,10 +274,11 @@ fun AdTogetherInterstitial(
                                     AsyncImage(
                                         model = ad.imageUrl,
                                         contentDescription = ad.title,
-                                        contentScale = ContentScale.Crop,
+                                        contentScale = ContentScale.Fit,
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .aspectRatio(16f / 9f)
+                                            .heightIn(max = 280.dp)
+                                            .background(MaterialTheme.colorScheme.surfaceVariant)
                                             .clickable {
                                                 coroutineScope.launch { AdTogether.trackClick(ad.id, ad.token) }
                                                 ad.clickUrl?.let { url ->
@@ -340,6 +352,17 @@ fun AdTogetherInterstitial(
                                             modifier = Modifier.padding(vertical = 6.dp)
                                         )
                                     }
+
+                                    Spacer(modifier = Modifier.height(12.dp))
+
+                                    Text(
+                                        text = "Powered by AdTogether",
+                                        fontSize = 10.sp,
+                                        color = descColor.copy(alpha = 0.4f),
+                                        letterSpacing = 0.3.sp,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                    )
                                 }
                             }
                         }

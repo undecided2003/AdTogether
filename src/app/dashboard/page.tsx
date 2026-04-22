@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { auth, db } from "@/lib/firebase";
-import { doc, getDoc, collection, query, where, getDocs, updateDoc, deleteDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, updateDoc, deleteDoc, arrayUnion, arrayRemove, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { Coins, Plus, Activity, LogOut, Globe, Image as ImageIcon, MousePointerClick, MapPin, Check, Key, Copy, Eye, EyeOff, X, ChevronDown, ChevronUp, Monitor, Pencil, Smartphone, Shield, ShieldAlert, ArrowDownUp, TrendingUp } from "lucide-react";
@@ -40,12 +40,19 @@ export default function DashboardPage() {
   
   // Earnings log state
   const [showEarnings, setShowEarnings] = useState(false);
+  const [expandedEarningsAdId, setExpandedEarningsAdId] = useState<string | null>(null);
   
   // App ID copying state
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // App ID activity state
   const [expandedAppActivity, setExpandedAppActivity] = useState<Record<string, boolean>>({});
+
+  // Ad preview modal state
+  const [previewAd, setPreviewAd] = useState<any | null>(null);
+  
+  // Blocked ads per App ID state
+  const [blockingAd, setBlockingAd] = useState<string | null>(null);
   
   const router = useRouter();
 
@@ -225,6 +232,30 @@ export default function DashboardPage() {
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
+  const handleToggleBlockAdForApp = async (apiKey: string, adId: string, isCurrentlyBlocked: boolean) => {
+    if (!user) return;
+    setBlockingAd(adId);
+    try {
+      const userRef = doc(db, "users", user.uid);
+      const currentBlockedMap = userData?.blockedAdsByAppId || {};
+      const currentList: string[] = currentBlockedMap[apiKey] || [];
+      let updatedList: string[];
+      if (isCurrentlyBlocked) {
+        updatedList = currentList.filter((id: string) => id !== adId);
+      } else {
+        updatedList = [...currentList, adId];
+      }
+      const updatedMap = { ...currentBlockedMap, [apiKey]: updatedList };
+      await updateDoc(userRef, { blockedAdsByAppId: updatedMap });
+      setUserData({ ...userData, blockedAdsByAppId: updatedMap });
+    } catch (e) {
+      console.error("Failed to toggle ad block", e);
+      alert("Failed to update blocklist");
+    } finally {
+      setBlockingAd(null);
+    }
+  };
+
   const ctr = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) : "0.00";
 
   if (loading) {
@@ -396,68 +427,116 @@ export default function DashboardPage() {
                       ? userData.apiKeyLabels[entry.apiKey]
                       : 'Unknown App';
                     const maskedKey = entry.apiKey ? `${entry.apiKey.substring(0, 6)}...${entry.apiKey.slice(-4)}` : '—';
-                    
                     return (
-                      <div
-                        key={adId}
-                        className="bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-white/10 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 hover:border-zinc-300 dark:hover:border-white/20 transition-colors"
-                      >
-                        {/* Campaign image + info */}
-                        <div className="flex items-center gap-3 flex-grow min-w-0">
-                          <div className="w-12 h-12 rounded-lg bg-zinc-200 dark:bg-zinc-800 overflow-hidden shrink-0 border border-zinc-200 dark:border-white/10">
-                            {entry.adImageUrl ? (
-                              <img src={entry.adImageUrl} alt={entry.adTitle} className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-zinc-400 dark:text-zinc-600">
-                                <ImageIcon className="w-5 h-5" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="font-semibold text-zinc-900 dark:text-white truncate text-sm">
-                              {entry.adTitle || 'Unknown Campaign'}
+                      <div key={adId} className="flex flex-col bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-white/10 rounded-xl overflow-hidden hover:border-zinc-300 dark:hover:border-white/20 transition-colors">
+                        <div 
+                          className="p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 cursor-pointer"
+                          onClick={() => setExpandedEarningsAdId(expandedEarningsAdId === adId ? null : adId)}
+                        >
+                          {/* Campaign image + info */}
+                          <div className="flex items-center gap-3 flex-grow min-w-0">
+                            <div className="w-12 h-12 rounded-lg bg-zinc-200 dark:bg-zinc-800 overflow-hidden shrink-0 border border-zinc-200 dark:border-white/10">
+                              {entry.adImageUrl ? (
+                                <img src={entry.adImageUrl} alt={entry.adTitle} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-zinc-400 dark:text-zinc-600">
+                                  <ImageIcon className="w-5 h-5" />
+                                </div>
+                              )}
                             </div>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
-                                entry.adType === 'interstitial'
-                                  ? 'bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-500/20'
-                                  : 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/20'
-                              }`}>
-                                {entry.adType === 'interstitial' ? 'INTERSTITIAL' : 'BANNER'}
+                            <div className="min-w-0">
+                              <div className="font-semibold text-zinc-900 dark:text-white truncate text-sm">
+                                {entry.adTitle || 'Unknown Campaign'}
+                              </div>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
+                                  entry.adType === 'interstitial'
+                                    ? 'bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-500/20'
+                                    : 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/20'
+                                }`}>
+                                  {entry.adType === 'interstitial' ? 'INTERSTITIAL' : 'BANNER'}
+                                </span>
+                                <span className="text-xs text-zinc-400 dark:text-zinc-500 truncate" title={`Ad ID: ${adId}`}>
+                                  {adId.substring(0, 8)}...
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Stats */}
+                          <div className="flex items-center gap-4 sm:gap-6 shrink-0 w-full sm:w-auto">
+                            <div className="flex flex-col items-center">
+                              <span className="text-lg font-bold text-zinc-900 dark:text-white">{(entry.impressions || 0).toLocaleString()}</span>
+                              <span className="text-[10px] uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Views</span>
+                            </div>
+                            <div className="flex flex-col items-center">
+                              <span className="text-lg font-bold text-zinc-900 dark:text-white">{(entry.clicks || 0).toLocaleString()}</span>
+                              <span className="text-[10px] uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Clicks</span>
+                            </div>
+                            <div className="flex flex-col items-center">
+                              <span className="text-lg font-bold text-green-600 dark:text-green-400">+{(entry.creditsEarned || 0).toLocaleString()}</span>
+                              <span className="text-[10px] uppercase tracking-wider text-green-500/80 dark:text-green-500/60">Credits</span>
+                            </div>
+                            <div className="flex flex-col items-center min-w-0">
+                              <div className="flex items-center gap-1">
+                                <Smartphone className="w-3 h-3 text-amber-500 dark:text-amber-400 shrink-0" />
+                                <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300 truncate max-w-[100px]" title={`${keyLabel} (${entry.apiKey})`}>
+                                  {keyLabel}
+                                </span>
+                              </div>
+                              <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500 truncate max-w-[100px]" title={entry.apiKey}>
+                                {maskedKey}
                               </span>
-                              <span className="text-xs text-zinc-400 dark:text-zinc-500 truncate" title={`Ad ID: ${adId}`}>
-                                {adId.substring(0, 8)}...
-                              </span>
+                            </div>
+                            
+                            <div className="text-zinc-400 pl-2">
+                              {expandedEarningsAdId === adId ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                             </div>
                           </div>
                         </div>
 
-                        {/* Stats */}
-                        <div className="flex items-center gap-4 sm:gap-6 shrink-0 w-full sm:w-auto">
-                          <div className="flex flex-col items-center">
-                            <span className="text-lg font-bold text-zinc-900 dark:text-white">{(entry.impressions || 0).toLocaleString()}</span>
-                            <span className="text-[10px] uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Views</span>
-                          </div>
-                          <div className="flex flex-col items-center">
-                            <span className="text-lg font-bold text-zinc-900 dark:text-white">{(entry.clicks || 0).toLocaleString()}</span>
-                            <span className="text-[10px] uppercase tracking-wider text-zinc-400 dark:text-zinc-500">Clicks</span>
-                          </div>
-                          <div className="flex flex-col items-center">
-                            <span className="text-lg font-bold text-green-600 dark:text-green-400">+{(entry.creditsEarned || 0).toLocaleString()}</span>
-                            <span className="text-[10px] uppercase tracking-wider text-green-500/80 dark:text-green-500/60">Credits</span>
-                          </div>
-                          <div className="flex flex-col items-center min-w-0">
-                            <div className="flex items-center gap-1">
-                              <Smartphone className="w-3 h-3 text-amber-500 dark:text-amber-400 shrink-0" />
-                              <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300 truncate max-w-[100px]" title={`${keyLabel} (${entry.apiKey})`}>
-                                {keyLabel}
-                              </span>
+                        {expandedEarningsAdId === adId && (
+                          <div className="px-4 pb-4 pt-3 border-t border-zinc-100 dark:border-white/5 bg-white/50 dark:bg-black/20">
+                            <div className="text-[10px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2 font-semibold flex items-center justify-between">
+                              <span>Recent Views</span>
+                              <span>(Up to 40 latest)</span>
                             </div>
-                            <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500 truncate max-w-[100px]" title={entry.apiKey}>
-                              {maskedKey}
-                            </span>
+                            <div className="max-h-48 overflow-y-auto space-y-1.5 custom-scrollbar pr-2">
+                              {entry.recentViews && entry.recentViews.length > 0 ? (
+                                entry.recentViews.slice().reverse().map((v: any, i: number) => {
+                                  let timeStr = null;
+                                  const dateToParse = v.time || v;
+                                  if (dateToParse.toDate) timeStr = dateToParse.toDate().toLocaleString();
+                                  else if (dateToParse.seconds) timeStr = new Date(dateToParse.seconds * 1000).toLocaleString();
+                                  else {
+                                    const d = new Date(dateToParse);
+                                    timeStr = isNaN(d.getTime()) ? null : d.toLocaleString();
+                                  }
+
+                                  return (
+                                    <div key={i} className="flex flex-wrap justify-between items-center text-xs text-zinc-700 dark:text-zinc-300 bg-white/80 dark:bg-black/40 px-3 py-2 rounded-lg border border-zinc-100 dark:border-white/5">
+                                      <span className="font-medium text-zinc-600 dark:text-zinc-400">{timeStr}</span>
+                                      <div className="flex items-center gap-2">
+                                        {v.creditsEarned !== undefined && (
+                                          <span className="text-green-600 dark:text-green-400 font-semibold text-[11px] bg-green-50 dark:bg-green-500/10 px-1.5 py-0.5 rounded border border-green-200 dark:border-green-500/20">
+                                            +{v.creditsEarned} credits
+                                          </span>
+                                        )}
+                                        {v.region && v.region !== 'Unknown' && (
+                                          <span className="bg-zinc-100 dark:bg-white/10 px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-bold">
+                                            {v.region}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })
+                              ) : (
+                                <div className="text-xs text-zinc-500 italic text-center py-4">No recent view records stored yet.</div>
+                              )}
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
                     );
                   })}
@@ -678,10 +757,21 @@ export default function DashboardPage() {
                         
                         {expandedAppActivity[key] && (
                           <div className="mt-3 space-y-2">
-                            {appCampaigns.map(([adId, entry]) => (
-                              <div key={adId} className="flex items-center justify-between bg-white dark:bg-zinc-900/50 rounded-lg p-3 border border-zinc-100 dark:border-white/5">
-                                <div className="flex items-center gap-3 min-w-0">
-                                  <div className="w-10 h-10 rounded bg-zinc-200 dark:bg-zinc-800 overflow-hidden shrink-0 border border-zinc-200 dark:border-white/10">
+                            {appCampaigns.map(([adId, entry]) => {
+                              const realAdId = entry.adId || adId;
+                              const isBlocked = (userData?.blockedAdsByAppId?.[key] || []).includes(realAdId);
+                              return (
+                              <div key={adId} className={`flex items-center justify-between rounded-lg p-3 border transition-colors ${
+                                isBlocked
+                                  ? 'bg-red-50/50 dark:bg-red-500/5 border-red-100 dark:border-red-500/10'
+                                  : 'bg-white dark:bg-zinc-900/50 border-zinc-100 dark:border-white/5 hover:border-zinc-200 dark:hover:border-white/10'
+                              }`}>
+                                <div
+                                  className="flex items-center gap-3 min-w-0 cursor-pointer flex-grow"
+                                  onClick={() => setPreviewAd({ ...entry, adId: realAdId, fromAppKey: key })}
+                                  title="Click to preview ad"
+                                >
+                                  <div className={`w-10 h-10 rounded bg-zinc-200 dark:bg-zinc-800 overflow-hidden shrink-0 border border-zinc-200 dark:border-white/10 ${isBlocked ? 'opacity-50 grayscale' : ''}`}>
                                     {entry.adImageUrl ? (
                                       <img src={entry.adImageUrl} alt={entry.adTitle} className="w-full h-full object-cover" />
                                     ) : (
@@ -691,7 +781,7 @@ export default function DashboardPage() {
                                     )}
                                   </div>
                                   <div className="min-w-0">
-                                    <div className="text-sm font-medium text-zinc-900 dark:text-white truncate flex items-center gap-2">
+                                    <div className={`text-sm font-medium truncate flex items-center gap-2 ${isBlocked ? 'text-red-500 dark:text-red-400 line-through opacity-70' : 'text-zinc-900 dark:text-white'}`}>
                                       {entry.adTitle || 'Unknown Campaign'}
                                       {entry.platform && (
                                         <span className="shrink-0 text-[10px] font-mono border border-zinc-200 dark:border-white/10 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-500">
@@ -700,18 +790,38 @@ export default function DashboardPage() {
                                       )}
                                     </div>
                                     <div className="text-xs text-zinc-500 truncate">
-                                      {entry.lastUpdated ? new Date(entry.lastUpdated).toLocaleDateString() + ' at ' + new Date(entry.lastUpdated).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Unknown date'}
+                                      {isBlocked ? (
+                                        <span className="text-red-500/80 dark:text-red-400/80">Blocked from this app</span>
+                                      ) : (
+                                        entry.lastUpdated ? new Date(entry.lastUpdated).toLocaleDateString() + ' at ' + new Date(entry.lastUpdated).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Unknown date'
+                                      )}
                                     </div>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-4 shrink-0 text-right pl-2">
+                                <div className="flex items-center gap-3 shrink-0 text-right pl-2">
                                   <div className="flex flex-col">
-                                    <span className="text-sm font-bold text-zinc-900 dark:text-white">{entry.impressions || 0}</span>
+                                    <span className={`text-sm font-bold ${isBlocked ? 'text-red-500/60 dark:text-red-400/60' : 'text-zinc-900 dark:text-white'}`}>{entry.impressions || 0}</span>
                                     <span className="text-[10px] uppercase tracking-wider text-zinc-500">Views</span>
                                   </div>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleToggleBlockAdForApp(key, realAdId, isBlocked);
+                                    }}
+                                    disabled={blockingAd === realAdId}
+                                    className={`p-1.5 rounded-lg shrink-0 transition-colors ${
+                                      isBlocked
+                                        ? 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-500/30'
+                                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:text-red-500 dark:hover:text-red-400'
+                                    } ${blockingAd === realAdId ? 'opacity-50' : ''}`}
+                                    title={isBlocked ? 'Unblock this ad' : 'Block this ad from showing in this app'}
+                                  >
+                                    {isBlocked ? <ShieldAlert className="w-3.5 h-3.5" /> : <Shield className="w-3.5 h-3.5" />}
+                                  </button>
                                 </div>
                               </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
                       </div>
@@ -1111,18 +1221,53 @@ if (showAd) {
                   <div className="space-y-2">
                     {Object.entries(modalAd.origins as Record<string, number>)
                       .sort(([, a], [, b]) => b - a)
-                      .map(([source, impressions]) => {
+                  .map(([source, impressions]) => {
                         const clickCount = modalAd.clicksByOrigin?.[source] || 0;
                         const displayName = source.replace(/_/g, '.').replace(/unknown\.origin/, 'Unknown');
                         const isBlocked = modalAd.blockedOrigins?.includes(source) || false;
                         const isExpanded = expandedOrigin === source;
+                        const parseDateString = (val: any) => {
+                          if (!val) return null;
+                          let dateToParse = val;
+                          let region = null;
+                          
+                          // Handle new object format
+                          if (val && typeof val === 'object' && val.time) {
+                            dateToParse = val.time;
+                            region = val.region;
+                          }
+                          
+                          let timeStr = null;
+                          if (dateToParse.toDate) timeStr = dateToParse.toDate().toLocaleString();
+                          else if (dateToParse.seconds) timeStr = new Date(dateToParse.seconds * 1000).toLocaleString();
+                          else {
+                            const d = new Date(dateToParse);
+                            timeStr = isNaN(d.getTime()) ? null : d.toLocaleString();
+                          }
+                          
+                          return timeStr ? { timeStr, region } : null;
+                        };
                         
-                        const lastSeen = modalAd.lastSeenByOrigin?.[source] 
-                          ? new Date(modalAd.lastSeenByOrigin[source]).toLocaleString() 
-                          : 'Unknown';
-                        const lastClicked = modalAd.lastClickedByOrigin?.[source] 
-                          ? new Date(modalAd.lastClickedByOrigin[source]).toLocaleString() 
-                          : 'Never';
+                        const sourceVal = source.replace(/\./g, '_');
+                        
+                        const rawViewsArray = modalAd.recentViewsByOrigin?.[source] || modalAd.recentViewsByOrigin?.[sourceVal] || [];
+                        const recentViews = Array.isArray(rawViewsArray) ? rawViewsArray.map(parseDateString).filter(Boolean) : [];
+                        // Fallback if empty and we have a lastSeen value
+                        if (recentViews.length === 0) {
+                          const fallbackView = parseDateString(modalAd.lastSeenByOrigin?.[source]) || parseDateString(modalAd.lastSeenByOrigin?.[sourceVal]) || parseDateString(modalAd.createdAt);
+                          if (fallbackView) recentViews.push(fallbackView);
+                        }
+
+                        const rawClicksArray = modalAd.recentClicksByOrigin?.[source] || modalAd.recentClicksByOrigin?.[sourceVal] || [];
+                        const recentClicks = Array.isArray(rawClicksArray) ? rawClicksArray.map(parseDateString).filter(Boolean) : [];
+                        if (recentClicks.length === 0) {
+                          const fallbackClick = parseDateString(modalAd.lastClickedByOrigin?.[source]) || parseDateString(modalAd.lastClickedByOrigin?.[sourceVal]);
+                          if (fallbackClick) recentClicks.push(fallbackClick);
+                        }
+                        
+                        recentViews.reverse();
+                        recentClicks.reverse();
+
                         const sourceCtr = impressions > 0 ? ((clickCount / impressions) * 100).toFixed(2) : "0.00";
 
                         return (
@@ -1193,13 +1338,37 @@ if (showAd) {
                                   <div className="text-[10px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">Source ID</div>
                                   <div className="text-sm font-mono text-zinc-600 dark:text-zinc-400 truncate" title={source}>{source}</div>
                                 </div>
-                                <div>
-                                  <div className="text-[10px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">Last Viewed</div>
-                                  <div className="text-sm font-medium text-zinc-900 dark:text-white">{lastSeen}</div>
-                                </div>
-                                <div>
-                                  <div className="text-[10px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">Last Clicked</div>
-                                  <div className="text-sm font-medium text-zinc-900 dark:text-white">{lastClicked}</div>
+                                <div className="col-span-2 grid grid-cols-2 gap-4 mt-1 border-t border-zinc-100 dark:border-white/5 pt-3">
+                                  <div>
+                                    <div className="text-[10px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2 font-semibold">Recent Views</div>
+                                    <div className="max-h-32 overflow-y-auto space-y-1 pr-2 custom-scrollbar">
+                                      {recentViews.length > 0 ? recentViews.map((v, i) => (
+                                        <div key={i} className="flex justify-between items-center text-[11px] text-zinc-700 dark:text-zinc-300 bg-black/5 dark:bg-white/5 px-2 py-1 rounded truncate">
+                                          <span>{v?.timeStr}</span>
+                                          {v?.region && v?.region !== 'Unknown' && (
+                                            <span className="ml-2 bg-black/10 dark:bg-white/10 px-1.5 py-0.5 rounded font-bold tracking-wider">{v?.region}</span>
+                                          )}
+                                        </div>
+                                      )) : (
+                                        <div className="text-[11px] text-zinc-500 italic">No views stored yet.</div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <div className="text-[10px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2 font-semibold">Recent Clicks</div>
+                                    <div className="max-h-32 overflow-y-auto space-y-1 pr-2 custom-scrollbar">
+                                      {recentClicks.length > 0 ? recentClicks.map((v, i) => (
+                                        <div key={i} className="flex justify-between items-center text-[11px] text-zinc-700 dark:text-zinc-300 bg-black/5 dark:bg-white/5 px-2 py-1 rounded truncate">
+                                          <span>{v?.timeStr}</span>
+                                          {v?.region && v?.region !== 'Unknown' && (
+                                            <span className="ml-2 bg-black/10 dark:bg-white/10 px-1.5 py-0.5 rounded font-bold tracking-wider">{v?.region}</span>
+                                          )}
+                                        </div>
+                                      )) : (
+                                        <div className="text-[11px] text-zinc-500 italic">No clicks stored yet.</div>
+                                      )}
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             )}
@@ -1207,6 +1376,114 @@ if (showAd) {
                         );
                       })}
                   </div>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Ad Preview Modal */}
+      {previewAd && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setPreviewAd(null)}>
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-5 border-b border-zinc-200 dark:border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-amber-100 dark:bg-amber-500/10 rounded-xl text-amber-600 dark:text-amber-400">
+                  <ImageIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Ad Preview</h3>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">How this ad appears in your app</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setPreviewAd(null)}
+                className="p-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-xl transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Ad Image */}
+            <div className="bg-zinc-100 dark:bg-zinc-950 relative">
+              {previewAd.adImageUrl ? (
+                <img
+                  src={previewAd.adImageUrl}
+                  alt={previewAd.adTitle}
+                  className="w-full max-h-[300px] object-contain bg-black/5 dark:bg-white/5"
+                />
+              ) : (
+                <div className="w-full h-40 flex items-center justify-center text-zinc-400 dark:text-zinc-600">
+                  <ImageIcon className="w-10 h-10" />
+                </div>
+              )}
+              <div className="absolute top-3 right-3">
+                <div className={`backdrop-blur px-2.5 py-1 rounded-lg text-[11px] font-bold border ${
+                  previewAd.adType === 'interstitial'
+                    ? 'bg-purple-100/90 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-500/30'
+                    : 'bg-amber-100/90 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/30'
+                }`}>
+                  {previewAd.adType === 'interstitial' ? 'INTERSTITIAL' : 'BANNER'}
+                </div>
+              </div>
+            </div>
+
+            {/* Ad Details */}
+            <div className="p-5 space-y-4 overflow-y-auto">
+              <div>
+                <h4 className="text-lg font-bold text-zinc-900 dark:text-white">{previewAd.adTitle || 'Unknown Campaign'}</h4>
+                {previewAd.platform && (
+                  <span className="inline-block mt-1 text-[10px] font-mono border border-zinc-200 dark:border-white/10 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-500">
+                    {previewAd.platform}
+                  </span>
+                )}
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-white/10 rounded-xl p-3 text-center">
+                  <span className="text-lg font-bold text-zinc-900 dark:text-white">{(previewAd.impressions || 0).toLocaleString()}</span>
+                  <div className="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">Views</div>
+                </div>
+                <div className="bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-white/10 rounded-xl p-3 text-center">
+                  <span className="text-lg font-bold text-zinc-900 dark:text-white">{(previewAd.clicks || 0).toLocaleString()}</span>
+                  <div className="text-[10px] uppercase tracking-wider text-zinc-500 mt-1">Clicks</div>
+                </div>
+                <div className="bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-white/10 rounded-xl p-3 text-center">
+                  <span className="text-lg font-bold text-green-600 dark:text-green-400">+{(previewAd.creditsEarned || 0).toLocaleString()}</span>
+                  <div className="text-[10px] uppercase tracking-wider text-green-500/80 dark:text-green-500/60 mt-1">Credits</div>
+                </div>
+              </div>
+
+              {previewAd.lastUpdated && (
+                <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Last shown: {new Date(previewAd.lastUpdated).toLocaleDateString()} at {new Date(previewAd.lastUpdated).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                </div>
+              )}
+
+              {/* Block/Unblock Button */}
+              {previewAd.fromAppKey && (() => {
+                const realAdId = previewAd.adId;
+                const isBlocked = (userData?.blockedAdsByAppId?.[previewAd.fromAppKey] || []).includes(realAdId);
+                const appLabel = userData?.apiKeyLabels?.[previewAd.fromAppKey] || 'this app';
+                return (
+                  <button
+                    onClick={() => handleToggleBlockAdForApp(previewAd.fromAppKey, realAdId, isBlocked)}
+                    disabled={blockingAd === realAdId}
+                    className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-colors ${
+                      isBlocked
+                        ? 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-white/10'
+                        : 'bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-500/10 dark:hover:bg-red-500/20 dark:text-red-400 border border-red-200 dark:border-red-500/20'
+                    } ${blockingAd === realAdId ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    {isBlocked ? (
+                      <><Shield className="w-4 h-4" /> Unblock from {appLabel}</>
+                    ) : (
+                      <><ShieldAlert className="w-4 h-4" /> Block from {appLabel}</>
+                    )}
+                  </button>
                 );
               })()}
             </div>

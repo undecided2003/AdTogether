@@ -2,6 +2,7 @@
 ///
 /// This library provides widgets and APIs for integrating reciprocal ad exchange
 /// into your Flutter apps, helping you increase conversions and grow your audience.
+library;
 
 export 'src/adtogether_core.dart';
 export 'src/models/ad_size.dart';

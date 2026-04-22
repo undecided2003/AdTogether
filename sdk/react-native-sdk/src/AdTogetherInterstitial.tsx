@@ -119,9 +119,9 @@ export const AdTogetherInterstitial: React.FC<AdTogetherInterstitialProps> = ({
 
         <View style={[styles.content, isLandscape && styles.contentLandscape]}>
           <TouchableOpacity activeOpacity={0.9} style={[styles.card, isLandscape && styles.cardLandscape]} onPress={handlePress}>
-            <View style={[styles.imageWrapper, isLandscape && styles.imageWrapperLandscape]}>
+            <View style={[styles.imageWrapper, isLandscape && styles.imageWrapperLandscape, !isLandscape && { backgroundColor: isDarkMode ? '#111827' : '#F3F4F6' }]}>
               {adData.imageUrl ? (
-                <Image source={{ uri: adData.imageUrl }} style={styles.image} resizeMode={isLandscape ? "cover" : "contain"} />
+                <Image source={{ uri: adData.imageUrl }} style={[styles.image, !isLandscape && { resizeMode: 'contain' }]} resizeMode={isLandscape ? "cover" : "contain"} />
               ) : (
                 <View style={[styles.imagePlaceholder, { backgroundColor: isDarkMode ? '#1F2937' : '#E5E7EB' }]} />
               )}
@@ -141,6 +141,9 @@ export const AdTogetherInterstitial: React.FC<AdTogetherInterstitialProps> = ({
               <View style={styles.ctaButton}>
                 <Text style={styles.ctaText}>Learn More</Text>
               </View>
+              <Text style={[styles.poweredBy, { color: isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }]}>
+                Powered by AdTogether
+              </Text>
             </ScrollView>
           </TouchableOpacity>
         </View>
@@ -188,8 +191,10 @@ const styles = StyleSheet.create({
   },
   imageWrapper: {
     width: '100%',
-    aspectRatio: 1,
+    maxHeight: 300,
     marginBottom: 32,
+    borderRadius: 16,
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,
@@ -267,5 +272,11 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  poweredBy: {
+    fontSize: 10,
+    textAlign: 'center',
+    marginTop: 12,
+    letterSpacing: 0.3,
   },
 });

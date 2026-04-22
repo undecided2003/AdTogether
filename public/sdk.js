@@ -81,11 +81,11 @@
         // Render HTML
         container.innerHTML = `
           <a href="${clickUrl}" target="_blank" rel="noopener noreferrer" style="display: flex; flex-direction: column; text-decoration: none; color: inherit; height: 100%;">
-            <div style="position: relative; width: 100%; height: 180px; background-color: ${isDarkMode ? '#374151' : '#f3f4f6'};">
+            <div style="position: relative; width: 100%; max-height: 250px; background-color: ${isDarkMode ? '#374151' : '#f3f4f6'}; display: flex; align-items: center; justify-content: center;">
               ${
                 ad.imageUrl
-                  ? `<img src="${ad.imageUrl}" alt="${ad.title}" style="width: 100%; height: 100%; object-fit: cover;" />`
-                  : `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: ${descColor};">No Image</div>`
+                  ? `<img src="${ad.imageUrl}" alt="${ad.title}" style="width: 100%; max-height: 250px; object-fit: contain; display: block;" />`
+                  : `<div style="width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; color: ${descColor};">No Image</div>`
               }
               <div style="position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); color: white; font-size: 10px; padding: 4px 8px; border-radius: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Ad</div>
             </div>

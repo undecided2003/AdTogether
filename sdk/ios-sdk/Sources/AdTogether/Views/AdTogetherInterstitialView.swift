@@ -114,6 +114,12 @@ public struct AdTogetherInterstitialView: View {
                                             .cornerRadius(12)
                                     }
                                     .padding(.top, 8)
+                                    
+                                    Text("Powered by AdTogether")
+                                        .font(.system(size: 10))
+                                        .foregroundColor(colorScheme == .dark ? Color.white.opacity(0.3) : Color.black.opacity(0.3))
+                                        .frame(maxWidth: .infinity, alignment: .center)
+                                        .padding(.top, 8)
                                 }
                                 .padding(20)
                             }
@@ -127,11 +133,14 @@ public struct AdTogetherInterstitialView: View {
                             if let imageUrlString = adModel.imageUrl, let imageUrl = URL(string: imageUrlString) {
                                 AsyncImage(url: imageUrl) { image in
                                     image.resizable()
-                                         .aspectRatio(16/9, contentMode: .fill)
+                                         .aspectRatio(contentMode: .fit)
                                 } placeholder: {
                                     Color.gray.opacity(0.2)
-                                        .aspectRatio(16/9, contentMode: .fill)
+                                        .frame(height: 200)
                                 }
+                                .frame(maxHeight: 280)
+                                .frame(maxWidth: .infinity)
+                                .background(colorScheme == .dark ? Color(red: 0.07, green: 0.09, blue: 0.14) : Color(red: 0.95, green: 0.96, blue: 0.96))
                                 .clipped()
                                 .onTapGesture { handleAdClick(ad: adModel) }
                             }
@@ -172,6 +181,12 @@ public struct AdTogetherInterstitialView: View {
                                         .cornerRadius(12)
                                 }
                                 .padding(.top, 8)
+                                
+                                Text("Powered by AdTogether")
+                                    .font(.system(size: 10))
+                                    .foregroundColor(colorScheme == .dark ? Color.white.opacity(0.3) : Color.black.opacity(0.3))
+                                    .frame(maxWidth: .infinity, alignment: .center)
+                                    .padding(.top, 8)
                             }
                             .padding(20)
                             .onTapGesture { handleAdClick(ad: adModel) }

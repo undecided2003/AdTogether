@@ -46,14 +46,19 @@ export async function GET(request: Request) {
     const safeSourceId = (rawSource || 'unknown_origin').replace(/\./g, '_').replace(/\//g, '_').substring(0, 50);
 
     let viewerUid: string | null = null;
+    let publisherBlockedAds: string[] = [];
     if (apiKey) {
       const pSnap = await db.collection('users').where('apiKey', '==', apiKey).limit(1).get();
       if (!pSnap.empty) {
         viewerUid = pSnap.docs[0].id;
+        const pData = pSnap.docs[0].data();
+        publisherBlockedAds = pData?.blockedAdsByAppId?.[apiKey] || [];
       } else {
         const pSnapArr = await db.collection('users').where('apiKeys', 'array-contains', apiKey).limit(1).get();
         if (!pSnapArr.empty) {
           viewerUid = pSnapArr.docs[0].id;
+          const pData = pSnapArr.docs[0].data();
+          publisherBlockedAds = pData?.blockedAdsByAppId?.[apiKey] || [];
         }
       }
     }
@@ -78,6 +83,11 @@ export async function GET(request: Request) {
 
         // Skip ads that have blocked this origin
         if (data.blockedOrigins && data.blockedOrigins.includes(safeSourceId)) {
+          return;
+        }
+
+        // Skip ads that the publisher has blocked for this App ID
+        if (publisherBlockedAds.length > 0 && publisherBlockedAds.includes(doc.id)) {
           return;
         }
 

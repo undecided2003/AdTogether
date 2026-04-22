@@ -19,6 +19,8 @@ export async function POST(request: Request) {
     const reqHeaders = await headers();
     const ip = reqHeaders.get('x-forwarded-for') || reqHeaders.get('x-real-ip') || 'unknown';
     
+    const ipCountry = reqHeaders.get('x-vercel-ip-country') || null;
+    
     // Extract origin for web tracking
     const originHeader = reqHeaders.get('origin') || reqHeaders.get('referer') || '';
     
@@ -26,7 +28,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Too Many Requests' }, { status: 429, headers: corsHeaders });
     }
 
-    const { adId, token, bundleId, apiKey, environment } = await request.json();
+    const { adId, token, bundleId, apiKey, environment, country } = await request.json();
+    const finalCountry = country || ipCountry;
 
     // Ignore local test traffic
     if (environment === 'development' || environment === 'test') {
@@ -69,12 +72,36 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid auth token' }, { status: 403, headers: corsHeaders });
     }
 
-    // Increment click count on the ad document for analytics
     const adRef = db.collection('ads').doc(adId);
-    await adRef.update({ 
-      clicks: FieldValue.increment(1),
-      [`clicksByOrigin.${safeSourceId}`]: FieldValue.increment(1),
-      [`lastClickedByOrigin.${safeSourceId}`]: new Date().toISOString()
+    await db.runTransaction(async (transaction: any) => {
+      const adDoc = await transaction.get(adRef);
+      if (!adDoc.exists) return;
+      
+      const adData = adDoc.data() || {};
+      
+      const clicksByOrigin = adData.clicksByOrigin || {};
+      clicksByOrigin[safeSourceId] = (clicksByOrigin[safeSourceId] || 0) + 1;
+      
+      const lastClickedMap = adData.lastClickedByOrigin || {};
+      lastClickedMap[safeSourceId] = new Date().toISOString();
+      
+      const recentClicksMap = adData.recentClicksByOrigin || {};
+      const currentClicks = recentClicksMap[safeSourceId] || [];
+      currentClicks.push({
+        time: new Date().toISOString(),
+        region: finalCountry || 'Unknown'
+      });
+      if (currentClicks.length > 40) {
+        currentClicks.splice(0, currentClicks.length - 40);
+      }
+      recentClicksMap[safeSourceId] = currentClicks;
+
+      transaction.update(adRef, { 
+        clicks: (adData.clicks || 0) + 1,
+        clicksByOrigin,
+        lastClickedByOrigin: lastClickedMap,
+        recentClicksByOrigin: recentClicksMap
+      });
     }).catch(console.error);
 
     // Update publisher's earnings log with click count

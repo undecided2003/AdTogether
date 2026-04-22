@@ -156,10 +156,22 @@ export async function POST(request: Request) {
       const lastSeenMap = adData.lastSeenByOrigin || {};
       lastSeenMap[safeSourceId] = new Date().toISOString();
 
+      const recentViewsMap = adData.recentViewsByOrigin || {};
+      const currentViews = recentViewsMap[safeSourceId] || [];
+      currentViews.push({
+        time: new Date().toISOString(),
+        region: finalCountry || 'Unknown'
+      });
+      if (currentViews.length > 40) {
+        currentViews.splice(0, currentViews.length - 40);
+      }
+      recentViewsMap[safeSourceId] = currentViews;
+
       transaction.update(adRef, { 
         impressions: currentImpressions + 1,
         origins: originsMap,
-        lastSeenByOrigin: lastSeenMap
+        lastSeenByOrigin: lastSeenMap,
+        recentViewsByOrigin: recentViewsMap
       });
 
       // Only deduct credits if NOT a self-impression
@@ -193,6 +205,14 @@ export async function POST(request: Request) {
              const earningsLog = pData.earningsLog || {};
              const logKey = apiKey ? `${apiKey}_${adId}` : adId;
              const existing = earningsLog[logKey] || {};
+             const currentViews = existing.recentViews || [];
+             currentViews.push({
+               time: new Date().toISOString(),
+               region: finalCountry || 'Unknown',
+               creditsEarned: creditCost
+             });
+             if (currentViews.length > 40) currentViews.splice(0, currentViews.length - 40);
+
              earningsLog[logKey] = {
                adId: adId,
                adTitle: adData.title || 'Unknown Campaign',
@@ -205,6 +225,7 @@ export async function POST(request: Request) {
                clicks: existing.clicks || 0,
                creditsEarned: (existing.creditsEarned || 0) + creditCost,
                lastUpdated: new Date().toISOString(),
+               recentViews: currentViews,
              };
              
              transaction.update(publisherRef, { credits: pCredits + creditCost, earningsLog });
@@ -218,6 +239,14 @@ export async function POST(request: Request) {
              const earningsLog = pData.earningsLog || {};
              const logKey = apiKey ? `${apiKey}_${adId}` : adId;
              const existing = earningsLog[logKey] || {};
+             const currentViews = existing.recentViews || [];
+             currentViews.push({
+               time: new Date().toISOString(),
+               region: finalCountry || 'Unknown',
+               creditsEarned: 0
+             });
+             if (currentViews.length > 40) currentViews.splice(0, currentViews.length - 40);
+
              earningsLog[logKey] = {
                adId: adId,
                adTitle: adData.title || 'Unknown Campaign (Self)',
@@ -230,6 +259,7 @@ export async function POST(request: Request) {
                clicks: existing.clicks || 0,
                creditsEarned: existing.creditsEarned || 0, // No new credits
                lastUpdated: new Date().toISOString(),
+               recentViews: currentViews,
              };
              transaction.update(publisherRef, { earningsLog });
           }

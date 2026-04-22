@@ -1,19 +1,22 @@
 "use strict";
 
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, useColorScheme, Linking } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, useColorScheme, Linking, Pressable } from 'react-native';
 import { AdTogether } from './AdTogether';
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 export const AdTogetherBanner = ({
   adUnitId,
   onAdLoaded,
   onAdFailedToLoad,
+  showCloseButton = false,
+  onAdClosed,
   theme = 'auto',
   style
 }) => {
   const [adData, setAdData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const systemColorScheme = useColorScheme();
   const impressionTrackedRef = useRef(false);
   useEffect(() => {
@@ -51,6 +54,13 @@ export const AdTogetherBanner = ({
       Linking.openURL(adData.clickUrl).catch(console.error);
     }
   };
+  const handleClose = () => {
+    setIsVisible(false);
+    onAdClosed?.();
+  };
+  if (!isVisible) {
+    return null;
+  }
   if (isLoading) {
     return /*#__PURE__*/_jsx(View, {
       style: [styles.container, style]
@@ -104,6 +114,16 @@ export const AdTogetherBanner = ({
         numberOfLines: 2,
         children: adData.description
       })]
+    }), showCloseButton && /*#__PURE__*/_jsx(Pressable, {
+      onPress: handleClose,
+      style: styles.closeButton,
+      hitSlop: 8,
+      accessibilityLabel: "Close ad",
+      accessibilityRole: "button",
+      children: /*#__PURE__*/_jsx(Text, {
+        style: styles.closeButtonText,
+        children: "\xD7"
+      })
     })]
   });
 };
@@ -163,6 +183,24 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 12
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1
+  },
+  closeButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    lineHeight: 18
   }
 });
 //# sourceMappingURL=AdTogetherBanner.js.map
