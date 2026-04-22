@@ -1,9 +1,7 @@
 # AdTogether iOS SDK
 
 
-<p align="center">
-  <img src="../../public/dashboard.png" width="800" alt="Developer Dashboard">
-</p>
+
 
 [![Swift Package Manager compatible](https://img.shields.io/badge/Swift_Package_Manager-compatible-orange?style=flat-square)](https://swift.org/package-manager/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -13,6 +11,10 @@
   The Universal Ad Exchange & Reciprocal Marketing Platform
 </p>
 
+> [!IMPORTANT]
+> **Developer Account Required**: Before integrating the SDK, you must create a developer account at [https://adtogether.relaxsoftwareapps.com](https://adtogether.relaxsoftwareapps.com) to generate your `appId` and configure your ad units. Integration will not work without a valid `appId`.
+
+
 ---
 
 
@@ -20,8 +22,9 @@
 
 This SDK allows iOS developers to easily integrate AdTogether ads into their applications. By displaying ads from other community members, you earn **Ad Credits** that allow your own app's ads to be shown across the AdTogether network.
 
-> [!IMPORTANT]
-> **Developer Account Required**: Before integrating the SDK, you must create a developer account at [https://adtogether.relaxsoftwareapps.com](https://adtogether.relaxsoftwareapps.com) to generate your `appId` and configure your ad units. Integration will not work without a valid `appId`.
+<p align="center">
+  <img src="../../public/dashboard.png" width="800" alt="Developer Dashboard">
+</p>
 
 ### 🖼️ Visualizing the Experience
 

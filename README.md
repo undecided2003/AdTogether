@@ -3,14 +3,16 @@
 </h1>
 
 
-<p align="center">
-  <img src="public/dashboard.png" width="800" alt="Developer Dashboard">
-</p>
+
 
 <p align="center">
   <strong>"Show an ad, get an ad shown"</strong><br>
   The Universal Ad Exchange & Reciprocal Marketing Platform
 </p>
+
+> [!IMPORTANT]
+> **Developer Account Required**: Before integrating any SDKs, you must create a developer account at [https://adtogether.relaxsoftwareapps.com](https://adtogether.relaxsoftwareapps.com). Once registered, you can create your first campaign, generate an `appId`, and configure ad units. Integration will not work without a valid `appId`.
+
 
 <p align="center">
   <a href="#-features">Features</a> •
@@ -28,8 +30,9 @@
 
 We provide a seamless, high-performance API and a suite of native SDKs across web, mobile, and cross-platform ecosystems, enabling you to integrate native advertising into any environment.
 
-> [!IMPORTANT]
-> **Developer Account Required**: Before integrating any SDKs, you must create a developer account at [https://adtogether.relaxsoftwareapps.com](https://adtogether.relaxsoftwareapps.com). Once registered, you can create your first campaign, generate an `appId`, and configure ad units. Integration will not work without a valid `appId`.
+<p align="center">
+  <img src="public/dashboard.png" width="800" alt="Developer Dashboard">
+</p>
 
 ### 🖼️ Visual Examples
 
@@ -99,9 +102,9 @@ Detailed instructions are provided in each SDK's local `README.md`.
 
 - **Web integration:** `npm install @adtogether/web-sdk`
 - **React Native integration:** `npm install @adtogether/react-native-sdk`
-- **Android integration:** Implement `com.relaxsoftwareapps.adtogether:sdk:0.1.23` inside your `build.gradle.kts`.
+- **Android integration:** Implement `com.relaxsoftwareapps.adtogether:sdk:0.1.24` inside your `build.gradle.kts`.
 - **iOS integration:** Add the Swift Package through Xcode directly from this repository link.
-- **Flutter integration:** Run `flutter pub add adtogether_sdk:^0.1.23`.
+- **Flutter integration:** Run `flutter pub add adtogether_sdk:^0.1.24`.
 
 ---
 

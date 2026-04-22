@@ -1,10 +1,5 @@
 # AdTogether SDK
 
-
-<p align="center">
-  <img src="../../public/dashboard.png" width="800" alt="Developer Dashboard">
-</p>
-
 [![Pub Version](https://img.shields.io/pub/v/adtogether_sdk)](https://pub.dev/packages/adtogether_sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Flutter](https://img.shields.io/badge/Platform-Flutter-02569B?logo=flutter)](https://flutter.dev)
@@ -16,13 +11,16 @@
 
 ---
 
-
 **AdTogether** is an ad exchange platform designed to empower developers and creators. By participating in our network, you can engage in reciprocal marketing for your own applications while simultaneously driving traffic to your products and helping you **increase conversions**. Our core philosophy is simple: **"Show an ad, get an ad shown"**.
 
 This SDK allows Flutter developers to easily integrate AdTogether ads into their applications. By displaying ads from other community members, you earn **Ad Credits** that allow your own app's ads to be shown across the AdTogether network.
 
 > [!IMPORTANT]
 > **Developer Account Required**: Before integrating the SDK, you must create a developer account at [https://adtogether.relaxsoftwareapps.com](https://adtogether.relaxsoftwareapps.com) to generate your `appId` and configure your ad units. Integration will not work without a valid `appId`.
+
+<p align="center">
+  <img src="../../public/dashboard.png" width="800" alt="Developer Dashboard">
+</p>
 
 ### 🖼️ Visualizing the Experience
 
