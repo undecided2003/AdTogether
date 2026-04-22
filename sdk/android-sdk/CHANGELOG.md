@@ -1,3 +1,8 @@
+## 0.1.21
+
+* **Brand**: Added "Powered by AdTogether" attribution to all Interstitial ad formats.
+* **Sync**: Unified versioning (0.1.20) across all AdTogether SDKs.
+
 ## 0.1.14
 
 * **Feature**: Added `onAdClosed` callback support to banner components.

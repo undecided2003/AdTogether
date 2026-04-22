@@ -1,3 +1,8 @@
+## 0.1.21
+
+* **Brand**: Added "Powered by AdTogether" attribution to all Interstitial ad formats across all platforms.
+* **Sync**: Unified versioning (0.1.20) across all AdTogether SDKs (Android, iOS, Web, React Native, and Flutter).
+
 ## 0.1.17
 
 * **Fix**: Updated interstitial ad image rendering to use `BoxFit.contain` with a background color instead of `BoxFit.cover`. This ensures ad images are no longer cropped and maintain their intended aspect ratio.
