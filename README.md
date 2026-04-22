@@ -2,8 +2,6 @@
   🚀 AdTogether
 </h1>
 
-> [!IMPORTANT]
-> **Developer Account Required**: Before integrating any SDKs, you must create a developer account at [https://adtogether.relaxsoftwareapps.com](https://adtogether.relaxsoftwareapps.com). Once registered, you can create your first campaign, generate an `appId`, and configure ad units. Integration will not work without a valid `appId`.
 
 <p align="center">
   <img src="public/dashboard.png" width="800" alt="Developer Dashboard">
@@ -29,6 +27,9 @@
 **AdTogether** is a state-of-the-art ad exchange platform designed to empower developers and creators. By participating in our network, you can engage in reciprocal marketing for your own applications while simultaneously driving traffic to your products and helping you **increase conversions**. Our core philosophy is simple: **"Show an ad, get an ad shown"**.
 
 We provide a seamless, high-performance API and a suite of native SDKs across web, mobile, and cross-platform ecosystems, enabling you to integrate native advertising into any environment.
+
+> [!IMPORTANT]
+> **Developer Account Required**: Before integrating any SDKs, you must create a developer account at [https://adtogether.relaxsoftwareapps.com](https://adtogether.relaxsoftwareapps.com). Once registered, you can create your first campaign, generate an `appId`, and configure ad units. Integration will not work without a valid `appId`.
 
 ### 🖼️ Visual Examples
 
