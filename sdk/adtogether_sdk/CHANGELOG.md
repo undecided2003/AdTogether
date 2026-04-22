@@ -1,4 +1,4 @@
-## 0.1.21
+## 0.1.22
 
 * **Brand**: Added "Powered by AdTogether" attribution to all Interstitial ad formats across all platforms.
 * **Sync**: Unified versioning (0.1.20) across all AdTogether SDKs (Android, iOS, Web, React Native, and Flutter).
