@@ -1,4 +1,4 @@
-## 0.1.24
+## 0.1.25
 * **Docs**: Standardized SDK documentation across all platforms.
 
 ## 0.1.23
