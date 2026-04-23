@@ -75,7 +75,7 @@ import kotlinx.coroutines.launch
  */
 @Composable
 fun AdTogetherInterstitial(
-    adUnitId: String,
+    adUnitId: String = "default",
     closeDelay: Int = 3,
     onAdLoaded: (() -> Unit)? = null,
     onAdFailedToLoad: ((String) -> Unit)? = null,

@@ -9,13 +9,13 @@
 ### Fetch Ad
 
 ```bash
-curl -X GET "https://adtogether.relaxsoftwareapps.com/api/ads/serve?country=global&adUnitId=YOUR_AD_UNIT_ID&adType=banner&apiKey=YOUR_APP_ID&bundleId=com.example.myapp&allowSelfAds=true"
+curl -X GET "https://adtogether.relaxsoftwareapps.com/api/ads/serve?country=global&adType=banner&apiKey=YOUR_APP_ID&bundleId=com.example.myapp&allowSelfAds=true&adUnitId=home_banner"
 ```
 
 **Query parameters:**
 | Param | Required | Description |
 |-------|----------|-------------|
-| `adUnitId` | **yes** | Ad placement identifier |
+| `adUnitId` | no | Optional label for the ad placement (e.g. `home_banner`). Used for analytics grouping only. |
 | `apiKey` | **yes** | Your registered app ID |
 | `country` | no | Country code or `"global"` (default) |
 | `bundleId` | no | Your app's bundle/package identifier |

@@ -32,7 +32,7 @@ class AdTogetherBanner extends StatefulWidget {
   /// Creates a new [AdTogetherBanner].
   const AdTogetherBanner({
     super.key,
-    required this.adUnitId,
+    this.adUnitId = 'default',
     this.size = AdSize.fluid,
     this.showCloseButton = false,
     this.onAdClosed,
@@ -59,7 +59,7 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
 
   Future<void> _fetchAd() async {
     try {
-      final ad = await AdTogether.fetchAd(widget.adUnitId, adType: 'banner');
+      final ad = await AdTogether.fetchAd(adUnitId: widget.adUnitId, adType: 'banner');
       if (mounted) {
         setState(() {
           _adData = ad;

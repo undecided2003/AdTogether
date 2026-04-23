@@ -1,6 +1,6 @@
 # AdTogether Web SDK — LLM Integration Reference
 
-**Version:** 0.1.14
+**Version:** 0.1.25
 
 **Package:** `@adtogether/web-sdk`
 **Distribution:** NPM (for React/Next.js) or CDN script tag (for plain HTML)
@@ -57,7 +57,7 @@ export default function MyComponent() {
     <div>
       {/* Banner Ad */}
       <AdTogetherBanner 
-        adUnitId="YOUR_AD_UNIT_ID" 
+        adUnitId="home_banner" // optional — any label for this placement
         showCloseButton={true}
         onAdLoaded={() => console.log('Ad loaded!')}
         onAdClosed={() => console.log('User closed the ad')}
@@ -66,7 +66,7 @@ export default function MyComponent() {
       {/* Interstitial Ad */}
       <button onClick={() => setShowAd(true)}>Show Interstitial</button>
       <AdTogetherInterstitial
-        adUnitId="YOUR_AD_UNIT_ID"
+        adUnitId="reward_interstitial" // optional placement label
         isOpen={showAd}
         onClose={() => setShowAd(false)}
         onAdLoaded={() => console.log('Interstitial loaded')}
@@ -79,7 +79,7 @@ export default function MyComponent() {
 **`<AdTogetherBanner>` props:**
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `adUnitId` | `string` | **required** | Ad placement identifier |
+| `adUnitId` | `string` | `'default'` | Optional label for this ad placement (e.g. `'home_banner'`, `'sidebar'`). Used for analytics grouping only — not validated server-side. |
 | `showCloseButton` | `boolean` | `false` | Show a dismissable close button overlay |
 | `onAdClosed` | `() => void` | — | Fires when user closes the ad |
 | `theme` | `'dark' \| 'light' \| 'auto'` | `'auto'` | Color scheme |
@@ -93,7 +93,7 @@ export default function MyComponent() {
 **`<AdTogetherInterstitial>` props:**
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `adUnitId` | `string` | **required** | Ad placement identifier |
+| `adUnitId` | `string` | `'default'` | Optional label for this ad placement. Used for analytics grouping only. |
 | `isOpen` | `boolean` | **required** | Controls visibility |
 | `onClose` | `() => void` | **required** | Called when user closes |
 | `closeDelay` | `number` | `3` | Seconds before close button appears |
@@ -107,5 +107,5 @@ export default function MyComponent() {
 <script src="https://adtogether.relaxsoftwareapps.com/sdk.js" defer></script>
 
 <!-- Banner Ad — the SDK auto-populates this div -->
-<div id="adtogether-ad-1" data-ad-unit="YOUR_AD_UNIT_ID"></div>
+<div id="adtogether-ad-1" data-ad-unit="home_banner"></div> <!-- optional placement label -->
 ```

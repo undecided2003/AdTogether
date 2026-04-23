@@ -3,7 +3,7 @@ import { AdTogether } from '../core/AdTogether';
 import { AdModel } from '../core/types';
 
 export interface AdTogetherBannerProps {
-  adUnitId: string;
+  adUnitId?: string;
   className?: string;
   style?: React.CSSProperties;
   onAdLoaded?: () => void;
@@ -21,7 +21,7 @@ export interface AdTogetherBannerProps {
 }
 
 export const AdTogetherBanner: React.FC<AdTogetherBannerProps> = ({
-  adUnitId,
+  adUnitId = 'default',
   className = '',
   style = {},
   onAdLoaded,

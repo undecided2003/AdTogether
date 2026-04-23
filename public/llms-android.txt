@@ -1,6 +1,6 @@
 # AdTogether Native Android SDK — LLM Integration Reference
 
-**Version:** 0.1.14
+**Version:** 0.1.25
 
 **Package:** `com.relaxsoftwareapps.adtogether:sdk`
 **Distribution:** Maven Central
@@ -15,7 +15,7 @@ Add to your module-level `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.relaxsoftwareapps.adtogether:sdk:0.1.14")
+    implementation("com.relaxsoftwareapps.adtogether:sdk:0.1.25")
 }
 ```
 
@@ -63,7 +63,7 @@ fun MainScreen() {
     Column {
         Text("My App")
         AdTogetherView(
-            adUnitId = "YOUR_AD_UNIT_ID",
+            adUnitId = "home_banner", // optional — any label for this placement
             modifier = Modifier.fillMaxWidth().height(50.dp),
             showCloseButton = true,
             onAdLoaded = { println("Ad loaded!") },
@@ -77,7 +77,7 @@ fun MainScreen() {
 ```kotlin
 @Composable
 fun AdTogetherView(
-    adUnitId: String,
+    adUnitId: String = "default",
     size: AdSize = AdSize.FLUID,
     showCloseButton: Boolean = false,
     onAdLoaded: (() -> Unit)? = null,
@@ -90,7 +90,7 @@ fun AdTogetherView(
 **`AdTogetherView` parameters:**
 | Param | Type | Default | Description |
 |-------|------|---------|-------------|
-| `adUnitId` | `String` | **required** | Ad placement identifier |
+| `adUnitId` | `String` | `"default"` | Optional label for this ad placement (e.g. `"home_banner"`, `"chat_bottom"`). Used for analytics grouping only — not validated server-side. |
 | `size` | `AdSize` | `AdSize.FLUID` | Ad size preset (`FLUID`, `BANNER`, `LARGE_BANNER`, `MEDIUM_RECTANGLE`) |
 | `showCloseButton` | `Boolean` | `false` | Show a dismissable close button overlay |
 | `onAdLoaded` | `(() -> Unit)?` | — | Fires when ad data loads |
@@ -116,7 +116,7 @@ fun MainScreen() {
 
         if (showAd) {
             AdTogetherInterstitial(
-                adUnitId = "YOUR_AD_UNIT_ID",
+                adUnitId = "level_complete", // optional placement label
                 closeDelay = 3,
                 onDismiss = { showAd = false },
                 onAdLoaded = { println("Interstitial loaded") }
@@ -130,7 +130,7 @@ fun MainScreen() {
 ```kotlin
 @Composable
 fun AdTogetherInterstitial(
-    adUnitId: String,
+    adUnitId: String = "default",    // optional placement label
     closeDelay: Int = 3,            // Seconds before close button appears
     onDismiss: () -> Unit,
     onAdLoaded: (() -> Unit)? = null,

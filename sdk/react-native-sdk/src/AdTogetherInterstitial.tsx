@@ -4,7 +4,7 @@ import { AdTogether } from './AdTogether';
 import { AdModel } from './types';
 
 export interface AdTogetherInterstitialProps {
-  adUnitId: string;
+  adUnitId?: string;
   isOpen: boolean;
   onClose: () => void;
   closeDelay?: number;
@@ -14,7 +14,7 @@ export interface AdTogetherInterstitialProps {
 }
 
 export const AdTogetherInterstitial: React.FC<AdTogetherInterstitialProps> = ({
-  adUnitId,
+  adUnitId = 'default',
   isOpen,
   onClose,
   closeDelay = 3,

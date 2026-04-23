@@ -4,7 +4,7 @@ import { AdTogether } from '../core/AdTogether';
 import { AdModel } from '../core/types';
 
 export interface AdTogetherInterstitialProps {
-  adUnitId: string;
+  adUnitId?: string;
   /** When true, the interstitial is shown (fetches and displays full-screen ad) */
   isOpen: boolean;
   /** Called when the user closes the interstitial */
@@ -20,7 +20,7 @@ export interface AdTogetherInterstitialProps {
 }
 
 export const AdTogetherInterstitial: React.FC<AdTogetherInterstitialProps> = ({
-  adUnitId,
+  adUnitId = 'default',
   isOpen,
   onClose,
   onAdLoaded,

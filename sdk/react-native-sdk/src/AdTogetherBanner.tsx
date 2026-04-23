@@ -4,7 +4,7 @@ import { AdTogether } from './AdTogether';
 import { AdModel } from './types';
 
 export interface AdTogetherBannerProps {
-  adUnitId: string;
+  adUnitId?: string;
   onAdLoaded?: () => void;
   onAdFailedToLoad?: (error: Error) => void;
   /** Whether to show a close button on the banner */
@@ -17,7 +17,7 @@ export interface AdTogetherBannerProps {
 }
 
 export const AdTogetherBanner: React.FC<AdTogetherBannerProps> = ({
-  adUnitId,
+  adUnitId = 'default',
   onAdLoaded,
   onAdFailedToLoad,
   showCloseButton = false,

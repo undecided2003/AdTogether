@@ -2,7 +2,7 @@ import SwiftUI
 import SafariServices
 
 public struct AdTogetherView: View {
-    public let adUnitID: String
+    public let adUnitId: String
     public let size: AdSize
     public let showCloseButton: Bool
     
@@ -21,14 +21,14 @@ public struct AdTogetherView: View {
     @Environment(\.openURL) var openURL
     
     public init(
-        adUnitID: String, 
+        adUnitId: String = "default", 
         size: AdSize = .fluid,
         showCloseButton: Bool = false,
         onAdLoaded: (() -> Void)? = nil,
         onAdFailedToLoad: ((Error) -> Void)? = nil,
         onAdClosed: (() -> Void)? = nil
     ) {
-        self.adUnitID = adUnitID
+        self.adUnitId = adUnitId
         self.size = size
         self.showCloseButton = showCloseButton
         self.onAdLoaded = onAdLoaded
@@ -193,7 +193,7 @@ public struct AdTogetherView: View {
             return
         }
         
-        AdTogether.fetchAd(adUnitId: adUnitID, adType: "banner") { result in
+        AdTogether.fetchAd(adUnitId: adUnitId, adType: "banner") { result in
             DispatchQueue.main.async {
                 self.isLoading = false
                 switch result {

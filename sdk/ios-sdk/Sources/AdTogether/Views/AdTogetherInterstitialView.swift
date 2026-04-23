@@ -5,13 +5,13 @@ import SwiftUI
 /// Usage:
 /// ```swift
 /// .fullScreenCover(isPresented: $showInterstitial) {
-///     AdTogetherInterstitialView(adUnitID: "my_interstitial") {
+///     AdTogetherInterstitialView(adUnitId: "my_interstitial") {
 ///         showInterstitial = false
 ///     }
 /// }
 /// ```
 public struct AdTogetherInterstitialView: View {
-    public let adUnitID: String
+    public let adUnitId: String
     public let closeDelay: Int
     public let onDismiss: () -> Void
     public let onAdLoaded: (() -> Void)?
@@ -33,13 +33,13 @@ public struct AdTogetherInterstitialView: View {
     }
     
     public init(
-        adUnitID: String, 
+        adUnitId: String = "default", 
         closeDelay: Int = 3, 
         onAdLoaded: (() -> Void)? = nil, 
         onAdFailedToLoad: ((Error) -> Void)? = nil,
         onDismiss: @escaping () -> Void
     ) {
-        self.adUnitID = adUnitID
+        self.adUnitId = adUnitId
         self.closeDelay = closeDelay
         self.onDismiss = onDismiss
         self.onAdLoaded = onAdLoaded
@@ -241,7 +241,7 @@ public struct AdTogetherInterstitialView: View {
             return
         }
         
-        AdTogether.fetchAd(adUnitId: adUnitID, adType: "interstitial") { result in
+        AdTogether.fetchAd(adUnitId: adUnitId, adType: "interstitial") { result in
             DispatchQueue.main.async {
                 self.isLoading = false
                 switch result {

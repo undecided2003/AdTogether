@@ -1,6 +1,6 @@
 "use server";
 
-import { adminDb } from '@/lib/firebase-admin';
+
 
 const DEEPSEEK_URL = "https://api.deepseek.com/chat/completions";
 
@@ -104,9 +104,7 @@ async function scrapeWebsiteContent(url: string) {
 export async function generateAdContent(clickUrl: string) {
   try {
     console.log(`[GEN_AD] Starting generation for ${clickUrl}`);
-    const configSnap = await adminDb.collection('config').doc('secrets').get();
-    const secretsData = configSnap.data() || {};
-    const DEEPSEEK_API_KEY = secretsData.DEEPSEEK_API_KEY || process.env.DEEPSEEK_API_KEY;
+    const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 
     if (!DEEPSEEK_API_KEY) {
       console.error("[GEN_AD] Missing API Key");
@@ -235,9 +233,7 @@ export async function generateAdContent(clickUrl: string) {
 
 export async function screenAdContent(title: string, description: string, clickUrl: string) {
   try {
-    const configSnap = await adminDb.collection('config').doc('secrets').get();
-    const secretsData = configSnap.data() || {};
-    const DEEPSEEK_API_KEY = secretsData.DEEPSEEK_API_KEY || process.env.DEEPSEEK_API_KEY;
+    const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 
     if (!DEEPSEEK_API_KEY) {
       throw new Error("DeepSeek API Key is missing. Please configure it in your environment or Firestore config/secrets.");

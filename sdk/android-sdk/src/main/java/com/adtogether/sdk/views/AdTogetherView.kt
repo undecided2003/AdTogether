@@ -49,7 +49,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun AdTogetherView(
-    adUnitId: String,
+    adUnitId: String = "default",
     size: AdSize = AdSize.FLUID,
     showCloseButton: Boolean = false,
     onAdLoaded: (() -> Unit)? = null,

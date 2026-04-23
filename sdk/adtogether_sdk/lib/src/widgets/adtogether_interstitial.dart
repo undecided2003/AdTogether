@@ -20,7 +20,7 @@ class AdTogetherInterstitial {
   /// [closeDelay] controls how long before the close button appears.
   static Future<void> show({
     required BuildContext context,
-    required String adUnitId,
+    String adUnitId = 'default',
     Duration closeDelay = const Duration(seconds: 3),
     VoidCallback? onAdLoaded,
     Function(String)? onAdFailedToLoad,
@@ -51,7 +51,7 @@ class _InterstitialDialog extends StatefulWidget {
   final Function(String)? onAdFailedToLoad;
 
   const _InterstitialDialog({
-    required this.adUnitId,
+    this.adUnitId = 'default',
     required this.closeDelay,
     this.onAdLoaded,
     this.onAdFailedToLoad,
@@ -80,7 +80,7 @@ class _InterstitialDialogState extends State<_InterstitialDialog>
   Future<void> _fetchAd() async {
     try {
       final ad = await AdTogether.fetchAd(
-        widget.adUnitId,
+        adUnitId: widget.adUnitId,
         adType: 'interstitial',
       );
       if (mounted) {

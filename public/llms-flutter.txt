@@ -1,8 +1,8 @@
 # AdTogether Flutter SDK — LLM Integration Reference
 
-**Version:** 0.1.14
+**Version:** 0.1.26
 
-**Package:** `adtogether_sdk: ^0.1.14`
+**Package:** `adtogether_sdk: ^0.1.26`
 **Distribution:** pub.dev
 **Targets:** Android, iOS, and Flutter Web — all from ONE Dart package
 
@@ -51,7 +51,7 @@ class MyPage extends StatelessWidget {
         children: [
           Expanded(child: Text("App Content")),
           AdTogetherBanner(
-            adUnitId: 'YOUR_AD_UNIT_ID',
+            adUnitId: 'home_banner', // optional — any label for this placement
             size: AdSize.banner,
             showCloseButton: true,
             onAdLoaded: () => print('Ad loaded!'),
@@ -68,7 +68,7 @@ class MyPage extends StatelessWidget {
 **`AdTogetherBanner` constructor parameters:**
 | Param | Type | Default | Description |
 |-------|------|---------|-------------|
-| `adUnitId` | `String` | **required** | Ad placement identifier |
+| `adUnitId` | `String` | `'default'` | Optional label for this ad placement (e.g. `'home_banner'`, `'chat_bottom'`). Used for analytics grouping only — not validated server-side. |
 | `size` | `AdSize` | `AdSize.fluid` | Ad size preset (`fluid`, `banner`, `largeBanner`, `mediumRectangle`) |
 | `showCloseButton` | `bool` | `false` | Show a dismissable close button overlay |
 | `onAdLoaded` | `VoidCallback?` | — | Fires when ad data loads |
@@ -81,7 +81,7 @@ class MyPage extends StatelessWidget {
 // Show as a full-screen dialog (imperative API)
 AdTogetherInterstitial.show(
   context: context,
-  adUnitId: 'YOUR_AD_UNIT_ID',
+  adUnitId: 'level_complete', // optional placement label
   closeDelay: const Duration(seconds: 3),
   onAdLoaded: () => print('Interstitial ready'),
   onAdClosed: () => print('User closed'),
@@ -92,7 +92,7 @@ AdTogetherInterstitial.show(
 ```dart
 static Future<void> show({
   required BuildContext context,
-  required String adUnitId,
+  String adUnitId = 'default',  // optional placement label
   Duration closeDelay = const Duration(seconds: 3),
   VoidCallback? onAdLoaded,
   Function(String)? onAdFailedToLoad,

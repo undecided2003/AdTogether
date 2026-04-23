@@ -13,7 +13,7 @@ import java.net.URL
 internal object AdNetworkService {
     private const val TAG = "AdTogetherSDK"
 
-    suspend fun fetchAd(adUnitId: String, adType: String? = null, exclude: String? = null, allowSelfAds: Boolean = true): AdModel? = withContext(Dispatchers.IO) {
+    suspend fun fetchAd(adUnitId: String = "default", adType: String? = null, exclude: String? = null, allowSelfAds: Boolean = true): AdModel? = withContext(Dispatchers.IO) {
         try {
             var urlStr = "${AdTogether.baseUrl}/api/ads/serve?country=global&adUnitId=$adUnitId&apiKey=${AdTogether.appId}&allowSelfAds=$allowSelfAds"
             if (adType != null) {

@@ -1,6 +1,6 @@
 # AdTogether Native iOS SDK — LLM Integration Reference
 
-**Version:** 0.1.14
+**Version:** 0.1.25
 
 **Package:** `AdTogether`
 **Distribution:** Swift Package Manager (SPM)
@@ -20,7 +20,7 @@ https://github.com/undecided2003/AdTogether.git
 Or add directly to `Package.swift`:
 
 ```swift
-.package(url: "https://github.com/undecided2003/AdTogether.git", from: "0.1.13")
+.package(url: "https://github.com/undecided2003/AdTogether.git", from: "0.1.25")
 ```
 
 ### Initialize
@@ -62,7 +62,7 @@ struct ContentView: View {
         VStack {
             Text("My App")
             AdTogetherView(
-                adUnitID: "YOUR_AD_UNIT_ID",
+                adUnitId: "home_banner", // optional — any label for this placement
                 showCloseButton: true,
                 onAdLoaded: { print("Ad loaded!") },
                 onAdClosed: { print("User closed the ad") }
@@ -76,7 +76,7 @@ struct ContentView: View {
 **`AdTogetherView` init:**
 ```swift
 public init(
-    adUnitID: String,
+    adUnitId: String = "default",
     size: AdSize = .fluid,
     showCloseButton: Bool = false,
     onAdLoaded: (() -> Void)? = nil,
@@ -88,7 +88,7 @@ public init(
 **`AdTogetherView` parameters:**
 | Param | Type | Default | Description |
 |-------|------|---------|-------------|
-| `adUnitID` | `String` | **required** | Ad placement identifier (**capital "ID"**) |
+| `adUnitId` | `String` | `"default"` | Optional label for this ad placement. Used for analytics grouping only. |
 | `size` | `AdSize` | `.fluid` | Ad size preset (`.fluid`, `.banner`, `.largeBanner`, `.mediumRectangle`) |
 | `showCloseButton` | `Bool` | `false` | Show a dismissable close button overlay |
 | `onAdLoaded` | `(() -> Void)?` | — | Fires when ad data loads |
@@ -111,7 +111,7 @@ struct ContentView: View {
                 showAd = true
             }
             .fullScreenCover(isPresented: $showAd) {
-                AdTogetherInterstitialView(adUnitID: "YOUR_AD_UNIT_ID") {
+                AdTogetherInterstitialView(adUnitId: "level_complete") { // optional placement label
                     showAd = false
                 } onAdLoaded: {
                     print("Interstitial loaded")
@@ -125,7 +125,7 @@ struct ContentView: View {
 **`AdTogetherInterstitialView` init:**
 ```swift
 public init(
-    adUnitID: String,
+    adUnitId: String = "default",   // optional placement label
     closeDelay: Int = 3,           // Seconds before close button appears
     onDismiss: @escaping () -> Void,
     onAdLoaded: (() -> Void)? = nil,
@@ -133,7 +133,6 @@ public init(
 )
 ```
 
-> **Key naming difference:** iOS uses `adUnitID` (capital "ID"), not `adUnitId`.
 
 ### iOS-Specific Notes
 

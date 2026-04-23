@@ -180,11 +180,8 @@ export default function DashboardPage() {
       alert("Please enter an app or website name for this key.");
       return;
     }
+    // No limit on App IDs
     const currentKeys = userData?.apiKeys || (userData?.apiKey ? [userData.apiKey] : []);
-    if (currentKeys.length >= 3) {
-      alert("You can only generate up to 3 App IDs.");
-      return;
-    }
     
     setGenerating(true);
     try {
@@ -666,12 +663,12 @@ export default function DashboardPage() {
               <div>
                 <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">App IDs</h3>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                  One App ID per app or website (up to 3). Each ID tracks its own traffic.
+                  One App ID per app or website. Each ID tracks its own traffic.
                 </p>
               </div>
             </div>
             
-            {(!(userData.apiKeys || (userData.apiKey ? [userData.apiKey] : [])).length || (userData.apiKeys || (userData.apiKey ? [userData.apiKey] : [])).length < 3) && !showNewKeyForm && (
+            {!showNewKeyForm && (
               <button
                 onClick={() => setShowNewKeyForm(true)}
                 className="w-full sm:w-auto bg-zinc-100 hover:bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-white px-5 py-2.5 rounded-xl font-medium transition-colors whitespace-nowrap flex items-center gap-2"
@@ -1066,7 +1063,7 @@ AdTogether.initialize(appId: "${userData?.apiKeys?.[0] || userData?.apiKey || 'Y
 
 // Banner Ad
 AdTogetherView(
-    adUnitID: "home_banner",
+    adUnitId: "home_banner",
     showCloseButton: true,
     onAdLoaded: { print("Ad loaded!") },
     onAdFailedToLoad: { error in print("Error: \(error)") },
@@ -1080,7 +1077,7 @@ Button("Show Interstitial") {
 }
 .fullScreenCover(isPresented: $showAd) {
     AdTogetherInterstitialView(
-        adUnitID: "level_complete",
+        adUnitId: "level_complete",
         closeDelay: 3,
         onAdLoaded: { print("Ad loaded!") },
         onAdFailedToLoad: { error in print("Error: \(error)") }

@@ -1,6 +1,6 @@
 # AdTogether React Native SDK — LLM Integration Reference
 
-**Version:** 0.1.14
+**Version:** 0.1.25
 
 **Package:** `@adtogether/react-native-sdk`
 **Distribution:** NPM
@@ -57,7 +57,7 @@ function MyScreen() {
       <Text>My App Content</Text>
 
       <AdTogetherBanner
-        adUnitId="YOUR_AD_UNIT_ID"
+        adUnitId="home_banner" // optional — any label for this placement
         showCloseButton={true}
         onAdLoaded={() => console.log('Banner loaded!')}
         onAdFailedToLoad={(error) => console.error('Banner error:', error)}
@@ -71,7 +71,7 @@ function MyScreen() {
 **`<AdTogetherBanner>` props:**
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `adUnitId` | `string` | **required** | Ad placement identifier |
+| `adUnitId` | `string` | `'default'` | Optional label for this ad placement (e.g. `'home_banner'`, `'chat_bottom'`). Used for analytics grouping only — not validated server-side. |
 | `showCloseButton` | `boolean` | `false` | Show a dismissable close button overlay |
 | `onAdClosed` | `() => void` | — | Fires when user closes the ad |
 | `theme` | `'dark' \| 'light' \| 'auto'` | `'auto'` | Color scheme |
@@ -94,7 +94,7 @@ function MyScreen() {
       <Button title="Show Interstitial" onPress={() => setShowAd(true)} />
 
       <AdTogetherInterstitial
-        adUnitId="YOUR_AD_UNIT_ID"
+        adUnitId="level_complete" // optional placement label
         isOpen={showAd}
         onClose={() => setShowAd(false)}
         closeDelay={5}
@@ -108,7 +108,7 @@ function MyScreen() {
 **`<AdTogetherInterstitial>` props:**
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `adUnitId` | `string` | **required** | Ad placement identifier |
+| `adUnitId` | `string` | `'default'` | Optional label for this ad placement. Used for analytics grouping only. |
 | `isOpen` | `boolean` | **required** | Controls visibility |
 | `onClose` | `() => void` | **required** | Called when user closes |
 | `closeDelay` | `number` | `3` | Seconds before close button appears |

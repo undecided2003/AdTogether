@@ -103,7 +103,7 @@ export class AdTogether {
 
   private lastAdId?: string;
 
-  static async fetchAd(adUnitId: string, adType?: AdType): Promise<AdModel> {
+  static async fetchAd(adUnitId: string = 'default', adType?: AdType): Promise<AdModel> {
     if (!AdTogether.shared.assertInitialized()) {
       throw new Error('AdTogether not initialized');
     }

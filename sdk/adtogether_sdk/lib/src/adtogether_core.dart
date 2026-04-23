@@ -150,7 +150,7 @@ class AdTogether {
   /// Fetch an ad for a specific ad unit.
   /// [adUnitId] is the unique identifier for the ad placement.
   /// [adType] optionally filter by 'banner' or 'interstitial'.
-  static Future<AdModel> fetchAd(String adUnitId, {String? adType}) async {
+  static Future<AdModel> fetchAd({String adUnitId = 'default', String? adType}) async {
     // Ensure SDK is initialized
     final currentAppId = appId;
 

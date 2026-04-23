@@ -705,7 +705,7 @@ struct ContentView: View {
             
             // Banner Ad
             AdTogetherView(
-                adUnitID: "YOUR_AD_UNIT_ID",
+                adUnitId: "YOUR_AD_UNIT_ID",
                 onAdLoaded: { print("Ad loaded!") }
             )
             .frame(height: 50)
@@ -716,7 +716,7 @@ struct ContentView: View {
             }
             .fullScreenCover(isPresented: $showAd) {
                 AdTogetherInterstitialView(
-                    adUnitID: "YOUR_AD_UNIT_ID",
+                    adUnitId: "YOUR_AD_UNIT_ID",
                     closeDelay: 3,
                     onAdLoaded: { print("Interstitial loaded!") }
                 ) { showAd = false }

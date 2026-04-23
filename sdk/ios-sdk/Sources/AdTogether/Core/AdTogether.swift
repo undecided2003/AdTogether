@@ -52,7 +52,7 @@ public final class AdTogether {
     ///   - adUnitId: The unique identifier for the ad placement.
     ///   - adType: Optional ad type filter, either "banner" or "interstitial".
     ///   - completion: Completeness block with Result containing AdModel or Error.
-    public static func fetchAd(adUnitId: String, adType: String? = nil, completion: @escaping (Result<AdModel, Error>) -> Void) {
+    public static func fetchAd(adUnitId: String = "default", adType: String? = nil, completion: @escaping (Result<AdModel, Error>) -> Void) {
         guard shared.assertInitialized() else {
             completion(.failure(NSError(domain: "AdTogether", code: -1, userInfo: [NSLocalizedDescriptionKey: "SDK not initialized"])))
             return

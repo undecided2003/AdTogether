@@ -80,7 +80,7 @@ object AdTogether {
      * Fetches an ad for a specific ad unit.
      * @param adType Optional filter: "banner" or "interstitial".
      */
-    suspend fun fetchAd(adUnitId: String, adType: String? = null): AdModel? {
+    suspend fun fetchAd(adUnitId: String = "default", adType: String? = null): AdModel? {
         if (!assertInitialized()) return null
         val ad = AdNetworkService.fetchAd(adUnitId, adType, lastAdId, allowSelfAds)
         if (ad != null) {

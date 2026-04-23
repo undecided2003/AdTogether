@@ -11,7 +11,7 @@ import com.adtogether.sdk.models.AdSize
  */
 @Composable
 fun AdTogetherBanner(
-    adUnitId: String,
+    adUnitId: String = "default",
     size: AdSize = AdSize.FLUID,
     showCloseButton: Boolean = false,
     onAdLoaded: (() -> Unit)? = null,
