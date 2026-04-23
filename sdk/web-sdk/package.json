@@ -4,12 +4,11 @@
   "description": "The official AdTogether Web SDK — reciprocal ad exchange to increase conversions and grow your audience.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/undecided2003/AdTogether.git",
-    "directory": "sdk/web-sdk"
+    "url": "git+https://github.com/undecided2003/adtogether-web-sdk.git"
   },
   "homepage": "https://adtogether.relaxsoftwareapps.com",
   "bugs": {
-    "url": "https://github.com/undecided2003/AdTogether/issues"
+    "url": "https://github.com/undecided2003/adtogether-web-sdk/issues"
   },
   "keywords": [
     "ads",

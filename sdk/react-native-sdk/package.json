@@ -16,12 +16,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/undecided2003/AdTogether.git",
-    "directory": "sdk/react-native-sdk"
+    "url": "git+https://github.com/undecided2003/adtogether-react-native-sdk.git"
   },
   "homepage": "https://adtogether.relaxsoftwareapps.com",
   "bugs": {
-    "url": "https://github.com/undecided2003/AdTogether/issues"
+    "url": "https://github.com/undecided2003/adtogether-react-native-sdk/issues"
   },
   "scripts": {
     "build": "bob build",

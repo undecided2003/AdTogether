@@ -75,9 +75,9 @@ mavenPublishing {
             }
         }
         scm {
-            connection.set("scm:git:github.com/undecided2003/AdTogether.git")
-            developerConnection.set("scm:git:ssh://github.com/undecided2003/AdTogether.git")
-            url.set("https://github.com/undecided2003/AdTogether/tree/main/sdk/android-sdk")
+            connection.set("scm:git:github.com/undecided2003/adtogether-android-sdk.git")
+            developerConnection.set("scm:git:ssh://github.com/undecided2003/adtogether-android-sdk.git")
+            url.set("https://github.com/undecided2003/adtogether-android-sdk")
         }
     }
 
