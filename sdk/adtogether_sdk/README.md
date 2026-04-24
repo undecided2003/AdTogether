@@ -19,7 +19,7 @@ This SDK allows Flutter developers to easily integrate AdTogether ads into their
 > **Developer Account Required**: Before integrating the SDK, you must create a developer account at [https://adtogether.relaxsoftwareapps.com](https://adtogether.relaxsoftwareapps.com) to generate your `appId` and configure your ad units. Integration will not work without a valid `appId`.
 
 <p align="center">
-  <img src="../../public/dashboard.png" width="800" alt="Developer Dashboard">
+  <img src="https://adtogether.relaxsoftwareapps.com/dashboard.png" width="800" alt="Developer Dashboard">
 </p>
 
 ### 🖼️ Visualizing the Experience
@@ -46,7 +46,7 @@ Add the dependency to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  adtogether_sdk: ^0.1.23
+  adtogether_sdk: ^0.1.27
 ```
 
 Then run:
@@ -75,7 +75,8 @@ void main() async {
 |-------------|-----------|----------|-------------|
 | `appId`     | `String`  | ✅       | Your registered App ID from the AdTogether Dashboard. |
 | `baseUrl`   | `String?` | ❌       | Override the API base URL (useful for staging/testing environments). |
-| `bundleId`  | `String?` | ❌       | Explicitly set your app's bundle/package identifier. If omitted, web traffic is identified by the `Origin` header automatically. For mobile, it is recommended to set this explicitly. |
+| `bundleId`  | `String?` | ❌       | Explicitly set your app's bundle/package identifier. If omitted, it is auto-detected via `package_info_plus` on mobile and from `window.location.hostname` on web. |
+| `allowSelfAds` | `bool` | ❌ (default: `true`) | Whether to show your own ads as a fallback when no other ads are available. |
 
 ```dart
 AdTogether.initialize(
@@ -117,7 +118,7 @@ Widget build(BuildContext context) {
 
 | Parameter          | Type                | Default      | Description |
 |--------------------|---------------------|--------------|-------------|
-| `adUnitId`         | `String`            | **required** | Unique identifier for this ad placement. |
+| `adUnitId`         | `String`            | `'default'`  | Optional label for this ad placement (e.g. `'home_banner'`, `'chat_bottom'`). Used for analytics grouping only — not validated server-side. |
 | `size`             | `AdSize`            | `AdSize.fluid` | The desired ad size. See [Supported Ad Sizes](#supported-ad-sizes). |
 | `showCloseButton`  | `bool`              | `false`      | Show a dismissable close button overlay. |
 | `onAdClosed`       | `VoidCallback?`     | `null`       | Called when the user closes the ad. |
@@ -157,7 +158,7 @@ void _showAdBreak() {
 | Parameter          | Type                | Default                      | Description |
 |--------------------|---------------------|------------------------------|-------------|
 | `context`          | `BuildContext`      | **required**                 | The build context to display the dialog in. |
-| `adUnitId`         | `String`            | **required**                 | Unique identifier for this ad placement. |
+| `adUnitId`         | `String`            | `'default'`                  | Optional label for this ad placement. Used for analytics grouping only — not validated server-side. |
 | `closeDelay`       | `Duration`          | `Duration(seconds: 3)`       | How long before the close button appears. During this time, a countdown is shown. |
 | `onAdLoaded`       | `VoidCallback?`     | `null`                       | Called when the ad has been successfully fetched. |
 | `onAdFailedToLoad` | `Function(String)?` | `null`                       | Called with an error message if the ad fails to load. The dialog is automatically dismissed on failure. |
@@ -236,6 +237,7 @@ This SDK depends on the following packages:
 | Package               | Purpose |
 |-----------------------|---------|
 | [`http`](https://pub.dev/packages/http) | HTTP requests for ad fetching and event tracking. |
+| [`package_info_plus`](https://pub.dev/packages/package_info_plus) | Auto-detection of `bundleId`, `appName`, and `appVersion` for tracking metadata. |
 | [`url_launcher`](https://pub.dev/packages/url_launcher) | Opening ad click-through URLs in the device browser. |
 | [`visibility_detector`](https://pub.dev/packages/visibility_detector) | Viewability-based impression tracking for banner ads. |
 

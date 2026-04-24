@@ -1,6 +1,6 @@
 # AdTogether REST API — LLM Integration Reference
 
-**Version:** 0.1.14
+**Version:** 0.1.26
 
 > **Integration Guide:** For custom environments without a dedicated SDK, you can directly interface with the AdTogether Ad Serving API.
 

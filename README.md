@@ -31,7 +31,7 @@
 We provide a seamless, high-performance API and a suite of native SDKs across web, mobile, and cross-platform ecosystems, enabling you to integrate native advertising into any environment.
 
 <p align="center">
-  <img src="public/dashboard.png" width="800" alt="Developer Dashboard">
+  <img src="https://adtogether.relaxsoftwareapps.com/dashboard.png" width="800" alt="Developer Dashboard">
 </p>
 
 ### 🖼️ Visual Examples
@@ -102,9 +102,9 @@ Detailed instructions are provided in each SDK's local `README.md`.
 
 - **Web integration:** `npm install @adtogether/web-sdk`
 - **React Native integration:** `npm install @adtogether/react-native-sdk`
-- **Android integration:** Implement `com.relaxsoftwareapps.adtogether:sdk:0.1.25` inside your `build.gradle.kts`.
+- **Android integration:** Implement `com.relaxsoftwareapps.adtogether:sdk:0.1.27` inside your `build.gradle.kts`.
 - **iOS integration:** Add the Swift Package through Xcode directly from this repository link.
-- **Flutter integration:** Run `flutter pub add adtogether_sdk:^0.1.25`.
+- **Flutter integration:** Run `flutter pub add adtogether_sdk:^0.1.27`.
 
 ---
 

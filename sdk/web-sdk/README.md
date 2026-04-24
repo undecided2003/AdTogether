@@ -22,7 +22,7 @@
 This SDK allows web developers (React and Vanilla JS) to easily integrate AdTogether ads into their applications. By displaying ads from other community members, you earn **Ad Credits** that allow your own app's ads to be shown across the AdTogether network.
 
 <p align="center">
-  <img src="../../public/dashboard.png" width="800" alt="Developer Dashboard">
+  <img src="https://adtogether.relaxsoftwareapps.com/dashboard.png" width="800" alt="Developer Dashboard">
 </p>
 
 ### 🖼️ Visualizing the Experience
@@ -92,7 +92,7 @@ function MyApp() {
 
 | Prop               | Type                    | Default   | Description |
 |--------------------|-------------------------|-----------|-------------|
-| `adUnitId`         | `string`                | **required** | Unique identifier for this ad placement. |
+| `adUnitId`         | `string`                | `'default'`  | Optional label for this ad placement (e.g. `'home_banner'`, `'sidebar'`). Used for analytics grouping only — not validated server-side. |
 | `showCloseButton`  | `boolean`               | `false`   | Show a dismissable close button overlay. |
 | `onAdClosed`       | `() => void`            | —         | Called when the user closes the ad. |
 | `width`            | `number \| string`      | `'100%'`  | Width of the ad element. |
@@ -137,7 +137,7 @@ function MyApp() {
 
 | Prop               | Type                    | Default   | Description |
 |--------------------|-------------------------|-----------|-------------|
-| `adUnitId`         | `string`                | **required** | Unique identifier for this ad placement. |
+| `adUnitId`         | `string`                | `'default'`  | Optional label for this ad placement. Used for analytics grouping only. |
 | `isOpen`           | `boolean`               | **required** | When `true`, the interstitial is displayed. |
 | `onClose`          | `() => void`            | **required** | Called when the user closes the interstitial. |
 | `closeDelay`       | `number`                | `3`       | Seconds before the close button appears. A countdown is shown during this time. |

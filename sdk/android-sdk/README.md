@@ -22,7 +22,7 @@
 This SDK allows Android developers to easily integrate AdTogether ads into their applications. By displaying ads from other community members, you earn **Ad Credits** that allow your own app's ads to be shown across the AdTogether network.
 
 <p align="center">
-  <img src="../../public/dashboard.png" width="800" alt="Developer Dashboard">
+  <img src="https://adtogether.relaxsoftwareapps.com/dashboard.png" width="800" alt="Developer Dashboard">
 </p>
 
 ### 🖼️ Visualizing the Experience
@@ -47,7 +47,7 @@ Add the dependency to your app-level `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.relaxsoftwareapps.adtogether:sdk:0.1.23")
+    implementation("com.relaxsoftwareapps.adtogether:sdk:0.1.27")
 }
 ```
 

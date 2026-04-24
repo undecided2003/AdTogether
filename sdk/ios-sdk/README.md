@@ -23,7 +23,7 @@
 This SDK allows iOS developers to easily integrate AdTogether ads into their applications. By displaying ads from other community members, you earn **Ad Credits** that allow your own app's ads to be shown across the AdTogether network.
 
 <p align="center">
-  <img src="../../public/dashboard.png" width="800" alt="Developer Dashboard">
+  <img src="https://adtogether.relaxsoftwareapps.com/dashboard.png" width="800" alt="Developer Dashboard">
 </p>
 
 ### 🖼️ Visualizing the Experience
@@ -52,7 +52,7 @@ This SDK allows iOS developers to easily integrate AdTogether ads into their app
 ### CocoaPods
 
 ```ruby
-pod 'AdTogether', '~> 0.1.23'
+pod 'AdTogether', '~> 0.1.26'
 ```
 
 ### Initialize

@@ -1,6 +1,6 @@
 # AdTogether — LLM Integration Reference
 
-**Version:** 0.1.25 (Web/RN/iOS/Android) / 0.1.26 (Flutter)
+**Version:** 0.1.26 
 
 **"Show an ad, get an ad shown"**
 *The reciprocal ad exchange to increase conversions and grow your app's audience.*

@@ -54,7 +54,7 @@ dependencies {
 
 mavenPublishing {
     // Defines the coordinates
-    coordinates("com.relaxsoftwareapps.adtogether", "sdk", "0.1.26")
+    coordinates("com.relaxsoftwareapps.adtogether", "sdk", "0.1.27")
     
     // Configures the POM
     pom {

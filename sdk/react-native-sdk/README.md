@@ -18,7 +18,7 @@ This SDK allows React Native developers to easily integrate AdTogether ads into 
 > **Developer Account Required**: Before integrating the SDK, you must create a developer account at [https://adtogether.relaxsoftwareapps.com](https://adtogether.relaxsoftwareapps.com) to generate your `appId` and configure your ad units. Integration will not work without a valid `appId`.
 
 <p align="center">
-  <img src="../../public/dashboard.png" width="800" alt="Developer Dashboard">
+  <img src="https://adtogether.relaxsoftwareapps.com/dashboard.png" width="800" alt="Developer Dashboard">
 </p>
 
 ### 🖼️ Visualizing the Experience
@@ -90,7 +90,7 @@ function MyApp() {
 
 | Prop               | Type                    | Default   | Description |
 |--------------------|-------------------------|-----------|-------------|
-| `adUnitId`         | `string`                | **required** | Unique identifier for this ad placement. |
+| `adUnitId`         | `string`                | `'default'`  | Optional label for this ad placement (e.g. `'home_banner'`, `'chat_bottom'`). Used for analytics grouping only — not validated server-side. |
 | `showCloseButton`  | `boolean`               | `false`   | Show a dismissable close button overlay. |
 | `onAdClosed`       | `() => void`            | —         | Called when the user closes the ad. |
 | `theme`            | `'dark' \| 'light' \| 'auto'` | `'auto'` | Color scheme. `'auto'` follows system preference. |
@@ -131,7 +131,7 @@ function MyApp() {
 
 | Prop               | Type                    | Default   | Description |
 |--------------------|-------------------------|-----------|-------------|
-| `adUnitId`         | `string`                | **required** | Unique identifier for this ad placement. |
+| `adUnitId`         | `string`                | `'default'`  | Optional label for this ad placement. Used for analytics grouping only. |
 | `isOpen`           | `boolean`               | **required** | When `true`, the interstitial is displayed. |
 | `onClose`          | `() => void`            | **required** | Called when the user closes the interstitial. |
 | `closeDelay`       | `number`                | `3`       | Seconds before the close button appears. A countdown is shown during this time. |
