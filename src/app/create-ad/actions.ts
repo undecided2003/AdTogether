@@ -178,8 +178,10 @@ export async function generateAdContent(clickUrl: string) {
         "Authorization": `Bearer ${DEEPSEEK_API_KEY}`
       },
       body: JSON.stringify({
-        model: "deepseek-chat",
+        model: "deepseek-v4-flash",
         messages: truncatedMessages,
+        thinking: { type: "enabled" },
+        reasoning_effort: "low",
         stream: false,
         response_format: { type: "json_object" }
       }),
@@ -262,8 +264,10 @@ export async function screenAdContent(title: string, description: string, clickU
         "Authorization": `Bearer ${DEEPSEEK_API_KEY}`
       },
       body: JSON.stringify({
-        model: "deepseek-chat",
+        model: "deepseek-v4-flash",
         messages: messages,
+        thinking: { type: "enabled" },
+        reasoning_effort: "low",
         stream: false,
         response_format: { type: "json_object" }
       }),

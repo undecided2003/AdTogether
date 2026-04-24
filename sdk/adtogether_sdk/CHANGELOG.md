@@ -1,3 +1,6 @@
+## 0.1.27
+* **Docs**: Fixed broken "Developer Dashboard" preview image in the package description by switching to an absolute URL.
+
 ## 0.1.26
 * **Fix**: Relaxed `package_info_plus` constraint from `^10.0.0` to `>=5.0.0 <11.0.0` to resolve `win32` version conflicts with `device_info_plus` and `syncfusion_flutter_pdfviewer`.
 
