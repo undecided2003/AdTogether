@@ -1,3 +1,7 @@
+## 0.2.0
+* **Security**: Implemented strict validation for required parameters and API keys.
+* **Error Handling**: Improved error handling for invalid or missing App IDs across all platforms, ensuring graceful failures with descriptive logs.
+
 ## 0.1.27
 * **Docs**: Fixed broken "Developer Dashboard" preview image in the package description by switching to an absolute URL.
 

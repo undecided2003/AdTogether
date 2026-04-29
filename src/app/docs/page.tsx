@@ -14,7 +14,18 @@ import {
   Copy,
   Info,
   X,
+  ExternalLink,
 } from 'lucide-react';
+import { 
+  ReactLogo, 
+  FlutterLogo, 
+  AndroidLogo, 
+  AppleLogo,
+  JavaScriptLogo,
+  NextjsLogo,
+  VueLogo,
+  Html5Logo
+} from '@/components/FrameworkLogos';
 
 function PlatformBadge({ label, color }: { label: string; color: string }) {
   return (
@@ -28,36 +39,24 @@ function PlatformBadge({ label, color }: { label: string; color: string }) {
 }
 
 function ZoomableImage({ src, alt, className }: { src: string; alt: string; className?: string }) {
-  const [isOpen, setIsOpen] = useState(false);
-
   return (
-    <>
+    <a 
+      href={src} 
+      target="_blank" 
+      rel="noopener noreferrer" 
+      className="relative group/zoom cursor-pointer overflow-hidden rounded-2xl block"
+    >
       <img
         src={src}
         alt={alt}
-        className={`${className} cursor-zoom-in transition-transform hover:scale-[1.02]`}
-        onClick={() => setIsOpen(true)}
+        className={`${className} transition-transform duration-700 group-hover:scale-110`}
       />
-      {isOpen && (
-        <div 
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm cursor-zoom-out"
-          onClick={() => setIsOpen(false)}
-        >
-          <img
-            src={src}
-            alt={alt}
-            className="max-w-[95%] max-h-[95%] object-contain rounded-xl shadow-2xl cursor-default"
-            onClick={(e) => e.stopPropagation()}
-          />
-          <button 
-            className="absolute z-[110] md:top-8 md:right-8 top-4 right-4 p-2.5 text-white hover:text-white bg-zinc-900/80 hover:bg-zinc-800 backdrop-blur-md rounded-full transition-all ring-1 ring-white/20 shadow-xl"
-            onClick={() => setIsOpen(false)}
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-      )}
-    </>
+      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 duration-300">
+         <div className="p-4 bg-white/10 backdrop-blur-xl rounded-full border border-white/20 text-white transform scale-50 group-hover:scale-100 transition-all duration-300 shadow-2xl">
+           <ExternalLink className="w-8 h-8 drop-shadow-lg" />
+         </div>
+      </div>
+    </a>
   );
 }
 
@@ -145,7 +144,7 @@ export default function DocsPage() {
         <div className="relative group overflow-hidden bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-500/10 dark:to-orange-500/5 border border-amber-200 dark:border-amber-500/20 rounded-3xl p-8 mb-12 shadow-xl shadow-amber-500/5">
           <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 blur-[80px] rounded-full -mr-32 -mt-32 pointer-events-none" />
           
-          <div className="flex flex-col md:flex-row items-start gap-8 relative z-10">
+          <div className="flex flex-col lg:flex-row items-center gap-10 relative z-10">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-2.5 bg-amber-500/20 rounded-xl">
@@ -179,12 +178,12 @@ export default function DocsPage() {
               </p>
             </div>
             
-            <div className="flex-1 w-full">
-              <div className="relative border border-amber-200/50 dark:border-amber-500/20 rounded-2xl overflow-hidden shadow-2xl group-hover:scale-[1.01] transition-transform duration-500">
+            <div className="flex-[1.4] w-full">
+              <div className="relative border border-amber-200/50 dark:border-amber-500/20 rounded-2xl overflow-hidden shadow-2xl group-hover:scale-[1.02] transition-transform duration-500">
                 <ZoomableImage 
                   src="/dashboard.png" 
                   alt="AdTogether Developer Dashboard" 
-                  className="w-full aspect-[16/10] object-cover" 
+                  className="w-full aspect-video object-cover" 
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
               </div>
@@ -335,16 +334,17 @@ export default function DocsPage() {
 
                 <div className="flex flex-wrap gap-3">
                   {[
-                    { label: 'Web (JS)', color: 'text-pink-600 dark:text-pink-400 bg-pink-100 dark:bg-pink-500/10 border-pink-300 dark:border-pink-500/20' },
-                    { label: 'React Native', color: 'text-cyan-600 dark:text-cyan-400 bg-cyan-100 dark:bg-cyan-500/10 border-cyan-300 dark:border-cyan-500/20' },
-                    { label: 'Flutter (Dart)', color: 'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-500/10 border-blue-300 dark:border-blue-500/20' },
-                    { label: 'Native iOS (Swift)', color: 'text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-500/10 border-orange-300 dark:border-orange-500/20' },
-                    { label: 'Native Android (Kotlin)', color: 'text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-500/10 border-purple-300 dark:border-purple-500/20' },
-                  ].map(({ label, color }) => (
+                    { label: 'Web (JS)', icon: <JavaScriptLogo className="w-4 h-4" />, color: 'text-pink-600 dark:text-pink-400 bg-pink-100 dark:bg-pink-500/10 border-pink-300 dark:border-pink-500/20' },
+                    { label: 'React Native', icon: <ReactLogo className="w-4 h-4" />, color: 'text-cyan-600 dark:text-cyan-400 bg-cyan-100 dark:bg-cyan-500/10 border-cyan-300 dark:border-cyan-500/20' },
+                    { label: 'Flutter (Dart)', icon: <FlutterLogo className="w-4 h-4" />, color: 'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-500/10 border-blue-300 dark:border-blue-500/20' },
+                    { label: 'Native iOS (Swift)', icon: <AppleLogo className="w-4 h-4" />, color: 'text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-500/10 border-orange-300 dark:border-orange-500/20' },
+                    { label: 'Native Android (Kotlin)', icon: <AndroidLogo className="w-4 h-4" />, color: 'text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-500/10 border-purple-300 dark:border-purple-500/20' },
+                  ].map(({ label, icon, color }) => (
                     <span
                       key={label}
-                      className={`text-sm font-medium px-4 py-2 rounded-xl border ${color}`}
+                      className={`inline-flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-xl border ${color}`}
                     >
+                      {icon}
                       {label}
                     </span>
                   ))}
@@ -478,8 +478,8 @@ export default function DocsPage() {
             {/* ─── Web Integration ─── */}
             <section className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 p-8 rounded-3xl hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors">
               <div className="flex items-center space-x-3 mb-3">
-                <div className="p-3 bg-pink-500/20 rounded-xl text-pink-400">
-                  <Globe className="w-6 h-6" />
+                <div className="p-2.5 bg-pink-500/10 rounded-xl">
+                  <ReactLogo className="w-7 h-7" />
                 </div>
                 <div className="flex items-center gap-3">
                   <h2 className="text-2xl font-semibold">Web SDK</h2>
@@ -490,10 +490,22 @@ export default function DocsPage() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-2 mb-6">
-                <PlatformBadge label="HTML" color="text-pink-600 dark:text-pink-400 border-pink-300 dark:border-pink-500/30" />
-                <PlatformBadge label="React" color="text-pink-600 dark:text-pink-400 border-pink-300 dark:border-pink-500/30" />
-                <PlatformBadge label="Next.js" color="text-pink-600 dark:text-pink-400 border-pink-300 dark:border-pink-500/30" />
-                <PlatformBadge label="Vue" color="text-pink-600 dark:text-pink-400 border-pink-300 dark:border-pink-500/30" />
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-pink-300 dark:border-pink-500/30 text-pink-600 dark:text-pink-400">
+                  <Html5Logo className="w-3.5 h-3.5" />
+                  <span className="text-xs font-medium">HTML</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-pink-300 dark:border-pink-500/30 text-pink-600 dark:text-pink-400">
+                  <ReactLogo className="w-3.5 h-3.5" />
+                  <span className="text-xs font-medium">React</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-pink-300 dark:border-pink-500/30 text-pink-600 dark:text-pink-400">
+                  <NextjsLogo className="w-3.5 h-3.5" />
+                  <span className="text-xs font-medium">Next.js</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-pink-300 dark:border-pink-500/30 text-pink-600 dark:text-pink-400">
+                  <VueLogo className="w-3.5 h-3.5" />
+                  <span className="text-xs font-medium">Vue</span>
+                </div>
               </div>
               <p className="text-zinc-600 dark:text-gray-400 mb-6">
                 Embed ads into any webpage using our lightweight script. Zero
@@ -568,8 +580,8 @@ export default function MyComponent() {
               </div>
 
               <div className="flex items-center space-x-3 mb-3">
-                <div className="p-3 bg-amber-500/20 rounded-xl text-amber-400">
-                  <Smartphone className="w-6 h-6" />
+                <div className="p-2.5 bg-blue-500/10 rounded-xl">
+                  <FlutterLogo className="w-7 h-7" />
                 </div>
                 <div className="flex items-center gap-3">
                   <h2 className="text-2xl font-semibold">Flutter SDK</h2>
@@ -642,8 +654,8 @@ AdTogetherInterstitial.show(
             {/* ─── Native iOS ─── */}
             <section className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 p-8 rounded-3xl hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors">
               <div className="flex items-center space-x-3 mb-3">
-                <div className="p-3 bg-orange-500/20 rounded-xl text-orange-400">
-                  <Terminal className="w-6 h-6" />
+                <div className="p-2.5 bg-orange-500/10 rounded-xl">
+                  <AppleLogo className="w-7 h-7 text-orange-500" />
                 </div>
                 <div className="flex items-center gap-3">
                   <h2 className="text-2xl font-semibold">Native iOS SDK</h2>
@@ -675,7 +687,7 @@ AdTogetherInterstitial.show(
               <CodeBlock title="Package.swift">
 {`.package(
   url: "https://github.com/undecided2003/AdTogether.git",
-  from: "0.1.23"
+  from: "0.2.0"
 )`}
               </CodeBlock>
 
@@ -730,8 +742,8 @@ struct ContentView: View {
             {/* ─── Native Android ─── */}
             <section className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 p-8 rounded-3xl hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors">
               <div className="flex items-center space-x-3 mb-3">
-                <div className="p-3 bg-purple-500/20 rounded-xl text-purple-400">
-                  <Terminal className="w-6 h-6" />
+                <div className="p-2.5 bg-purple-500/10 rounded-xl">
+                  <AndroidLogo className="w-7 h-7" />
                 </div>
                 <div className="flex items-center gap-3">
                   <h2 className="text-2xl font-semibold">Native Android SDK</h2>
@@ -762,7 +774,7 @@ struct ContentView: View {
               </p>
               <CodeBlock title="build.gradle.kts">
 {`dependencies {
-    implementation("com.relaxsoftwareapps.adtogether:sdk:0.1.23")
+    implementation("com.relaxsoftwareapps.adtogether:sdk:0.2.0")
 }`}
               </CodeBlock>
 

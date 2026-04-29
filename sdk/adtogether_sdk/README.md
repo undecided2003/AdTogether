@@ -46,7 +46,7 @@ Add the dependency to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  adtogether_sdk: ^0.1.27
+  adtogether_sdk: ^0.2.0
 ```
 
 Then run:

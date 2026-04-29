@@ -31,6 +31,14 @@ internal class AdNetworkService {
                 return
             }
             
+            if let httpResponse = response as? HTTPURLResponse {
+                if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
+                    print("AdTogether Error: Invalid App ID. Please check your dashboard.")
+                    completion(.failure(NSError(domain: "AdTogether", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "Invalid App ID"])))
+                    return
+                }
+            }
+            
             guard let data = data else {
                 completion(.failure(NSError(domain: "AdTogether", code: -2, userInfo: [NSLocalizedDescriptionKey: "No data received"])))
                 return

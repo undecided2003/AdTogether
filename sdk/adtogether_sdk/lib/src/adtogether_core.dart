@@ -174,6 +174,9 @@ class AdTogether {
       final ad = AdModel.fromJson(data);
       _lastAdId = ad.id;
       return ad;
+    } else if (response.statusCode == 401 || response.statusCode == 403) {
+      debugPrint('AdTogether Error: Invalid App ID. Please check your dashboard.');
+      throw Exception('AdTogether Error: Invalid App ID. Status code: ${response.statusCode}');
     } else {
       throw Exception(
         'AdTogether Error: Failed to fetch ad. Status code: ${response.statusCode}',

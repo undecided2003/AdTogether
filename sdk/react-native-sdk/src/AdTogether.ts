@@ -129,6 +129,9 @@ export class AdTogether {
         const ad = await response.json();
         sdk.lastAdId = ad.id;
         return ad;
+      } else if (response.status === 401 || response.status === 403) {
+        console.error('AdTogether Error: Invalid App ID. Please check your dashboard.');
+        throw new Error(`AdTogether Error: Invalid App ID. Status: ${response.status}`);
       }
 
       throw new Error(`Failed to fetch ad. Status: ${response.status}`);

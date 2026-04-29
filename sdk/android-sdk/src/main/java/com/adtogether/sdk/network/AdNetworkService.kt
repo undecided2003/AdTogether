@@ -31,7 +31,8 @@ internal object AdNetworkService {
             connection.connectTimeout = 5000
             connection.readTimeout = 5000
 
-            if (connection.responseCode == HttpURLConnection.HTTP_OK) {
+            val responseCode = connection.responseCode
+            if (responseCode == HttpURLConnection.HTTP_OK) {
                 val responseString = connection.inputStream.bufferedReader().use { it.readText() }
                 val json = JSONObject(responseString)
                 
@@ -44,8 +45,11 @@ internal object AdNetworkService {
                     token = json.optString("token", null).takeIf { it.isNotEmpty() },
                     adType = json.optString("adType", null).takeIf { it.isNotEmpty() }
                 )
+            } else if (responseCode == HttpURLConnection.HTTP_UNAUTHORIZED || responseCode == HttpURLConnection.HTTP_FORBIDDEN) {
+                Log.e(TAG, "AdTogether Error: Invalid App ID. Please check your dashboard.")
+                return@withContext null
             } else {
-                Log.e(TAG, "Failed to fetch ad. Code: ${connection.responseCode}")
+                Log.e(TAG, "Failed to fetch ad. Code: $responseCode")
                 return@withContext null
             }
         } catch (e: Exception) {

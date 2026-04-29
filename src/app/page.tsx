@@ -1,6 +1,13 @@
 import Link from 'next/link';
 import { CodeBlock } from '@/components/CodeBlock';
 import ExampleAdsButton from '@/components/ExampleAdsButton';
+import { 
+  ReactLogo, 
+  FlutterLogo, 
+  AndroidLogo, 
+  SwiftLogo,
+  AppleLogo
+} from '@/components/FrameworkLogos';
 
 async function getNpmDownloads(pkg: string) {
   try {
@@ -24,12 +31,12 @@ async function getPubDownloads(pkg: string) {
   }
 }
 
-
-
-function SdkCard({ title, repoName, url, statLabel, statValue, icon }: { title: string, repoName: string, url: string, statLabel: string, statValue: React.ReactNode, icon: string }) {
+function SdkCard({ title, repoName, url, statLabel, statValue, icon }: { title: string, repoName: string, url: string, statLabel: string, statValue: React.ReactNode, icon: React.ReactNode }) {
   return (
     <a href={url} target="_blank" rel="noopener noreferrer" className="flex flex-col p-6 h-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0A0A0A] hover:border-amber-400 dark:hover:border-[#FFCE2A] transition-all group shadow-sm hover:shadow-md">
-      <div className="text-3xl mb-4 grayscale opacity-80 group-hover:opacity-100 group-hover:grayscale-0 transition-all">{icon}</div>
+      <div className="w-10 h-10 mb-4 grayscale opacity-80 group-hover:opacity-100 group-hover:grayscale-0 transition-all flex items-center justify-center">
+        {icon}
+      </div>
       <h4 className="text-lg font-bold text-zinc-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-[#FFCE2A] transition-colors">{title}</h4>
       <p className="text-xs font-mono text-zinc-500 mt-1 truncate" title={repoName}>{repoName}</p>
       
@@ -45,7 +52,9 @@ export default async function Home() {
   const webSdkDownloads = await getNpmDownloads('@adtogether/web-sdk');
   const rnSdkDownloads = await getNpmDownloads('@adtogether/react-native-sdk');
   const flutterDownloads = await getPubDownloads('adtogether_sdk');
+  
   const formatNum = (num: number | null) => num !== null ? new Intl.NumberFormat('en-US').format(num) : null;
+
   const exampleCode = `"use client";
 import { useState } from 'react';
 import { AdTogether } from '@adtogether/web-sdk';
@@ -94,7 +103,7 @@ export default function MyComponent() {
       <div className="flex flex-col lg:flex-row items-center gap-16 px-6">
         <div className="flex-1 space-y-8">
           <div className="inline-flex font-mono text-xs tracking-wider text-amber-700 dark:text-[#FFCE2A] uppercase border border-amber-300 dark:border-[#FFCE2A]/30 bg-amber-100 dark:bg-[#FFCE2A]/10 px-3 py-1 rounded">
-            v0.1.26 Now Available
+            v0.2.0 Now Available
           </div>
 
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-zinc-900 dark:text-white leading-[1.1] uppercase">
@@ -187,7 +196,7 @@ export default function MyComponent() {
             url="https://www.npmjs.com/package/@adtogether/web-sdk" 
             statLabel="Downloads/mo"
             statValue={formatNum(webSdkDownloads)}
-            icon="🌐" 
+            icon={<ReactLogo className="w-10 h-10" />} 
           />
           <SdkCard 
             title="React Native" 
@@ -195,7 +204,7 @@ export default function MyComponent() {
             url="https://www.npmjs.com/package/@adtogether/react-native-sdk" 
             statLabel="Downloads/mo"
             statValue={formatNum(rnSdkDownloads)}
-            icon="📱" 
+            icon={<ReactLogo className="w-10 h-10" />} 
           />
           <SdkCard 
             title="Flutter" 
@@ -203,7 +212,7 @@ export default function MyComponent() {
             url="https://pub.dev/packages/adtogether_sdk" 
             statLabel="Downloads/mo"
             statValue={formatNum(flutterDownloads)} 
-            icon="💙" 
+            icon={<FlutterLogo className="w-10 h-10" />} 
           />
           <SdkCard 
             title="Android" 
@@ -211,7 +220,7 @@ export default function MyComponent() {
             url="https://central.sonatype.com/namespace/com.relaxsoftwareapps.adtogether" 
             statLabel="Registry"
             statValue="Maven Central" 
-            icon="🤖" 
+            icon={<AndroidLogo className="w-10 h-10" />} 
           />
           <SdkCard 
             title="iOS & Swift" 
@@ -219,7 +228,7 @@ export default function MyComponent() {
             url="https://github.com/undecided2003/AdTogether" 
             statLabel="Registry"
             statValue="SPM / CocoaPods" 
-            icon="🍎" 
+            icon={<SwiftLogo className="w-10 h-10" />} 
           />
         </div>
       </div>

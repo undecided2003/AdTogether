@@ -47,20 +47,27 @@ export async function GET(request: Request) {
 
     let viewerUid: string | null = null;
     let publisherBlockedAds: string[] = [];
-    if (apiKey) {
-      const pSnap = await db.collection('users').where('apiKey', '==', apiKey).limit(1).get();
-      if (!pSnap.empty) {
-        viewerUid = pSnap.docs[0].id;
-        const pData = pSnap.docs[0].data();
+    
+    if (!apiKey) {
+      return NextResponse.json({ error: 'App ID (apiKey) is required' }, { status: 400, headers: corsHeaders });
+    }
+
+    const pSnap = await db.collection('users').where('apiKey', '==', apiKey).limit(1).get();
+    if (!pSnap.empty) {
+      viewerUid = pSnap.docs[0].id;
+      const pData = pSnap.docs[0].data();
+      publisherBlockedAds = pData?.blockedAdsByAppId?.[apiKey] || [];
+    } else {
+      const pSnapArr = await db.collection('users').where('apiKeys', 'array-contains', apiKey).limit(1).get();
+      if (!pSnapArr.empty) {
+        viewerUid = pSnapArr.docs[0].id;
+        const pData = pSnapArr.docs[0].data();
         publisherBlockedAds = pData?.blockedAdsByAppId?.[apiKey] || [];
-      } else {
-        const pSnapArr = await db.collection('users').where('apiKeys', 'array-contains', apiKey).limit(1).get();
-        if (!pSnapArr.empty) {
-          viewerUid = pSnapArr.docs[0].id;
-          const pData = pSnapArr.docs[0].data();
-          publisherBlockedAds = pData?.blockedAdsByAppId?.[apiKey] || [];
-        }
       }
+    }
+
+    if (!viewerUid) {
+      return NextResponse.json({ error: 'Invalid App ID' }, { status: 401, headers: corsHeaders });
     }
 
     const externalAds: any[] = [];

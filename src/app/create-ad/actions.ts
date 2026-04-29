@@ -180,8 +180,7 @@ export async function generateAdContent(clickUrl: string) {
       body: JSON.stringify({
         model: "deepseek-v4-flash",
         messages: truncatedMessages,
-        thinking: { type: "enabled" },
-        reasoning_effort: "low",
+        thinking: { type: "disabled" },
         stream: false,
         response_format: { type: "json_object" }
       }),
@@ -266,8 +265,7 @@ export async function screenAdContent(title: string, description: string, clickU
       body: JSON.stringify({
         model: "deepseek-v4-flash",
         messages: messages,
-        thinking: { type: "enabled" },
-        reasoning_effort: "low",
+        thinking: { type: "disabled" },
         stream: false,
         response_format: { type: "json_object" }
       }),

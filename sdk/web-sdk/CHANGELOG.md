@@ -1,3 +1,7 @@
+## 0.2.0
+* **Security**: Implemented strict validation for required parameters and API keys.
+* **Error Handling**: Improved error handling for invalid or missing App IDs across all platforms, ensuring graceful failures with descriptive logs.
+
 ## 0.1.25
 * **Docs**: Standardized SDK documentation across all platforms.
 
