@@ -9,7 +9,7 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://adtogether.relaxsoftwareapps.com'),
+  metadataBase: new URL('https://www.ad-together.org'),
   title: 'AdTogether | Show an ad, get an ad shown',
   description: 'AdTogether is a reciprocal ad exchange platform to increase conversions. Earn credits by showing ads and spend them to get your own app shown globally.',
   icons: {
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'AdTogether | Show an ad, get an ad shown',
     description: 'AdTogether is a fair 1-to-1 ad exchange platform to increase conversions and grow your audience. Earn credits by showing ads — spend them to grow your app globally.',
-    url: 'https://adtogether.relaxsoftwareapps.com',
+    url: 'https://www.ad-together.org',
     siteName: 'AdTogether',
     images: [{ url: '/adtogether_logo.png', width: 1200, height: 630, alt: 'AdTogether' }],
     type: 'website',

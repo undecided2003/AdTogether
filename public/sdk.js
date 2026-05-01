@@ -1,8 +1,8 @@
 (function () {
   // 1. Detect base URL dynamically based on where the script is hosted
-  // This allows it to work on any origin where the SDK is hosted, defaulting to adtogether.relaxsoftwareapps.com in prod.
+  // This allows it to work on any origin where the SDK is hosted, defaulting to www.ad-together.org in prod.
   const scriptElement = document.currentScript || document.querySelector('script[src*="sdk.js"]');
-  const baseUrl = scriptElement ? new URL(scriptElement.src).origin : 'https://adtogether.relaxsoftwareapps.com';
+  const baseUrl = scriptElement ? new URL(scriptElement.src).origin : 'https://www.ad-together.org';
 
   const init = async () => {
     // Find all uninitialized ad containers

@@ -7,7 +7,7 @@ exports.AdTogether = void 0;
 var _reactNative = require("react-native");
 class AdTogether {
   allowSelfAds = true;
-  baseUrl = 'https://adtogether.relaxsoftwareapps.com';
+  baseUrl = 'https://www.ad-together.org';
   constructor() {}
   static get shared() {
     if (!AdTogether.instance) {

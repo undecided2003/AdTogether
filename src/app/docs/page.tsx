@@ -161,7 +161,7 @@ export default function DocsPage() {
               
               <div className="flex flex-wrap gap-4 mb-8">
                 <a 
-                  href="https://adtogether.relaxsoftwareapps.com" 
+                  href="https://www.ad-together.org" 
                   className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-amber-500/25 hover:scale-[1.02] active:scale-[0.98]"
                 >
                   Create Account
@@ -458,7 +458,7 @@ export default function DocsPage() {
                     Fetch Ad
                   </p>
                   <CodeBlock language="bash" title="GET /api/ads/serve">
-{`curl -X GET "https://adtogether.relaxsoftwareapps.com/api/ads/serve?country=global"`}
+{`curl -X GET "https://www.ad-together.org/api/ads/serve?country=global"`}
                   </CodeBlock>
                 </div>
                 
@@ -467,7 +467,7 @@ export default function DocsPage() {
                     Track Impression
                   </p>
                   <CodeBlock language="bash" title="POST /api/ads/impression">
-{`curl -X POST "https://adtogether.relaxsoftwareapps.com/api/ads/impression" \\
+{`curl -X POST "https://www.ad-together.org/api/ads/impression" \\
   -H "Content-Type: application/json" \\
   -d '{"adId": "123456", "token": "HMAC_TOKEN_FROM_FETCH"}'`}
                   </CodeBlock>
@@ -567,7 +567,7 @@ export default function MyComponent() {
                 Alternative: Plain HTML (CDN)
               </p>
               <CodeBlock language="html" title="index.html">
-                {`<script src="https://adtogether.relaxsoftwareapps.com/sdk.js" defer></script>
+                {`<script src="https://www.ad-together.org/sdk.js" defer></script>
 <!-- Banner Ad -->
 <div id="adtogether-ad" data-ad-unit="YOUR_AD_UNIT_ID"></div>`}
               </CodeBlock>

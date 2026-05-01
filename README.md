@@ -11,7 +11,7 @@
 </p>
 
 > [!IMPORTANT]
-> **Developer Account Required**: Before integrating any SDKs, you must create a developer account at [https://adtogether.relaxsoftwareapps.com](https://adtogether.relaxsoftwareapps.com). Once registered, you can create your first campaign, generate an `appId`, and configure ad units. Integration will not work without a valid `appId`.
+> **Developer Account Required**: Before integrating any SDKs, you must create a developer account at [https://www.ad-together.org](https://www.ad-together.org). Once registered, you can create your first campaign, generate an `appId`, and configure ad units. Integration will not work without a valid `appId`.
 
 
 <p align="center">
@@ -31,7 +31,7 @@
 We provide a seamless, high-performance API and a suite of native SDKs across web, mobile, and cross-platform ecosystems, enabling you to integrate native advertising into any environment.
 
 <p align="center">
-  <img src="https://adtogether.relaxsoftwareapps.com/dashboard.png" width="800" alt="Developer Dashboard">
+  <img src="https://www.ad-together.org/dashboard.png" width="800" alt="Developer Dashboard">
 </p>
 
 ### 🖼️ Visual Examples
@@ -92,7 +92,7 @@ npm install
 npm run dev
 ```
 
-Visit [https://adtogether.relaxsoftwareapps.com](https://adtogether.relaxsoftwareapps.com) to view the AdTogether dashboard.
+Visit [https://www.ad-together.org](https://www.ad-together.org) to view the AdTogether dashboard.
 
 ---
 

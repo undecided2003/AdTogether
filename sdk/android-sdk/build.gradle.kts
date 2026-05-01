@@ -60,7 +60,7 @@ mavenPublishing {
     pom {
         name.set("AdTogether Android SDK")
         description.set("The official AdTogether Android SDK — reciprocal ad exchange to increase conversions and grow your audience.")
-        url.set("https://adtogether.relaxsoftwareapps.com")
+        url.set("https://www.ad-together.org")
         licenses {
             license {
                 name.set("MIT License")

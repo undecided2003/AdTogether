@@ -15,17 +15,17 @@
 This SDK allows React Native developers to easily integrate AdTogether ads into their applications. By displaying ads from other community members, you earn **Ad Credits** that allow your own app's ads to be shown across the AdTogether network.
 
 > [!IMPORTANT]
-> **Developer Account Required**: Before integrating the SDK, you must create a developer account at [https://adtogether.relaxsoftwareapps.com](https://adtogether.relaxsoftwareapps.com) to generate your `appId` and configure your ad units. Integration will not work without a valid `appId`.
+> **Developer Account Required**: Before integrating the SDK, you must create a developer account at [https://www.ad-together.org](https://www.ad-together.org) to generate your `appId` and configure your ad units. Integration will not work without a valid `appId`.
 
 <p align="center">
-  <img src="https://adtogether.relaxsoftwareapps.com/dashboard.png" width="800" alt="Developer Dashboard">
+  <img src="https://www.ad-together.org/dashboard.png" width="800" alt="Developer Dashboard">
 </p>
 
 ### 🖼️ Visualizing the Experience
 
 | **Native Banner Ad** | **Interstitial Full-Screen** |
 |:---:|:---:|
-| ![Banner Example](https://adtogether.relaxsoftwareapps.com/ads/preview_standard.png) | ![Interstitial Example](https://adtogether.relaxsoftwareapps.com/ads/preview_premium.png) |
+| ![Banner Example](https://www.ad-together.org/ads/preview_standard.png) | ![Interstitial Example](https://www.ad-together.org/ads/preview_premium.png) |
 | *Adaptive React Native Banner Component* | *Full-Screen Interstitial Experience* |
 
 ## Features
@@ -48,7 +48,7 @@ yarn add @adtogether/react-native-sdk
 
 ### 2. Initialize
 
-Call `AdTogether.initialize()` before rendering any ad components. You can obtain your App ID from the [AdTogether Dashboard](https://adtogether.relaxsoftwareapps.com/dashboard).
+Call `AdTogether.initialize()` before rendering any ad components. You can obtain your App ID from the [AdTogether Dashboard](https://www.ad-together.org/dashboard).
 
 ```typescript
 import { AdTogether } from '@adtogether/react-native-sdk';
@@ -145,14 +145,14 @@ function MyApp() {
 2. **Spend credits** — Your ad credits are automatically spent to show *your* campaigns inside other apps on the network, helping you increase conversions.
 3. **Fair weighting** — Different ad formats and geographies have different credit weights, ensuring a level playing field for apps of all sizes.
 
-Create and manage your campaigns from the [AdTogether Dashboard](https://adtogether.relaxsoftwareapps.com/dashboard).
+Create and manage your campaigns from the [AdTogether Dashboard](https://www.ad-together.org/dashboard).
 
 ## Additional Information
 
-- 📖 **Documentation**: [adtogether.relaxsoftwareapps.com/docs](https://adtogether.relaxsoftwareapps.com/docs)
+- 📖 **Documentation**: [www.ad-together.org/docs](https://www.ad-together.org/docs)
 - 🐛 **Issues**: [GitHub Issues](https://github.com/undecided2003/AdTogether/issues)
 - 💬 **Support**: Join our [Discord community](https://discord.gg/maA8g4ADpk) for real-time help.
-- 🌐 **Dashboard**: [adtogether.relaxsoftwareapps.com/dashboard](https://adtogether.relaxsoftwareapps.com/dashboard)
+- 🌐 **Dashboard**: [www.ad-together.org/dashboard](https://www.ad-together.org/dashboard)
 
 ## License
 

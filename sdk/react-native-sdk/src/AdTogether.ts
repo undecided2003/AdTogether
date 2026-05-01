@@ -6,7 +6,7 @@ export class AdTogether {
   private appId?: string;
   private bundleId?: string;
   private allowSelfAds: boolean = true;
-  public baseUrl: string = 'https://adtogether.relaxsoftwareapps.com';
+  public baseUrl: string = 'https://www.ad-together.org';
 
   private constructor() {}
 

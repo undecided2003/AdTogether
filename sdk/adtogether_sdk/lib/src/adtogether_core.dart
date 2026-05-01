@@ -9,7 +9,7 @@ import 'models/ad_model.dart';
 /// Use this class to initialize the SDK and fetch ads.
 class AdTogether {
   static String? _appId;
-  static String _baseUrl = 'https://adtogether.relaxsoftwareapps.com';
+  static String _baseUrl = 'https://www.ad-together.org';
   static String? _bundleId;
   static String? _appName;
   static String? _appVersion;

@@ -7,7 +7,7 @@ public final class AdTogether {
     static let shared = AdTogether()
     
     private(set) var appId: String?
-    private(set) var baseUrl: String = "https://adtogether.relaxsoftwareapps.com"
+    private(set) var baseUrl: String = "https://www.ad-together.org"
     private(set) var lastAdId: String?
     private(set) var allowSelfAds: Bool = true
     private(set) var bundleId: String?

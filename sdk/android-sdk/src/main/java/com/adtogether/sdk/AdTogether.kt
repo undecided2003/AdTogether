@@ -13,7 +13,7 @@ object AdTogether {
     var appId: String? = null
         private set
         
-    var baseUrl: String = "https://adtogether.relaxsoftwareapps.com"
+    var baseUrl: String = "https://www.ad-together.org"
         private set
 
     var lastAdId: String? = null

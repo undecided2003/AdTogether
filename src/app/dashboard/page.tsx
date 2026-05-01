@@ -1123,7 +1123,7 @@ if (showAd) {
                 language="html"
                 title="CDN / Script Tag"
                 code={`<!-- Add to <head> -->
-<script src="https://adtogether.relaxsoftwareapps.com/sdk.js" defer></script>
+<script src="https://www.ad-together.org/sdk.js" defer></script>
 
 <!-- Place where you want the ad -->
 <div 
@@ -1138,12 +1138,12 @@ if (showAd) {
                 <CodeBlock
                   language="bash"
                   title="1. Fetch Ad (GET)"
-                  code={`curl -X GET "https://adtogether.relaxsoftwareapps.com/api/ads/serve?country=global&adUnitId=YOUR_AD_UNIT_ID&adType=banner&apiKey=${userData?.apiKeys?.[0] || userData?.apiKey || 'YOUR_APP_ID'}&bundleId=com.example.myapp"`}
+                  code={`curl -X GET "https://www.ad-together.org/api/ads/serve?country=global&adUnitId=YOUR_AD_UNIT_ID&adType=banner&apiKey=${userData?.apiKeys?.[0] || userData?.apiKey || 'YOUR_APP_ID'}&bundleId=com.example.myapp"`}
                 />
                 <CodeBlock
                   language="bash"
                   title="2. Track Impression (POST)"
-                  code={`curl -X POST "https://adtogether.relaxsoftwareapps.com/api/ads/impression" \\
+                  code={`curl -X POST "https://www.ad-together.org/api/ads/impression" \\
   -H "Content-Type: application/json" \\
   -d '{"adId": "AD_ID", "token": "HMAC_TOKEN", "apiKey": "${userData?.apiKeys?.[0] || userData?.apiKey || 'YOUR_APP_ID'}", "bundleId": "com.example.myapp", "platform": "android"}'`}
                 />

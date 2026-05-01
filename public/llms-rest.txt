@@ -4,12 +4,12 @@
 
 > **Integration Guide:** For custom environments without a dedicated SDK, you can directly interface with the AdTogether Ad Serving API.
 
-**Base URL:** `https://adtogether.relaxsoftwareapps.com`
+**Base URL:** `https://www.ad-together.org`
 
 ### Fetch Ad
 
 ```bash
-curl -X GET "https://adtogether.relaxsoftwareapps.com/api/ads/serve?country=global&adType=banner&apiKey=YOUR_APP_ID&bundleId=com.example.myapp&allowSelfAds=true&adUnitId=home_banner"
+curl -X GET "https://www.ad-together.org/api/ads/serve?country=global&adType=banner&apiKey=YOUR_APP_ID&bundleId=com.example.myapp&allowSelfAds=true&adUnitId=home_banner"
 ```
 
 **Query parameters:**
@@ -38,7 +38,7 @@ Returns a JSON object:
 ### Track Impression
 
 ```bash
-curl -X POST "https://adtogether.relaxsoftwareapps.com/api/ads/impression" \
+curl -X POST "https://www.ad-together.org/api/ads/impression" \
   -H "Content-Type: application/json" \
   -d '{
     "adId": "ad_abc123",
@@ -55,7 +55,7 @@ curl -X POST "https://adtogether.relaxsoftwareapps.com/api/ads/impression" \
 ### Track Click
 
 ```bash
-curl -X POST "https://adtogether.relaxsoftwareapps.com/api/ads/click" \
+curl -X POST "https://www.ad-together.org/api/ads/click" \
   -H "Content-Type: application/json" \
   -d '{
     "adId": "ad_abc123",
