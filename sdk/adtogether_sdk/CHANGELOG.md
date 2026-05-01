@@ -1,3 +1,6 @@
+## 0.2.1
+* **Domain**: Updated base API domain to `www.ad-together.org`.
+
 ## 0.2.0
 * **Security**: Implemented strict validation for required parameters and API keys.
 * **Error Handling**: Improved error handling for invalid or missing App IDs across all platforms, ensuring graceful failures with descriptive logs.
