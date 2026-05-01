@@ -28,7 +28,7 @@ module.exports = __toCommonJS(index_exports);
 var AdTogether = class _AdTogether {
   constructor() {
     this.allowSelfAds = true;
-    this.baseUrl = "https://adtogether.relaxsoftwareapps.com";
+    this.baseUrl = "https://www.ad-together.org";
   }
   static get shared() {
     if (!_AdTogether.instance) {
@@ -61,7 +61,7 @@ var AdTogether = class _AdTogether {
     }
     return true;
   }
-  static async fetchAd(adUnitId, adType) {
+  static async fetchAd(adUnitId = "default", adType) {
     if (!_AdTogether.shared.assertInitialized()) {
       throw new Error("AdTogether not initialized");
     }
@@ -86,6 +86,9 @@ var AdTogether = class _AdTogether {
         const ad = await response.json();
         sdk.lastAdId = ad.id;
         return ad;
+      } else if (response.status === 401 || response.status === 403) {
+        console.error("AdTogether Error: Invalid App ID. Please check your dashboard.");
+        throw new Error(`AdTogether Error: Invalid App ID. Status: ${response.status}`);
       }
       throw new Error(`Failed to fetch ad. Status: ${response.status}`);
     } catch (err) {

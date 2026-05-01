@@ -1,12 +1,12 @@
 import {
   AdTogether
-} from "../chunk-IDISPRGA.mjs";
+} from "../chunk-EGEGGY7K.mjs";
 
 // src/react/AdTogetherBanner.tsx
 import { useEffect, useRef, useState } from "react";
 import { jsx, jsxs } from "react/jsx-runtime";
 var AdTogetherBanner = ({
-  adUnitId,
+  adUnitId = "default",
   className = "",
   style = {},
   onAdLoaded,
@@ -193,7 +193,7 @@ import { useEffect as useEffect2, useRef as useRef2, useState as useState2, useC
 import { createPortal } from "react-dom";
 import { jsx as jsx2, jsxs as jsxs2 } from "react/jsx-runtime";
 var AdTogetherInterstitial = ({
-  adUnitId,
+  adUnitId = "default",
   isOpen,
   onClose,
   onAdLoaded,

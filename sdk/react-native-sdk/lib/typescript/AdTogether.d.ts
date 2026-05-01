@@ -18,9 +18,14 @@ export declare class AdTogether {
     static initialize(options: AdTogetherOptions): void;
     assertInitialized(): boolean;
     private lastAdId?;
-    static fetchAd(adUnitId: string, adType?: AdType): Promise<AdModel>;
+    static fetchAd(adUnitId?: string, adType?: AdType): Promise<AdModel>;
     static trackImpression(adId: string, token?: string): void;
     static trackClick(adId: string, token?: string): void;
+    /**
+     * Detect country code from the device locale.
+     * Tries expo-localization first, then NativeModules, then Intl API.
+     */
+    private static detectCountry;
     private static trackEvent;
 }
 //# sourceMappingURL=AdTogether.d.ts.map

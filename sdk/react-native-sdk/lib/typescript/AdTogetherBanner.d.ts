@@ -1,6 +1,6 @@
 import React from 'react';
 export interface AdTogetherBannerProps {
-    adUnitId: string;
+    adUnitId?: string;
     onAdLoaded?: () => void;
     onAdFailedToLoad?: (error: Error) => void;
     /** Whether to show a close button on the banner */

@@ -32,7 +32,7 @@ var import_react = require("react");
 var AdTogether = class _AdTogether {
   constructor() {
     this.allowSelfAds = true;
-    this.baseUrl = "https://adtogether.relaxsoftwareapps.com";
+    this.baseUrl = "https://www.ad-together.org";
   }
   static get shared() {
     if (!_AdTogether.instance) {
@@ -65,7 +65,7 @@ var AdTogether = class _AdTogether {
     }
     return true;
   }
-  static async fetchAd(adUnitId, adType) {
+  static async fetchAd(adUnitId = "default", adType) {
     if (!_AdTogether.shared.assertInitialized()) {
       throw new Error("AdTogether not initialized");
     }
@@ -90,6 +90,9 @@ var AdTogether = class _AdTogether {
         const ad = await response.json();
         sdk.lastAdId = ad.id;
         return ad;
+      } else if (response.status === 401 || response.status === 403) {
+        console.error("AdTogether Error: Invalid App ID. Please check your dashboard.");
+        throw new Error(`AdTogether Error: Invalid App ID. Status: ${response.status}`);
       }
       throw new Error(`Failed to fetch ad. Status: ${response.status}`);
     } catch (err) {
@@ -154,7 +157,7 @@ var AdTogether = class _AdTogether {
 // src/react/AdTogetherBanner.tsx
 var import_jsx_runtime = require("react/jsx-runtime");
 var AdTogetherBanner = ({
-  adUnitId,
+  adUnitId = "default",
   className = "",
   style = {},
   onAdLoaded,
@@ -341,7 +344,7 @@ var import_react2 = require("react");
 var import_react_dom = require("react-dom");
 var import_jsx_runtime2 = require("react/jsx-runtime");
 var AdTogetherInterstitial = ({
-  adUnitId,
+  adUnitId = "default",
   isOpen,
   onClose,
   onAdLoaded,

@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface AdTogetherBannerProps {
-    adUnitId: string;
+    adUnitId?: string;
     className?: string;
     style?: React.CSSProperties;
     onAdLoaded?: () => void;
@@ -20,7 +20,7 @@ interface AdTogetherBannerProps {
 declare const AdTogetherBanner: React.FC<AdTogetherBannerProps>;
 
 interface AdTogetherInterstitialProps {
-    adUnitId: string;
+    adUnitId?: string;
     /** When true, the interstitial is shown (fetches and displays full-screen ad) */
     isOpen: boolean;
     /** Called when the user closes the interstitial */

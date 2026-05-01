@@ -28,7 +28,7 @@ declare class AdTogether {
     static initialize(options: AdTogetherOptions): void;
     assertInitialized(): boolean;
     private lastAdId?;
-    static fetchAd(adUnitId: string, adType?: AdType): Promise<AdModel>;
+    static fetchAd(adUnitId?: string, adType?: AdType): Promise<AdModel>;
     static trackImpression(adId: string, token?: string): void;
     static trackClick(adId: string, token?: string): void;
     /**

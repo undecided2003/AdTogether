@@ -88,7 +88,7 @@ class AdTogether {
     }
     return true;
   }
-  static async fetchAd(adUnitId, adType) {
+  static async fetchAd(adUnitId = 'default', adType) {
     if (!AdTogether.shared.assertInitialized()) {
       throw new Error('AdTogether not initialized');
     }
@@ -112,6 +112,9 @@ class AdTogether {
         const ad = await response.json();
         sdk.lastAdId = ad.id;
         return ad;
+      } else if (response.status === 401 || response.status === 403) {
+        console.error('AdTogether Error: Invalid App ID. Please check your dashboard.');
+        throw new Error(`AdTogether Error: Invalid App ID. Status: ${response.status}`);
       }
       throw new Error(`Failed to fetch ad. Status: ${response.status}`);
     } catch (err) {
@@ -123,6 +126,66 @@ class AdTogether {
   }
   static trackClick(adId, token) {
     this.trackEvent('/api/ads/click', adId, token);
+  }
+
+  /**
+   * Detect country code from the device locale.
+   * Tries expo-localization first, then NativeModules, then Intl API.
+   */
+  static detectCountry() {
+    // 1. Try expo-localization
+    try {
+      const ExpoLocalization = require('expo-localization');
+      if (ExpoLocalization?.region) {
+        return ExpoLocalization.region; // e.g. "US"
+      }
+      // expo-localization v3+ uses getLocales()
+      if (ExpoLocalization?.getLocales) {
+        const locales = ExpoLocalization.getLocales();
+        if (locales?.[0]?.regionCode) {
+          return locales[0].regionCode;
+        }
+      }
+    } catch (_) {}
+
+    // 2. Try RN NativeModules (I18nManager or SettingsManager)
+    try {
+      if (_reactNative.Platform.OS === 'ios') {
+        const settings = _reactNative.NativeModules.SettingsManager?.settings;
+        const locale = settings?.AppleLocale || settings?.AppleLanguages?.[0];
+        if (locale) {
+          const parts = locale.replace('_', '-').split('-');
+          if (parts.length >= 2) {
+            const region = parts[parts.length - 1].toUpperCase();
+            if (region.length === 2) return region;
+          }
+        }
+      } else if (_reactNative.Platform.OS === 'android') {
+        const locale = _reactNative.NativeModules.I18nManager?.localeIdentifier;
+        if (locale) {
+          const parts = locale.replace('_', '-').split('-');
+          if (parts.length >= 2) {
+            const region = parts[parts.length - 1].toUpperCase();
+            if (region.length === 2) return region;
+          }
+        }
+      }
+    } catch (_) {}
+
+    // 3. Fallback: Intl API (available in Hermes & JSC)
+    try {
+      if (typeof Intl !== 'undefined' && Intl.DateTimeFormat) {
+        const resolved = Intl.DateTimeFormat().resolvedOptions();
+        if (resolved.locale) {
+          const parts = resolved.locale.split('-');
+          if (parts.length >= 2) {
+            const region = parts[parts.length - 1].toUpperCase();
+            if (region.length === 2) return region;
+          }
+        }
+      }
+    } catch (_) {}
+    return null;
   }
   static trackEvent(endpoint, adId, token) {
     if (!AdTogether.shared.assertInitialized()) return;
@@ -140,7 +203,8 @@ class AdTogether {
         } : {}),
         // Send platform and environment to match Flutter SDK
         platform: _reactNative.Platform.OS,
-        environment: __DEV__ ? 'development' : 'production'
+        environment: __DEV__ ? 'development' : 'production',
+        country: AdTogether.detectCountry()
       })
     }).catch(console.error);
   }

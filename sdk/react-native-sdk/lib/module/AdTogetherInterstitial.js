@@ -5,7 +5,7 @@ import { View, Text, Image, TouchableOpacity, StyleSheet, Modal, SafeAreaView, u
 import { AdTogether } from './AdTogether';
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 export const AdTogetherInterstitial = ({
-  adUnitId,
+  adUnitId = 'default',
   isOpen,
   onClose,
   closeDelay = 3,

@@ -1,6 +1,6 @@
 import React from 'react';
 export interface AdTogetherInterstitialProps {
-    adUnitId: string;
+    adUnitId?: string;
     isOpen: boolean;
     onClose: () => void;
     closeDelay?: number;
