@@ -67,54 +67,128 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Import GPG key and prepare signing
+      - name: Import GPG key for keyserver upload
         run: |
-          # Import the ASCII-armored private key into GPG (handles newlines correctly)
           echo "${{ secrets.SIGNING_KEY }}" | gpg --batch --import
+          echo "GPG key imported. Key info:"
+          gpg --list-keys --keyid-format long ${{ secrets.SIGNING_KEY_ID }}
+
+      - name: Prepare in-memory signing key
+        run: |
+          # Extract the base64 key body (strip ASCII armor headers/footers)
+          # This is what Gradle's in-memory signing expects
+          SIGNING_KEY_BODY=$(echo "${{ secrets.SIGNING_KEY }}" | \
+            grep -v '^-----' | \
+            grep -v '^Version:' | \
+            grep -v '^Comment:' | \
+            grep -v '^Hash:' | \
+            grep -v '^\s*$' | \
+            tr -d '\n')
           
-          # Export to a binary keyring file (avoids all newline/encoding issues)
-          # --batch --pinentry-mode loopback is required in headless CI (no TTY)
-          gpg --batch --pinentry-mode loopback \
-            --passphrase "${{ secrets.SIGNING_PASSWORD }}" \
-            --export-secret-keys ${{ secrets.SIGNING_KEY_ID }} > /tmp/secring.gpg
-          
-          # Verify the keyring was created and is non-empty
-          KEYRING_SIZE=$(wc -c < /tmp/secring.gpg)
-          echo "Keyring size: $KEYRING_SIZE bytes"
-          if [ "$KEYRING_SIZE" -lt 100 ]; then
-            echo "❌ ERROR: Keyring file is too small or empty!"
+          # Verify we extracted something
+          KEY_LENGTH=${#SIGNING_KEY_BODY}
+          echo "Extracted in-memory key body: $KEY_LENGTH characters"
+          if [ "$KEY_LENGTH" -lt 100 ]; then
+            echo "❌ ERROR: Extracted key body is too short!"
             exit 1
           fi
           
-          # Write signing config to gradle.properties (file-based signing)
-          echo "" >> sdk/android-sdk/gradle.properties
-          echo "signing.keyId=${{ secrets.SIGNING_KEY_ID }}" >> sdk/android-sdk/gradle.properties
-          echo "signing.password=${{ secrets.SIGNING_PASSWORD }}" >> sdk/android-sdk/gradle.properties
-          echo "signing.secretKeyRingFile=/tmp/secring.gpg" >> sdk/android-sdk/gradle.properties
+          # Store for later steps (masked in logs)
+          echo "::add-mask::$SIGNING_KEY_BODY"
+          echo "SIGNING_KEY_BODY=$SIGNING_KEY_BODY" >> $GITHUB_ENV
 
       - name: Publish GPG key to keyservers
         run: |
-          gpg --keyserver hkps://keyserver.ubuntu.com --send-keys ${{ secrets.SIGNING_KEY_ID }} || true
-          gpg --keyserver hkps://keys.openpgp.org --send-keys ${{ secrets.SIGNING_KEY_ID }} || true
-          gpg --keyserver hkps://pgp.mit.edu --send-keys ${{ secrets.SIGNING_KEY_ID }} || true
-          echo "Waiting 30 seconds for keyserver propagation..."
-          sleep 30
+          KEY_ID="${{ secrets.SIGNING_KEY_ID }}"
+          echo "Publishing key $KEY_ID to keyservers..."
+          
+          for SERVER in "hkps://keyserver.ubuntu.com" "hkps://keys.openpgp.org" "hkps://pgp.mit.edu"; do
+            echo "→ Uploading to $SERVER"
+            for ATTEMPT in 1 2 3; do
+              if gpg --keyserver "$SERVER" --send-keys "$KEY_ID" 2>&1; then
+                echo "  ✅ Uploaded to $SERVER (attempt $ATTEMPT)"
+                break
+              else
+                echo "  ⚠️ Attempt $ATTEMPT failed for $SERVER"
+                sleep 5
+              fi
+            done
+          done
 
-      - name: Verify signing locally before publishing
+      - name: Wait for keyserver propagation
         run: |
-          # Quick sanity check: sign a test file and verify it
-          echo "test" > /tmp/test.txt
-          gpg --batch --pinentry-mode loopback --passphrase "${{ secrets.SIGNING_PASSWORD }}" \
-            --local-user ${{ secrets.SIGNING_KEY_ID }} --detach-sign /tmp/test.txt
-          gpg --verify /tmp/test.txt.sig /tmp/test.txt
-          echo "✅ GPG signing verification passed"
+          echo "Waiting 120 seconds for keyserver propagation..."
+          sleep 120
+
+      - name: Verify key is retrievable from keyservers
+        run: |
+          KEY_ID="${{ secrets.SIGNING_KEY_ID }}"
+          KEY_FOUND=false
+          for SERVER in "hkps://keyserver.ubuntu.com" "hkps://keys.openpgp.org" "hkps://pgp.mit.edu"; do
+            echo "→ Checking $SERVER for key $KEY_ID..."
+            if gpg --batch --keyserver "$SERVER" --recv-keys "$KEY_ID" 2>&1; then
+              echo "  ✅ Key successfully retrieved from $SERVER"
+              KEY_FOUND=true
+              break
+            else
+              echo "  ❌ Key NOT found on $SERVER"
+            fi
+          done
+          if [ "$KEY_FOUND" = false ]; then
+            echo "❌ FATAL: Key $KEY_ID is not retrievable from ANY keyserver!"
+            echo "Maven Central will reject signatures. Aborting."
+            exit 1
+          fi
+
+      - name: Build, sign, and stage artifacts locally
+        run: |
+          gradle publishToStagingLocal --no-configuration-cache \
+            --no-daemon --stacktrace
+        working-directory: sdk/android-sdk
+        env:
+          ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ env.SIGNING_KEY_BODY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+
+      - name: Verify .asc signatures against artifacts
+        run: |
+          echo "=== Verifying all .asc signatures in staging repo ==="
+          STAGING_DIR="sdk/android-sdk/build/stagingLocalRepository"
+          FAIL=false
+          
+          find "$STAGING_DIR" -name "*.asc" | while read ASC_FILE; do
+            ARTIFACT_FILE="${ASC_FILE%.asc}"
+            if [ -f "$ARTIFACT_FILE" ]; then
+              echo "→ Verifying: $(basename "$ARTIFACT_FILE")"
+              if gpg --verify "$ASC_FILE" "$ARTIFACT_FILE" 2>&1; then
+                echo "  ✅ Signature valid"
+              else
+                echo "  ❌ SIGNATURE INVALID: $ASC_FILE"
+                echo "FAIL=true" >> $GITHUB_ENV
+              fi
+            else
+              echo "  ⚠️ No matching artifact for $ASC_FILE"
+            fi
+          done
+          
+          if [ "${FAIL}" = "true" ]; then
+            echo "❌ FATAL: One or more signatures failed verification!"
+            exit 1
+          fi
+          
+          echo ""
+          echo "=== Listing all staged artifacts ==="
+          find "$STAGING_DIR" -type f | sort
 
       - name: Publish to Maven Central
         run: |
           gradle publishToMavenCentral --no-configuration-cache \
-            --stacktrace --info
+            --no-daemon --stacktrace --info
         working-directory: sdk/android-sdk
         env:
+          ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ env.SIGNING_KEY_BODY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
 

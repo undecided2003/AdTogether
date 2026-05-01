@@ -193,7 +193,14 @@ export async function POST(request: Request) {
               outOfCredits = true;
             } else {
               // Deduct safely
-              transaction.update(userRef, { credits: currentCredits - creditCost });
+              const dateKey = new Date().toISOString().split('T')[0];
+              const dailySpend = userData.dailySpend || {};
+              dailySpend[dateKey] = (dailySpend[dateKey] || 0) + creditCost;
+
+              transaction.update(userRef, { 
+                credits: currentCredits - creditCost,
+                dailySpend 
+              });
               if (currentCredits - creditCost <= -5) {
                 transaction.update(adRef, { active: false });
               }
@@ -234,8 +241,15 @@ export async function POST(request: Request) {
                lastUpdated: new Date().toISOString(),
                recentViews: currentViews,
              };
+             const dateKey = new Date().toISOString().split('T')[0];
+             const dailyEarnings = pData.dailyEarnings || {};
+             dailyEarnings[dateKey] = (dailyEarnings[dateKey] || 0) + creditCost;
              
-             transaction.update(publisherRef, { credits: pCredits + creditCost, earningsLog });
+             transaction.update(publisherRef, { 
+               credits: pCredits + creditCost, 
+               earningsLog,
+               dailyEarnings
+             });
           }
         }
       } else {

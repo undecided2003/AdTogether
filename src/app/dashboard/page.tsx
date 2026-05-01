@@ -5,7 +5,7 @@ import { auth, db } from "@/lib/firebase";
 import { doc, getDoc, collection, query, where, getDocs, updateDoc, deleteDoc, arrayUnion, arrayRemove, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { Coins, Plus, Activity, LogOut, Globe, Image as ImageIcon, MousePointerClick, MapPin, Check, Key, Copy, Eye, EyeOff, X, ChevronDown, ChevronUp, Monitor, Pencil, Smartphone, Shield, ShieldAlert, ArrowDownUp, TrendingUp } from "lucide-react";
+import { Coins, Plus, Activity, LogOut, Globe, Image as ImageIcon, MousePointerClick, MapPin, Check, Key, Copy, Eye, EyeOff, X, ChevronDown, ChevronUp, Monitor, Pencil, Smartphone, Shield, ShieldAlert, ArrowDownUp, TrendingUp, TrendingDown } from "lucide-react";
 import Link from "next/link";
 import { CodeBlock } from "@/components/CodeBlock";
 import { COUNTRIES } from "@/lib/countries";
@@ -270,6 +270,30 @@ export default function DashboardPage() {
   const totalAdShown = userData?.earningsLog ? Object.values(userData.earningsLog as Record<string, any>).reduce((sum: number, e: any) => sum + (e.impressions || 0), 0) : 0;
   const totalCreditsEarned = userData?.earningsLog ? Object.values(userData.earningsLog as Record<string, any>).reduce((sum: number, e: any) => sum + (e.creditsEarned || 0), 0) : 0;
   const totalApps = (userData?.apiKeys || (userData?.apiKey ? [userData.apiKey] : [])).length;
+  const totalSpent = Math.max(0, 75 + totalCreditsEarned - (userData?.credits || 0));
+
+  const getPast30DaysSum = (dailyLog: Record<string, number> | undefined) => {
+    if (!dailyLog) return 0;
+    let sum = 0;
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    
+    for (const [dateStr, amount] of Object.entries(dailyLog)) {
+      const entryDate = new Date(dateStr);
+      if (isNaN(entryDate.getTime())) continue;
+      
+      const diffTime = now.getTime() - entryDate.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays >= 0 && diffDays <= 30) {
+        sum += amount;
+      }
+    }
+    return sum;
+  };
+
+  const past30DaysEarned = getPast30DaysSum(userData?.dailyEarnings);
+  const past30DaysSpent = getPast30DaysSum(userData?.dailySpend);
 
   if (loading) {
     return (
@@ -379,7 +403,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Publisher Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         {/* Total Ads Shown (Publisher) */}
         <div className="bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
           <div className="flex items-center gap-4 mb-4">
@@ -400,8 +424,22 @@ export default function DashboardPage() {
             </div>
             <h3 className="text-md font-medium text-zinc-700 dark:text-zinc-300">Total Earned</h3>
           </div>
-          <p className="text-4xl font-bold text-green-600 dark:text-green-400 mb-2">+{totalCreditsEarned.toLocaleString()}</p>
+          <p className="text-4xl font-bold text-green-600 dark:text-green-400 mb-1">+{totalCreditsEarned.toLocaleString()}</p>
+          <p className="text-sm font-medium text-green-600/80 dark:text-green-400/80 mb-2">Past 30 days: +{past30DaysEarned.toLocaleString()}</p>
           <p className="text-xs text-zinc-600 dark:text-zinc-400">Credits earned from publishing</p>
+        </div>
+
+        {/* Total Credits Spent */}
+        <div className="bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-3 bg-amber-50 dark:bg-amber-500/10 rounded-xl border border-amber-200 dark:border-amber-500/20 text-amber-600 dark:text-amber-400">
+              <TrendingDown className="w-5 h-5" />
+            </div>
+            <h3 className="text-md font-medium text-zinc-700 dark:text-zinc-300">Total Spent</h3>
+          </div>
+          <p className="text-4xl font-bold text-amber-600 dark:text-amber-400 mb-1">-{totalSpent.toLocaleString()}</p>
+          <p className="text-sm font-medium text-amber-600/80 dark:text-amber-400/80 mb-2">Past 30 days: -{past30DaysSpent.toLocaleString()}</p>
+          <p className="text-xs text-zinc-600 dark:text-zinc-400">Credits used for your campaigns</p>
         </div>
 
         {/* Total Apps */}
