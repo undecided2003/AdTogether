@@ -1,3 +1,6 @@
+## 0.2.4
+* **Sync**: Version parity across all AdTogether SDKs.
+
 ## 0.2.3
 * **Sync**: Version parity across all AdTogether SDKs.
 

@@ -102,9 +102,9 @@ Detailed instructions are provided in each SDK's local `README.md`.
 
 - **Web integration:** `npm install @adtogether/web-sdk`
 - **React Native integration:** `npm install @adtogether/react-native-sdk`
-- **Android integration:** Implement `com.relaxsoftwareapps.adtogether:sdk:0.2.3` inside your `build.gradle.kts`.
+- **Android integration:** Implement `com.relaxsoftwareapps.adtogether:sdk:0.2.4` inside your `build.gradle.kts`.
 - **iOS integration:** Add the Swift Package through Xcode directly from this repository link.
-- **Flutter integration:** Run `flutter pub add adtogether_sdk:^0.2.3`.
+- **Flutter integration:** Run `flutter pub add adtogether_sdk:^0.2.4`.
 
 ---
 
