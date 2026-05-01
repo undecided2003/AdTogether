@@ -1,4 +1,4 @@
-## 0.2.5
+## 0.2.6
 * **Fix**: Enhanced GPG key distribution with multiple keyservers and propagation delay.
 * **Sync**: Version parity across all AdTogether SDKs.
 
