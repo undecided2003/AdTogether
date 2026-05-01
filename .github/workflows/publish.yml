@@ -73,10 +73,18 @@ jobs:
           echo "${{ secrets.SIGNING_KEY }}" | gpg --batch --import
           
           # Export to a binary keyring file (avoids all newline/encoding issues)
-          gpg --export-secret-keys ${{ secrets.SIGNING_KEY_ID }} > /tmp/secring.gpg
+          # --batch --pinentry-mode loopback is required in headless CI (no TTY)
+          gpg --batch --pinentry-mode loopback \
+            --passphrase "${{ secrets.SIGNING_PASSWORD }}" \
+            --export-secret-keys ${{ secrets.SIGNING_KEY_ID }} > /tmp/secring.gpg
           
           # Verify the keyring was created and is non-empty
-          echo "Keyring size: $(wc -c < /tmp/secring.gpg) bytes"
+          KEYRING_SIZE=$(wc -c < /tmp/secring.gpg)
+          echo "Keyring size: $KEYRING_SIZE bytes"
+          if [ "$KEYRING_SIZE" -lt 100 ]; then
+            echo "❌ ERROR: Keyring file is too small or empty!"
+            exit 1
+          fi
           
           # Write signing config to gradle.properties (file-based signing)
           echo "" >> sdk/android-sdk/gradle.properties
