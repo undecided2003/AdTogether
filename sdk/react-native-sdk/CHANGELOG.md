@@ -1,4 +1,4 @@
-## 0.2.1
+## 0.2.2
 * **Domain**: Updated base API domain to `www.ad-together.org`.
 
 ## 0.2.0
