@@ -25,7 +25,7 @@ This SDK allows React Native developers to easily integrate AdTogether ads into 
 
 | **Native Banner Ad** | **Interstitial Full-Screen** |
 |:---:|:---:|
-| ![Banner Example](https://www.ad-together.org/ads/preview_standard.png) | ![Interstitial Example](https://www.ad-together.org/ads/preview_premium.png) |
+| ![Banner Example](https://www.ad-together.org/previews/preview_standard.png) | ![Interstitial Example](https://www.ad-together.org/previews/preview_premium.png) |
 | *Adaptive React Native Banner Component* | *Full-Screen Interstitial Experience* |
 
 ## Features

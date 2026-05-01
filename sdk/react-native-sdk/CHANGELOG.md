@@ -1,3 +1,6 @@
+## 0.2.3
+* **Sync**: Version parity across all AdTogether SDKs.
+
 ## 0.2.2
 * **Domain**: Updated base API domain to `www.ad-together.org`.
 

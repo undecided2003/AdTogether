@@ -259,7 +259,7 @@ export default function DocsPage() {
                       <X className="w-2.5 h-2.5 text-white/90" />
                     </div>
                     <ZoomableImage 
-                      src="/ads/preview_standard.png" 
+                      src="/previews/preview_standard.png" 
                       alt="Banner Ad" 
                       className="w-full h-full object-contain"
                     />
@@ -292,7 +292,7 @@ export default function DocsPage() {
                     </div>
                     <div className="w-full h-full bg-black flex items-center justify-center">
                       <ZoomableImage 
-                        src="/ads/preview_premium.png" 
+                        src="/previews/preview_premium.png" 
                         alt="Interstitial Ad Example" 
                         className="w-full h-full object-contain"
                       />
