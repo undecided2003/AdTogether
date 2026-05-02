@@ -1,3 +1,7 @@
+## 0.3.2
+* **Docs**: Added official Model Context Protocol (MCP) server integration instructions to README.
+* **Sync**: Version parity (0.3.2) across all AdTogether SDKs.
+
 ## 0.2.6
 * **Sync**: Version parity across all AdTogether SDKs.
 
@@ -90,3 +94,4 @@
 ## 0.1.0
 
 * Initial release of the AdTogether Flutter SDK.
+

@@ -1,4 +1,12 @@
-## 0.3.0
+## 0.3.2
+* **Docs**: Added official Model Context Protocol (MCP) server integration instructions to README.
+* **Sync**: Version parity (0.3.2) across all AdTogether SDKs.
+
+## 0.3.1
+* **Docs**: Added official Model Context Protocol (MCP) server integration instructions to README.
+* **Sync**: Version parity (0.3.1) across all AdTogether SDKs.
+
+
 * **Fix**: Resolved PGP signing failure (`invalid armor`) by providing the full ASCII armored secret key directly to Gradle's in-memory signing property, avoiding corruption from manual stripping.
 
 ## 0.2.9
@@ -74,3 +82,4 @@
 ## 0.1.0
 
 * Initial release of the AdTogether Android SDK.
+
