@@ -102,7 +102,7 @@ Detailed instructions are provided in each SDK's local `README.md`.
 
 - **Web integration:** `npm install @adtogether/web-sdk`
 - **React Native integration:** `npm install @adtogether/react-native-sdk`
-- **Android integration:** Implement `com.relaxsoftwareapps.adtogether:sdk:0.2.8` inside your `build.gradle.kts`.
+- **Android integration:** Implement `com.relaxsoftwareapps.adtogether:sdk:0.2.9` inside your `build.gradle.kts`.
 - **iOS integration:** Add the Swift Package through Xcode directly from this repository link.
 - **Flutter integration:** Run `flutter pub add adtogether_sdk:^0.2.6`.
 
@@ -117,6 +117,33 @@ Whenever a new version tag (e.g., `v1.0.0`) is pushed to the `main` branch, the 
 2. **Android**: Assembles the AAR, generates JavaDocs, signs with GPG, and deploys to **Maven Central (Sonatype)**.
 3. **iOS**: Validates the `Package.swift` configuration for Swift Package Manager integrations.
 4. **Flutter**: Validates the codebase using `dart analyze` and builds the package structure for **pub.dev**.
+
+---
+
+## 🤖 AI Assistant Integration (MCP)
+
+AdTogether provides a **Model Context Protocol (MCP)** server that allows AI assistants (like Claude Desktop or Cursor) to securely interact with your AdTogether campaigns and account data. 
+
+To configure your AI assistant, add the following to your `mcp_config.json`, replacing `YOUR_APP_ID_HERE` with your actual AdTogether App ID from the dashboard:
+
+```json
+{
+  "mcpServers": {
+    "adtogether": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote@latest",
+        "https://www.ad-together.org/api/mcp",
+        "--header",
+        "Authorization: Bearer YOUR_APP_ID_HERE"
+      ]
+    }
+  }
+}
+```
+
+This will give your AI assistant access to the `get_account_info`, `get_campaigns`, and `get_ad_together_documentation` tools, strictly scoped to your own account via the App ID.
 
 ---
 

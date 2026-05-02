@@ -1,3 +1,6 @@
+## 0.2.9
+* **Fix**: Resolved Gradle task ambiguity errors (`publishToStagingLocal`, `publishToMavenCentral`) by using explicit long-form task names required by newer Gradle/plugin versions.
+
 ## 0.2.8
 * **Fix**: Removed unreliable `pgp.mit.edu` keyserver from CI pipeline and added timeouts to prevent build hanging during GPG key propagation.
 

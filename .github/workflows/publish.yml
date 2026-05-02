@@ -142,7 +142,7 @@ jobs:
 
       - name: Build, sign, and stage artifacts locally
         run: |
-          gradle publishToStagingLocal --no-configuration-cache \
+          gradle publishAllPublicationsToStagingLocalRepository --no-configuration-cache \
             --no-daemon --stacktrace
         working-directory: sdk/android-sdk
         env:
@@ -182,7 +182,7 @@ jobs:
 
       - name: Publish to Maven Central
         run: |
-          gradle publishToMavenCentral --no-configuration-cache \
+          gradle publishAllPublicationsToMavenCentralRepository --no-configuration-cache \
             --no-daemon --stacktrace --info
         working-directory: sdk/android-sdk
         env:
