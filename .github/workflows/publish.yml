@@ -102,10 +102,10 @@ jobs:
           KEY_ID="${{ secrets.SIGNING_KEY_ID }}"
           echo "Publishing key $KEY_ID to keyservers..."
           
-          for SERVER in "hkps://keyserver.ubuntu.com" "hkps://keys.openpgp.org" "hkps://pgp.mit.edu"; do
+          for SERVER in "hkps://keyserver.ubuntu.com" "hkps://keys.openpgp.org"; do
             echo "→ Uploading to $SERVER"
             for ATTEMPT in 1 2 3; do
-              if gpg --keyserver "$SERVER" --send-keys "$KEY_ID" 2>&1; then
+              if timeout 30 gpg --keyserver "$SERVER" --send-keys "$KEY_ID" 2>&1; then
                 echo "  ✅ Uploaded to $SERVER (attempt $ATTEMPT)"
                 break
               else
@@ -124,9 +124,9 @@ jobs:
         run: |
           KEY_ID="${{ secrets.SIGNING_KEY_ID }}"
           KEY_FOUND=false
-          for SERVER in "hkps://keyserver.ubuntu.com" "hkps://keys.openpgp.org" "hkps://pgp.mit.edu"; do
+          for SERVER in "hkps://keyserver.ubuntu.com" "hkps://keys.openpgp.org"; do
             echo "→ Checking $SERVER for key $KEY_ID..."
-            if gpg --batch --keyserver "$SERVER" --recv-keys "$KEY_ID" 2>&1; then
+            if timeout 30 gpg --batch --keyserver "$SERVER" --recv-keys "$KEY_ID" 2>&1; then
               echo "  ✅ Key successfully retrieved from $SERVER"
               KEY_FOUND=true
               break

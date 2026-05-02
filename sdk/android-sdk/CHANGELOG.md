@@ -1,3 +1,6 @@
+## 0.2.8
+* **Fix**: Removed unreliable `pgp.mit.edu` keyserver from CI pipeline and added timeouts to prevent build hanging during GPG key propagation.
+
 ## 0.2.7
 * **Fix**: Resolved Maven Central PGP signature verification failures with robust keyserver upload retries, extended propagation wait, and pre-publish key retrieval verification.
 
