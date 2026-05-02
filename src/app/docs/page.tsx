@@ -26,6 +26,7 @@ import {
   VueLogo,
   Html5Logo
 } from '@/components/FrameworkLogos';
+import McpServerConfig from '@/components/McpServerConfig';
 
 function PlatformBadge({ label, color }: { label: string; color: string }) {
   return (
@@ -218,6 +219,7 @@ export default function DocsPage() {
                 </a>{' '}
                 section below and click the "LLM" badge next to the platform you are building for to get the specific integration context, endpoints, and code snippets.
               </p>
+              <McpServerConfig />
             </div>
           </div>
         )}

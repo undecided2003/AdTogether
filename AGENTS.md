@@ -8,21 +8,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 Critical: Always adhere to the architectural decisions documented in [SDK_SECURITY_INVARIANTS.md](file:///c:/Users/kevin/Next/AdTogether/docs/SDK_SECURITY_INVARIANTS.md). Specifically, ensure banner components never accidentally fetch or render interstitial ads, as this causes payout fraud.
 
 # Production Deployment Skills (Hacks)
-
-## 1. Firebase Admin Bypass
-**Problem:** Next.js build process often fails to bundle `firebase-admin` correctly or mangles it in a way that Cloud Functions cannot resolve.
-**Skill:** Use `eval("require('firebase-admin')")` in server-side libraries to force a native CommonJS require that bypasses the Next.js static analysis/bundling for that module.
-**Example:** [firebase-admin.ts](file:///c:/Users/kevin/Next/AdTogether/src/lib/firebase-admin.ts)
-
-## 2. Server Action Workarounds
-**Problem:** Next.js 16 Server Actions (`use server`) can have serialization issues or runtime failures on Firebase Hosting/Cloud Functions.
-**Skill:** Prefer standard API routes (`/api/...`) and client-side `fetch()` for complex logic like AI generation or content screening.
-**Example:** [CreateAdPage](file:///c:/Users/kevin/Next/AdTogether/src/app/create-ad/page.tsx) uses `fetch('/api/generate')` instead of the `generateAdContent` server action directly.
-
-## 3. ESM Compatibility vs Cloud Functions
-**Problem:** ESM-only libraries (like `cheerio` v1.2.0+) may crash in the Cloud Functions runtime environments that still expect CJS or have mixed module baggage.
-**Skill:** Use zero-dependency pure Javascript/Regex implementations for core tasks like HTML parsing to avoid external dependency hell.
-**Example:** [actions.ts](file:///c:/Users/kevin/Next/AdTogether/src/app/create-ad/actions.ts) uses regex-based extraction.
+Technical details for Android publishing, Firebase Admin workarounds, and ESM compatibility have been moved to [docs/SKILLS.md](file:///c:/Users/kevin/Next/AdTogether/docs/SKILLS.md) to keep this guide focused on agent-specific behavior.
 
 # Internal implementation Patterns
 

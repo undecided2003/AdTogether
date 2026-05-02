@@ -5,9 +5,10 @@ import { auth, db } from "@/lib/firebase";
 import { doc, getDoc, collection, query, where, getDocs, updateDoc, deleteDoc, arrayUnion, arrayRemove, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { Coins, Plus, Activity, LogOut, Globe, Image as ImageIcon, MousePointerClick, MapPin, Check, Key, Copy, Eye, EyeOff, X, ChevronDown, ChevronUp, Monitor, Pencil, Smartphone, Shield, ShieldAlert, ArrowDownUp, TrendingUp, TrendingDown } from "lucide-react";
+import { Coins, Plus, Activity, LogOut, Globe, Image as ImageIcon, MousePointerClick, MapPin, Check, Key, Copy, Eye, EyeOff, X, ChevronDown, ChevronUp, Monitor, Pencil, Smartphone, Shield, ShieldAlert, ArrowDownUp, TrendingUp, TrendingDown, Terminal, Bot } from "lucide-react";
 import Link from "next/link";
 import { CodeBlock } from "@/components/CodeBlock";
+import McpServerConfig from "@/components/McpServerConfig";
 import { COUNTRIES } from "@/lib/countries";
 
 export default function DashboardPage() {
@@ -56,7 +57,7 @@ export default function DashboardPage() {
   
   // Blocked ads per App ID state
   const [blockingAd, setBlockingAd] = useState<string | null>(null);
-  
+
   const router = useRouter();
   
   const parseDateObj = (val: any) => {
@@ -321,7 +322,13 @@ export default function DashboardPage() {
             Create Campaign
           </Link>
           <button 
-            onClick={() => setShowDocs(!showDocs)}
+            onClick={() => {
+              const element = document.getElementById("mcp-config");
+              if (element) {
+                element.scrollIntoView({ behavior: "smooth" });
+              }
+              setShowDocs(!showDocs);
+            }}
             className="flex items-center gap-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-white px-5 py-2.5 rounded-xl font-medium transition-colors"
           >
             Instructions
@@ -984,6 +991,26 @@ export default function DashboardPage() {
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* MCP Server Instructions */}
+      {userData && (
+        <div id="mcp-config" className="mb-12 bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-zinc-100 dark:bg-white/5 rounded-xl border border-zinc-200 dark:border-white/10 text-zinc-600 dark:text-white">
+                <Bot className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Are you an AI Coding Assistant?</h3>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                  Connect to our MCP Server to automatically retrieve App IDs and validate implementations.
+                </p>
+              </div>
+            </div>
+          </div>
+          <McpServerConfig initialAppId={userData?.apiKeys?.[0] || userData?.apiKey} />
         </div>
       )}
 
