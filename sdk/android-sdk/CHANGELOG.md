@@ -1,3 +1,6 @@
+## 0.3.0
+* **Fix**: Resolved PGP signing failure (`invalid armor`) by providing the full ASCII armored secret key directly to Gradle's in-memory signing property, avoiding corruption from manual stripping.
+
 ## 0.2.9
 * **Fix**: Resolved Gradle task ambiguity errors (`publishToStagingLocal`, `publishToMavenCentral`) by using explicit long-form task names required by newer Gradle/plugin versions.
 

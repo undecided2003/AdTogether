@@ -73,29 +73,7 @@ jobs:
           echo "GPG key imported. Key info:"
           gpg --list-keys --keyid-format long ${{ secrets.SIGNING_KEY_ID }}
 
-      - name: Prepare in-memory signing key
-        run: |
-          # Extract the base64 key body (strip ASCII armor headers/footers)
-          # This is what Gradle's in-memory signing expects
-          SIGNING_KEY_BODY=$(echo "${{ secrets.SIGNING_KEY }}" | \
-            grep -v '^-----' | \
-            grep -v '^Version:' | \
-            grep -v '^Comment:' | \
-            grep -v '^Hash:' | \
-            grep -v '^\s*$' | \
-            tr -d '\n')
-          
-          # Verify we extracted something
-          KEY_LENGTH=${#SIGNING_KEY_BODY}
-          echo "Extracted in-memory key body: $KEY_LENGTH characters"
-          if [ "$KEY_LENGTH" -lt 100 ]; then
-            echo "❌ ERROR: Extracted key body is too short!"
-            exit 1
-          fi
-          
-          # Store for later steps (masked in logs)
-          echo "::add-mask::$SIGNING_KEY_BODY"
-          echo "SIGNING_KEY_BODY=$SIGNING_KEY_BODY" >> $GITHUB_ENV
+      # --- Removed manual stripping of GPG armor to prevent corruption ---
 
       - name: Publish GPG key to keyservers
         run: |
@@ -147,7 +125,7 @@ jobs:
         working-directory: sdk/android-sdk
         env:
           ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
-          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ env.SIGNING_KEY_BODY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
 
       - name: Verify .asc signatures against artifacts
@@ -187,7 +165,7 @@ jobs:
         working-directory: sdk/android-sdk
         env:
           ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
-          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ env.SIGNING_KEY_BODY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
