@@ -73,7 +73,7 @@ Add the dependency to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  adtogether_sdk: ^0.4.4
+  adtogether_sdk: ^0.4.5
 ```
 
 Then run:
@@ -263,7 +263,6 @@ This SDK depends on the following packages:
 
 | Package               | Purpose |
 |-----------------------|---------|
-| [`package_info_plus`](https://pub.dev/packages/package_info_plus) | Auto-detection of `bundleId`, `appName`, and `appVersion` for tracking metadata. |
 | [`url_launcher`](https://pub.dev/packages/url_launcher) | Opening ad click-through URLs in the device browser. |
 | [`visibility_detector`](https://pub.dev/packages/visibility_detector) | Viewability-based impression tracking for banner ads. |
 
