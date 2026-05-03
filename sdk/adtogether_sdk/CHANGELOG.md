@@ -1,3 +1,8 @@
+## 0.4.4
+* **Fix**: Removed `package:http` dependency to work around a pub.dev infrastructure bug (`advisoriesUpdated must be a String`) that was preventing package analysis from completing.
+* **Internal**: Replaced with a zero-dependency, cross-platform HTTP client using `dart:io` (native) and browser `fetch` API (web/WASM).
+* **Sync**: Version parity (0.4.4) across all AdTogether SDKs.
+
 ## 0.4.3
 * **Fix**: Fixed example project Dart SDK constraints (`example/pubspec.yaml`) from `^3.11.4` to `">=3.3.0 <4.0.0"` to properly pass pub.dev package resolution and analysis.
 * **Sync**: Version parity (0.4.3) across all AdTogether SDKs.

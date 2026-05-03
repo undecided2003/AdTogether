@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+import 'utils/http_client.dart';
 import 'utils/platform_utils.dart';
 import 'models/ad_model.dart';
 
@@ -108,7 +108,7 @@ class AdTogether {
   /// Internal method to track an impression
   static Future<void> trackImpression(String adId, {String? token}) async {
     try {
-      await http.post(
+      await AdHttpClient.instance.post(
         Uri.parse('$_baseUrl/api/ads/impression'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
@@ -131,7 +131,7 @@ class AdTogether {
   /// Internal method to track a click
   static Future<void> trackClick(String adId, {String? token}) async {
     try {
-      await http.post(
+      await AdHttpClient.instance.post(
         Uri.parse('$_baseUrl/api/ads/click'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
@@ -171,7 +171,7 @@ class AdTogether {
     }
     url += '&allowSelfAds=$_allowSelfAds';
 
-    final response = await http.get(Uri.parse(url));
+    final response = await AdHttpClient.instance.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = jsonDecode(response.body);
