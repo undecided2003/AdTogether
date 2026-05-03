@@ -9,14 +9,14 @@
 ### Fetch Ad
 
 ```bash
-curl -X GET "https://www.ad-together.org/api/ads/serve?country=global&adType=banner&apiKey=YOUR_APP_ID&bundleId=com.example.myapp&allowSelfAds=true&adUnitId=home_banner"
+curl -X GET "https://www.ad-together.org/api/ads/serve?country=global&adType=banner&appId=YOUR_APP_ID&bundleId=com.example.myapp&allowSelfAds=true&adUnitId=home_banner"
 ```
 
 **Query parameters:**
 | Param | Required | Description |
 |-------|----------|-------------|
 | `adUnitId` | no | Optional label for the ad placement (e.g. `home_banner`). Used for analytics grouping only. |
-| `apiKey` | **yes** | Your registered app ID |
+| `appId` | **yes** | Your registered app ID (Legacy `apiKey` is supported but deprecated) |
 | `country` | no | Country code or `"global"` (default) |
 | `bundleId` | no | Your app's bundle/package identifier |
 | `allowSelfAds` | no | Show own ads as fallback (default: `true`) |
@@ -43,7 +43,7 @@ curl -X POST "https://www.ad-together.org/api/ads/impression" \
   -d '{
     "adId": "ad_abc123",
     "token": "HMAC_TOKEN_FROM_SERVE_RESPONSE",
-    "apiKey": "YOUR_APP_ID",
+    "appId": "YOUR_APP_ID",
     "bundleId": "com.example.myapp",
     "platform": "android",
     "environment": "production",
@@ -60,7 +60,7 @@ curl -X POST "https://www.ad-together.org/api/ads/click" \
   -d '{
     "adId": "ad_abc123",
     "token": "HMAC_TOKEN_FROM_SERVE_RESPONSE",
-    "apiKey": "YOUR_APP_ID",
+    "appId": "YOUR_APP_ID",
     "bundleId": "com.example.myapp",
     "platform": "web",
     "environment": "production"
@@ -73,11 +73,11 @@ curl -X POST "https://www.ad-together.org/api/ads/click" \
 |-------|----------|-------------|
 | `adId` | **yes** | The ad ID from the serve response |
 | `token` | **yes** | HMAC signature from the serve response (requests without valid token are rejected) |
-| `apiKey` | **yes** | Your registered app ID |
+| `appId` | **yes** | Your registered app ID (Legacy `apiKey` is supported but deprecated) |
 | `bundleId` | no | Your app's bundle/package identifier |
 | `platform` | no | Platform identifier (e.g. `"android"`, `"ios"`, `"web"`, `"macos"`) |
 | `environment` | no | `"development"` or `"production"` |
 | `appName` | no | Human-readable app name |
 | `appVersion` | no | App version string (e.g. `"1.2.3"`) |
 
-> **Note:** While only `adId`, `token`, and `apiKey` are strictly required, providing `bundleId`, `platform`, and `environment` enables richer analytics in your dashboard.
+> **Note:** While only `adId`, `token`, and `appId` are strictly required, providing `bundleId`, `platform`, and `environment` enables richer analytics in your dashboard.

@@ -54,7 +54,7 @@ export default function McpServerConfig({ initialAppId }: McpServerConfigProps) 
   const handleCopy = () => {
     if (error) return; // Don't copy if there's an error
     
-    navigator.clipboard.writeText(`https://www.ad-together.org/api/mcp${mcpAppId ? `?apiKey=${mcpAppId}` : ''}`);
+    navigator.clipboard.writeText(`https://www.ad-together.org/api/mcp${mcpAppId ? `?appId=${mcpAppId}` : ''}`);
     setCopiedMcpUrl(true);
     setTimeout(() => setCopiedMcpUrl(false), 2000);
   };
@@ -63,7 +63,7 @@ export default function McpServerConfig({ initialAppId }: McpServerConfigProps) 
     <div className="mt-4 p-4 bg-zinc-100/50 dark:bg-black/20 rounded-xl border border-zinc-200/80 dark:border-white/5">
       <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-200 mb-2">Connect to our MCP Server</h4>
       <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-3 leading-relaxed">
-        Get real-time access to user campaigns, API keys, and validation tools by connecting to our SSE MCP Server. Paste the URL directly into Cursor/Windsurf, or use the JSON configuration for Claude Desktop and other clients.
+        Get real-time access to user campaigns, App IDs, and validation tools by connecting to our SSE MCP Server. Paste the URL directly into Cursor/Windsurf, or use the JSON configuration for Claude Desktop and other clients.
       </p>
       <div className="flex flex-col lg:flex-row gap-6 mt-6">
         <div className="flex-1 space-y-4">
@@ -100,7 +100,7 @@ export default function McpServerConfig({ initialAppId }: McpServerConfigProps) 
               `}
               title="Copy URL"
             >
-              <span className="break-all">https://www.ad-together.org/api/mcp{mcpAppId ? `?apiKey=${mcpAppId}` : ''}</span>
+              <span className="break-all">https://www.ad-together.org/api/mcp{mcpAppId ? `?appId=${mcpAppId}` : ''}</span>
               <span className={`shrink-0 p-1.5 bg-zinc-100 dark:bg-black/30 rounded-md border border-zinc-200 dark:border-zinc-800 transition-colors ${!error && 'group-hover:border-zinc-300 dark:group-hover:border-zinc-600'}`}>
                 {copiedMcpUrl ? <Check className="w-3.5 h-3.5 text-green-500" /> : <LinkIcon className={`w-3.5 h-3.5 ${error ? 'text-zinc-500' : 'text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300'}`} />}
               </span>
@@ -121,7 +121,7 @@ export default function McpServerConfig({ initialAppId }: McpServerConfigProps) 
   "mcpServers": {
     "adtogether": {
       "type": "sse",
-      "url": "https://www.ad-together.org/api/mcp?apiKey=${mcpAppId || 'YOUR_APP_ID'}"
+      "url": "https://www.ad-together.org/api/mcp?appId=${mcpAppId || 'YOUR_APP_ID'}"
     }
   }
 }`}

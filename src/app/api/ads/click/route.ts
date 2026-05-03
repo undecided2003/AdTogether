@@ -34,7 +34,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Too Many Requests' }, { status: 429, headers: corsHeaders });
     }
 
-    const { adId, token, bundleId, apiKey, environment, country } = await request.json();
+    const body = await request.json();
+    const { adId, token, bundleId, environment, country, apiKey: legacyApiKey, appId: newAppId } = body;
+    const effectiveAppId = newAppId || appId || legacyApiKey;
     const finalCountry = country || ipCountry;
 
     // Ignore local test traffic
@@ -111,27 +113,44 @@ export async function POST(request: Request) {
     }).catch(console.error);
 
     // Update publisher's earnings log with click count
-    if (apiKey) {
+    if (effectiveAppId) {
       let publisherRef: any = null;
-      const pSnap = await db.collection('users').where('apiKey', '==', apiKey).limit(1).get();
-      if (!pSnap.empty) {
-        publisherRef = pSnap.docs[0].ref;
+      
+      // 1. Try appId field
+      const pSnapAppId = await db.collection('users').where('appId', '==', effectiveAppId).limit(1).get();
+      if (!pSnapAppId.empty) {
+        publisherRef = pSnapAppId.docs[0].ref;
       } else {
-        const pSnapArr = await db.collection('users').where('apiKeys', 'array-contains', apiKey).limit(1).get();
-        if (!pSnapArr.empty) {
-          publisherRef = pSnapArr.docs[0].ref;
+        // 2. Try appIds array
+        const pSnapAppIds = await db.collection('users').where('appIds', 'array-contains', effectiveAppId).limit(1).get();
+        if (!pSnapAppIds.empty) {
+          publisherRef = pSnapAppIds.docs[0].ref;
+        } else {
+          // 3. Fallback to legacy apiKey field
+          const pSnapApiKey = await db.collection('users').where('apiKey', '==', effectiveAppId).limit(1).get();
+          if (!pSnapApiKey.empty) {
+            publisherRef = pSnapApiKey.docs[0].ref;
+          } else {
+            // 4. Fallback to legacy apiKeys array
+            const pSnapApiKeys = await db.collection('users').where('apiKeys', 'array-contains', effectiveAppId).limit(1).get();
+            if (!pSnapApiKeys.empty) {
+              publisherRef = pSnapApiKeys.docs[0].ref;
+            }
+          }
         }
       }
+
       if (publisherRef) {
         const pubDoc = await publisherRef.get();
         const pubData = pubDoc.data();
         if (pubData) {
           const earningsLog = pubData.earningsLog || {};
-          const logKey = apiKey ? `${apiKey}_${adId}` : adId;
+          const logKey = effectiveAppId ? `${effectiveAppId}_${adId}` : adId;
           const actualKey = earningsLog[logKey] ? logKey : (earningsLog[adId] ? adId : logKey);
           
           if (earningsLog[actualKey]) {
             earningsLog[actualKey].clicks = (earningsLog[actualKey].clicks || 0) + 1;
+            earningsLog[actualKey].appId = effectiveAppId || earningsLog[actualKey].appId || '';
             earningsLog[actualKey].lastUpdated = new Date().toISOString();
             await publisherRef.update({ earningsLog });
           }

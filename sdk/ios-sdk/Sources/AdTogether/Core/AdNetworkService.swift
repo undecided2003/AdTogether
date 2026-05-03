@@ -6,7 +6,7 @@ import UIKit
 internal class AdNetworkService {
     
     static func fetchAd(adUnitId: String = "default", adType: String? = nil, exclude: String? = nil, allowSelfAds: Bool = true, completion: @escaping (Result<AdModel, Error>) -> Void) {
-        var urlString = "\(AdTogether.shared.baseUrl)/api/ads/serve?country=global&adUnitId=\(adUnitId)&apiKey=\(AdTogether.shared.appId ?? "")"
+        var urlString = "\(AdTogether.shared.baseUrl)/api/ads/serve?country=global&adUnitId=\(adUnitId)&appId=\(AdTogether.shared.appId ?? "")"
         if let adType = adType {
             urlString += "&adType=\(adType)"
         }
@@ -74,8 +74,8 @@ internal class AdNetworkService {
         if let token = token {
             body["token"] = token
         }
-        if let apiKey = AdTogether.shared.appId {
-            body["apiKey"] = apiKey
+        if let appId = AdTogether.shared.appId {
+            body["appId"] = appId
         }
         if let bundleId = AdTogether.shared.bundleId {
             body["bundleId"] = bundleId

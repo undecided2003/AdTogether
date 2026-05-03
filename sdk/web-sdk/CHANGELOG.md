@@ -1,3 +1,8 @@
+## 0.4.0
+* **Security**: Standardized `appId` as the primary identifier across all platforms.
+* **Deprecation**: Formally deprecated `apiKey` in favor of `appId` to align with the AdTogether dashboard.
+* **Sync**: Version parity (0.4.0) across all AdTogether SDKs.
+
 ## 0.3.2
 * **Docs**: Added official Model Context Protocol (MCP) server integration instructions to README.
 * **Sync**: Version parity (0.3.2) across all AdTogether SDKs.

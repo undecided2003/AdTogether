@@ -11,10 +11,13 @@ export interface AdModel {
 }
 
 export interface AdTogetherOptions {
+  /** The unique identifier for your application. */
   appId?: string;
+  /** @deprecated Use appId instead */
   apiKey?: string;
   baseUrl?: string;
   bundleId?: string;
   /** Whether to show your own ads as fallback if no external ads are available. Defaults to true. */
   allowSelfAds?: boolean;
 }
+

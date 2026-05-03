@@ -15,7 +15,7 @@ internal object AdNetworkService {
 
     suspend fun fetchAd(adUnitId: String = "default", adType: String? = null, exclude: String? = null, allowSelfAds: Boolean = true): AdModel? = withContext(Dispatchers.IO) {
         try {
-            var urlStr = "${AdTogether.baseUrl}/api/ads/serve?country=global&adUnitId=$adUnitId&apiKey=${AdTogether.appId}&allowSelfAds=$allowSelfAds"
+            var urlStr = "${AdTogether.baseUrl}/api/ads/serve?country=global&adUnitId=$adUnitId&appId=${AdTogether.appId}&allowSelfAds=$allowSelfAds"
             if (adType != null) {
                 urlStr += "&adType=$adType"
             }
@@ -78,7 +78,7 @@ internal object AdNetworkService {
             val jsonParams = JSONObject().apply { 
                 put("adId", adId)
                 if (token != null) put("token", token)
-                put("apiKey", AdTogether.appId)
+                put("appId", AdTogether.appId)
                 // Send the app package name for origin tracking
                 AdTogether.bundleId?.let { put("bundleId", it) }
                 // Send platform and app metadata to match Flutter SDK

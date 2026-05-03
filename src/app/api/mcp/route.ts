@@ -410,7 +410,7 @@ if (!globalForMCP.mcpServer) {
       const info = {
         credits: userData?.credits || 0,
         country: userData?.country || "Unknown",
-        apiKeys: userData?.apiKeys || [],
+        appId: userData?.appId || userData?.appIds?.[0] || userData?.apiKeys?.[0] || 'Unknown',
         totalEarned: Object.values(userData?.earningsLog || {}).reduce((sum: number, e: any) => sum + (e.creditsEarned || 0), 0)
       };
 
@@ -425,7 +425,7 @@ if (!globalForMCP.mcpServer) {
       if (!userDoc.exists) throw new Error("User not found.");
       const data = userDoc.data();
       const config = {
-        appId: data?.apiKeys?.[0] || 'Unknown',
+        appId: data?.appId || data?.appIds?.[0] || data?.apiKeys?.[0] || 'Unknown',
         bundleId: data?.bundleId || 'com.example.app',
         authorizedDomains: data?.authorizedDomains || []
       };
@@ -1229,22 +1229,33 @@ See the SDK README for your platform for full examples.`;
 
 async function authenticate(req: Request) {
   const url = new URL(req.url);
-  const apiKey = url.searchParams.get('apiKey') || req.headers.get('authorization')?.replace('Bearer ', '');
+  const appId = url.searchParams.get('appId') || url.searchParams.get('apiKey') || req.headers.get('authorization')?.replace('Bearer ', '');
 
-  if (!apiKey) {
+  if (!appId) {
     return null;
   }
 
-  // Check if it matches an apiKey
-  const pSnap = await db.collection('users').where('apiKey', '==', apiKey).limit(1).get();
+  // Check if it matches an appId (singular)
+  const pSnap = await db.collection('users').where('appId', '==', appId).limit(1).get();
   if (!pSnap.empty) {
-    return { token: apiKey, clientId: pSnap.docs[0].id, scopes: [] };
+    return { token: appId, clientId: pSnap.docs[0].id, scopes: [] };
   }
   
-  // Check if it matches an apiKeys array
-  const pSnapArr = await db.collection('users').where('apiKeys', 'array-contains', apiKey).limit(1).get();
+  // Check if it matches an appIds array
+  const pSnapArr = await db.collection('users').where('appIds', 'array-contains', appId).limit(1).get();
   if (!pSnapArr.empty) {
-    return { token: apiKey, clientId: pSnapArr.docs[0].id, scopes: [] };
+    return { token: appId, clientId: pSnapArr.docs[0].id, scopes: [] };
+  }
+
+  // Fallback for legacy apiKey fields (during transition)
+  const legacySnap = await db.collection('users').where('apiKey', '==', appId).limit(1).get();
+  if (!legacySnap.empty) {
+    return { token: appId, clientId: legacySnap.docs[0].id, scopes: [] };
+  }
+  
+  const legacySnapArr = await db.collection('users').where('apiKeys', 'array-contains', appId).limit(1).get();
+  if (!legacySnapArr.empty) {
+    return { token: appId, clientId: legacySnapArr.docs[0].id, scopes: [] };
   }
   
   return null;
@@ -1253,7 +1264,7 @@ async function authenticate(req: Request) {
 export async function GET(req: Request) {
   const authInfo = await authenticate(req);
   if (!authInfo) {
-    return new Response(JSON.stringify({ error: "Unauthorized: App ID is required via '?apiKey=' parameter or Bearer token." }), { 
+    return new Response(JSON.stringify({ error: "Unauthorized: App ID is required via '?appId=' parameter or Bearer token." }), { 
       status: 401, 
       headers: { "Content-Type": "application/json" } 
     });
@@ -1264,7 +1275,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const authInfo = await authenticate(req);
   if (!authInfo) {
-    return new Response(JSON.stringify({ error: "Unauthorized: App ID is required via '?apiKey=' parameter or Bearer token." }), { 
+    return new Response(JSON.stringify({ error: "Unauthorized: App ID is required via '?appId=' parameter or Bearer token." }), { 
       status: 401, 
       headers: { "Content-Type": "application/json" } 
     });

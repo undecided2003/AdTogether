@@ -45,6 +45,7 @@ class AdModel {
     );
   }
 
+  /// Serializes this [AdModel] into a JSON-compatible map.
   Map<String, dynamic> toJson() {
     return {
       'id': id,

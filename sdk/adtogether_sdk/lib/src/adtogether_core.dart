@@ -74,6 +74,9 @@ class AdTogether {
     }
   }
 
+  /// The registered App ID for this SDK instance.
+  ///
+  /// Throws an [Exception] if [initialize] has not been called.
   static String get appId {
     if (_appId == null) {
       throw Exception(
@@ -83,6 +86,7 @@ class AdTogether {
     return _appId!;
   }
 
+  /// The base API URL used for all ad-serving requests.
   static String get baseUrl => _baseUrl;
 
   /// Detect the user's country code from the device locale.
@@ -110,7 +114,7 @@ class AdTogether {
         body: jsonEncode({
           'adId': adId,
           'token': token,
-          'apiKey': _appId,
+          'appId': _appId,
           if (_bundleId != null) 'bundleId': _bundleId,
           if (_appName != null) 'appName': _appName,
           if (_appVersion != null) 'appVersion': _appVersion,
@@ -133,7 +137,7 @@ class AdTogether {
         body: jsonEncode({
           'adId': adId,
           'token': token,
-          'apiKey': _appId,
+          'appId': _appId,
           if (_bundleId != null) 'bundleId': _bundleId,
           if (_appName != null) 'appName': _appName,
           if (_appVersion != null) 'appVersion': _appVersion,
@@ -155,7 +159,7 @@ class AdTogether {
     final currentAppId = appId;
 
     String url =
-        '$_baseUrl/api/ads/serve?country=global&adUnitId=$adUnitId&apiKey=$currentAppId';
+        '$_baseUrl/api/ads/serve?country=global&adUnitId=$adUnitId&appId=$currentAppId';
     if (adType != null) {
       url += '&adType=$adType';
     }

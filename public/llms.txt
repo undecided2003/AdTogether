@@ -53,7 +53,7 @@ To prevent context bleeding and hallucination, **please read the specific instru
 | Field | Web | React Native | Flutter | iOS | Android |
 |-------|-----|-------------|---------|-----|---------|
 | `adId` + `token` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `apiKey` + `bundleId` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `appId` + `bundleId` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `platform` | `"web"` | `Platform.OS` | auto | `#if os()` | `"android"` |
 | `environment` | `NODE_ENV` | `__DEV__` | auto | `#if DEBUG` | debuggable flag |
 | `appName` | — | — | ✅ | ✅ | ✅ |
@@ -64,7 +64,7 @@ To prevent context bleeding and hallucination, **please read the specific instru
 ## Technical Notes for AI Agents
 
 - A valid `AD_UNIT_ID` looks like `unit_x8f9...` or a descriptive string like `home_bottom_banner`
-- A valid `API_KEY` / `APP_ID` looks like `at_k3m7...`
+- A valid `APP_ID` (formerly `API_KEY`) looks like `at_k3m7...`
 - All SDKs communicate with the same REST API endpoints (`/api/ads/serve`, `/api/ads/impression`, `/api/ads/click`).
 - **Strict Type Enforcement:** The `/serve` API now requires an `adType` parameter (`banner` or `interstitial`). The SDK components (`AdTogetherBanner`, `AdTogetherInterstitial`) handle this automatically under the hood. Custom REST integrations must pass this explicitly.
 - **Initialization must happen BEFORE any ad rendering call** — place it in app startup logic.

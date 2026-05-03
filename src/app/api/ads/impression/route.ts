@@ -34,7 +34,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Too Many Requests' }, { status: 429, headers: corsHeaders });
     }
 
-    const { adId, token, apiKey, bundleId, country, platform, appName, environment } = await request.json();
+    const { adId, token, appId, apiKey, bundleId, country, platform, appName, environment } = await request.json();
+    const effectiveAppId = appId || apiKey;
     
     // Ignore local test traffic to prevent statistics skewing
     if (environment === 'development' || environment === 'test') {
@@ -82,14 +83,28 @@ export async function POST(request: Request) {
     }
 
     let publisherRef: any = null;
-    if (apiKey) {
-      const pSnap = await db.collection('users').where('apiKey', '==', apiKey).limit(1).get();
-      if (!pSnap.empty) {
-        publisherRef = pSnap.docs[0].ref;
+    if (effectiveAppId) {
+      // 1. Try appId field
+      const pSnapAppId = await db.collection('users').where('appId', '==', effectiveAppId).limit(1).get();
+      if (!pSnapAppId.empty) {
+        publisherRef = pSnapAppId.docs[0].ref;
       } else {
-        const pSnapArr = await db.collection('users').where('apiKeys', 'array-contains', apiKey).limit(1).get();
-        if (!pSnapArr.empty) {
-          publisherRef = pSnapArr.docs[0].ref;
+        // 2. Try appIds array
+        const pSnapAppIds = await db.collection('users').where('appIds', 'array-contains', effectiveAppId).limit(1).get();
+        if (!pSnapAppIds.empty) {
+          publisherRef = pSnapAppIds.docs[0].ref;
+        } else {
+          // 3. Fallback to legacy apiKey field
+          const pSnapApiKey = await db.collection('users').where('apiKey', '==', effectiveAppId).limit(1).get();
+          if (!pSnapApiKey.empty) {
+            publisherRef = pSnapApiKey.docs[0].ref;
+          } else {
+            // 4. Fallback to legacy apiKeys array
+            const pSnapApiKeys = await db.collection('users').where('apiKeys', 'array-contains', effectiveAppId).limit(1).get();
+            if (!pSnapApiKeys.empty) {
+              publisherRef = pSnapApiKeys.docs[0].ref;
+            }
+          }
         }
       }
     }
@@ -216,7 +231,7 @@ export async function POST(request: Request) {
              
              // Build earnings log entry for publisher visibility
              const earningsLog = pData.earningsLog || {};
-             const logKey = apiKey ? `${apiKey}_${adId}` : adId;
+             const logKey = effectiveAppId ? `${effectiveAppId}_${adId}` : adId;
              const existing = earningsLog[logKey] || {};
              const currentViews = existing.recentViews || [];
              currentViews.push({
@@ -232,7 +247,7 @@ export async function POST(request: Request) {
                adDescription: adData.description || '',
                adImageUrl: adData.imageUrl || '',
                adType: adType,
-               apiKey: apiKey || '',
+               appId: effectiveAppId || '',
                platform: platform || existing.platform || '',
                appName: appName || existing.appName || '',
                impressions: (existing.impressions || 0) + 1,
@@ -258,7 +273,7 @@ export async function POST(request: Request) {
           const pData = pSnap.data();
           if (pData) {
              const earningsLog = pData.earningsLog || {};
-             const logKey = apiKey ? `${apiKey}_${adId}` : adId;
+             const logKey = effectiveAppId ? `${effectiveAppId}_${adId}` : adId;
              const existing = earningsLog[logKey] || {};
              const currentViews = existing.recentViews || [];
              currentViews.push({
@@ -274,7 +289,7 @@ export async function POST(request: Request) {
                adDescription: adData.description || '',
                adImageUrl: adData.imageUrl || '',
                adType: adType,
-               apiKey: apiKey || '',
+               appId: effectiveAppId || '',
                platform: platform || existing.platform || '',
                appName: appName || existing.appName || '',
                impressions: (existing.impressions || 0) + 1,

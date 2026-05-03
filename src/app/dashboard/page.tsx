@@ -26,12 +26,12 @@ export default function DashboardPage() {
   const [savingCountry, setSavingCountry] = useState(false);
   
   // App ID state
-  const [showApiKey, setShowApiKey] = useState<Record<string, boolean>>({});
+  const [showAppId, setShowAppId] = useState<Record<string, boolean>>({});
   const [generating, setGenerating] = useState(false);
   
   // App ID labeling state
-  const [newKeyLabel, setNewKeyLabel] = useState("");
-  const [showNewKeyForm, setShowNewKeyForm] = useState(false);
+  const [newAppIdLabel, setNewAppIdLabel] = useState("");
+  const [showNewAppIdForm, setShowNewAppIdForm] = useState(false);
   const [editingLabel, setEditingLabel] = useState<string | null>(null);
   const [editLabelValue, setEditLabelValue] = useState("");
   
@@ -174,28 +174,28 @@ export default function DashboardPage() {
     }
   };
 
-  const handleGenerateApiKey = async () => {
+  const handleGenerateAppId = async () => {
     if (!user) return;
-    const label = newKeyLabel.trim();
+    const label = newAppIdLabel.trim();
     if (!label) {
-      alert("Please enter an app or website name for this key.");
+      alert("Please enter an app or website name for this ID.");
       return;
     }
     // No limit on App IDs
-    const currentKeys = userData?.apiKeys || (userData?.apiKey ? [userData.apiKey] : []);
+    const currentIds = userData?.appIds || (userData?.appId ? [userData.appId] : []);
     
     setGenerating(true);
     try {
-      const newKey = `at_${crypto.randomUUID().replace(/-/g, '')}`;
-      const updatedKeys = [...currentKeys, newKey];
-      const currentLabels = userData?.apiKeyLabels || {};
-      const updatedLabels = { ...currentLabels, [newKey]: label };
+      const newId = `at_${crypto.randomUUID().replace(/-/g, '')}`;
+      const updatedIds = [...currentIds, newId];
+      const currentLabels = userData?.appIdLabels || {};
+      const updatedLabels = { ...currentLabels, [newId]: label };
       const userRef = doc(db, "users", user.uid);
-      await updateDoc(userRef, { apiKeys: updatedKeys, apiKey: updatedKeys[0], apiKeyLabels: updatedLabels });
-      setUserData({ ...userData, apiKeys: updatedKeys, apiKey: updatedKeys[0], apiKeyLabels: updatedLabels });
-      setShowApiKey(prev => ({ ...prev, [newKey]: true }));
-      setNewKeyLabel("");
-      setShowNewKeyForm(false);
+      await updateDoc(userRef, { appIds: updatedIds, appId: updatedIds[0], appIdLabels: updatedLabels });
+      setUserData({ ...userData, appIds: updatedIds, appId: updatedIds[0], appIdLabels: updatedLabels });
+      setShowAppId(prev => ({ ...prev, [newId]: true }));
+      setNewAppIdLabel("");
+      setShowNewAppIdForm(false);
     } catch (e) {
       console.error("Failed to generate App ID", e);
     } finally {
@@ -203,59 +203,59 @@ export default function DashboardPage() {
     }
   };
 
-  const handleDeleteApiKey = async (keyToDelete: string) => {
+  const handleDeleteAppId = async (idToDelete: string) => {
     if (!user) return;
-    const label = userData?.apiKeyLabels?.[keyToDelete] || 'this key';
+    const label = userData?.appIdLabels?.[idToDelete] || 'this ID';
     if (!window.confirm(`Are you sure you want to delete the App ID for "${label}"? Apps using it will fail to track impressions.`)) return;
-    const currentKeys = userData?.apiKeys || (userData?.apiKey ? [userData.apiKey] : []);
-    const updatedKeys = currentKeys.filter((k: string) => k !== keyToDelete);
-    const currentLabels = { ...(userData?.apiKeyLabels || {}) };
-    delete currentLabels[keyToDelete];
+    const currentIds = userData?.appIds || (userData?.appId ? [userData.appId] : []);
+    const updatedIds = currentIds.filter((id: string) => id !== idToDelete);
+    const currentLabels = { ...(userData?.appIdLabels || {}) };
+    delete currentLabels[idToDelete];
     try {
       const userRef = doc(db, "users", user.uid);
-      await updateDoc(userRef, { apiKeys: updatedKeys, apiKey: updatedKeys[0] || null, apiKeyLabels: currentLabels });
-      setUserData({ ...userData, apiKeys: updatedKeys, apiKey: updatedKeys[0] || null, apiKeyLabels: currentLabels });
+      await updateDoc(userRef, { appIds: updatedIds, appId: updatedIds[0] || null, appIdLabels: currentLabels });
+      setUserData({ ...userData, appIds: updatedIds, appId: updatedIds[0] || null, appIdLabels: currentLabels });
     } catch (e) {
       console.error("Failed to delete App ID", e);
     }
   };
 
-  const handleUpdateLabel = async (key: string) => {
+  const handleUpdateLabel = async (id: string) => {
     if (!user) return;
     const label = editLabelValue.trim();
     if (!label) return;
     try {
-      const currentLabels = { ...(userData?.apiKeyLabels || {}) };
-      currentLabels[key] = label;
+      const currentLabels = { ...(userData?.appIdLabels || {}) };
+      currentLabels[id] = label;
       const userRef = doc(db, "users", user.uid);
-      await updateDoc(userRef, { apiKeyLabels: currentLabels });
-      setUserData({ ...userData, apiKeyLabels: currentLabels });
+      await updateDoc(userRef, { appIdLabels: currentLabels });
+      setUserData({ ...userData, appIdLabels: currentLabels });
       setEditingLabel(null);
     } catch (e) {
       console.error("Failed to update label", e);
     }
   };
 
-  const copyApiKey = (key: string) => {
-    navigator.clipboard.writeText(key);
-    setCopiedKey(key);
+  const copyAppId = (id: string) => {
+    navigator.clipboard.writeText(id);
+    setCopiedKey(id);
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
-  const handleToggleBlockAdForApp = async (apiKey: string, adId: string, isCurrentlyBlocked: boolean) => {
+  const handleToggleBlockAdForApp = async (appId: string, adId: string, isCurrentlyBlocked: boolean) => {
     if (!user) return;
     setBlockingAd(adId);
     try {
       const userRef = doc(db, "users", user.uid);
       const currentBlockedMap = userData?.blockedAdsByAppId || {};
-      const currentList: string[] = currentBlockedMap[apiKey] || [];
+      const currentList: string[] = currentBlockedMap[appId] || [];
       let updatedList: string[];
       if (isCurrentlyBlocked) {
         updatedList = currentList.filter((id: string) => id !== adId);
       } else {
         updatedList = [...currentList, adId];
       }
-      const updatedMap = { ...currentBlockedMap, [apiKey]: updatedList };
+      const updatedMap = { ...currentBlockedMap, [appId]: updatedList };
       await updateDoc(userRef, { blockedAdsByAppId: updatedMap });
       setUserData({ ...userData, blockedAdsByAppId: updatedMap });
     } catch (e) {
@@ -270,7 +270,7 @@ export default function DashboardPage() {
 
   const totalAdShown = userData?.earningsLog ? Object.values(userData.earningsLog as Record<string, any>).reduce((sum: number, e: any) => sum + (e.impressions || 0), 0) : 0;
   const totalCreditsEarned = userData?.earningsLog ? Object.values(userData.earningsLog as Record<string, any>).reduce((sum: number, e: any) => sum + (e.creditsEarned || 0), 0) : 0;
-  const totalApps = (userData?.apiKeys || (userData?.apiKey ? [userData.apiKey] : [])).length;
+  const totalApps = (userData?.appIds || (userData?.appId ? [userData.appId] : [])).length;
   const totalSpent = Math.max(0, 75 + totalCreditsEarned - (userData?.credits || 0));
 
   const getPast30DaysSum = (dailyLog: Record<string, number> | undefined) => {
@@ -519,11 +519,11 @@ export default function DashboardPage() {
                 {Object.entries(userData.earningsLog as Record<string, any>)
                   .sort(([, a], [, b]) => (b.creditsEarned || 0) - (a.creditsEarned || 0))
                   .map(([adId, entry]) => {
-                    const apiKeys = userData.apiKeys || (userData.apiKey ? [userData.apiKey] : []);
-                    const keyLabel = entry.apiKey && userData.apiKeyLabels?.[entry.apiKey]
-                      ? userData.apiKeyLabels[entry.apiKey]
+                    const appIds = userData.appIds || (userData.appId ? [userData.appId] : []);
+                    const keyLabel = entry.appId && userData.appIdLabels?.[entry.appId]
+                      ? userData.appIdLabels[entry.appId]
                       : 'Unknown App';
-                    const maskedKey = entry.apiKey ? `${entry.apiKey.substring(0, 6)}...${entry.apiKey.slice(-4)}` : '—';
+                    const maskedKey = entry.appId ? `${entry.appId.substring(0, 6)}...${entry.appId.slice(-4)}` : '—';
                     return (
                       <div key={adId} className="flex flex-col bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-white/10 rounded-xl overflow-hidden hover:border-zinc-300 dark:hover:border-white/20 transition-colors">
                         <div 
@@ -582,11 +582,11 @@ export default function DashboardPage() {
                             <div className="flex flex-col items-center min-w-0">
                               <div className="flex items-center gap-1">
                                 <Smartphone className="w-3 h-3 text-amber-500 dark:text-amber-400 shrink-0" />
-                                <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300 truncate max-w-[100px]" title={`${keyLabel} (${entry.apiKey})`}>
+                                <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300 truncate max-w-[100px]" title={`${keyLabel} (${entry.appId})`}>
                                   {keyLabel}
                                 </span>
                               </div>
-                              <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500 truncate max-w-[100px]" title={entry.apiKey}>
+                              <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500 truncate max-w-[100px]" title={entry.appId}>
                                 {maskedKey}
                               </span>
                             </div>
@@ -737,13 +737,13 @@ export default function DashboardPage() {
                   placeholder='e.g. "My Blog" or "Adventure Book"'
                   value={newKeyLabel}
                   onChange={(e) => setNewKeyLabel(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleGenerateApiKey()}
+                  onKeyDown={(e) => e.key === 'Enter' && handleGenerateAppId()}
                   className="flex-grow bg-white dark:bg-black/50 border border-zinc-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
                   autoFocus
                 />
                 <div className="flex gap-2">
                   <button
-                    onClick={handleGenerateApiKey}
+                    onClick={handleGenerateAppId}
                     disabled={generating || !newKeyLabel.trim()}
                     className="px-4 py-2 bg-zinc-900 border border-transparent dark:bg-zinc-800 text-white dark:text-zinc-200 text-sm font-medium rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors cursor-pointer"
                   >
@@ -760,11 +760,11 @@ export default function DashboardPage() {
             </div>
           )}
           
-          {(userData.apiKeys || (userData.apiKey ? [userData.apiKey] : [])).length > 0 && (
+          {(userData.appIds || (userData.appId ? [userData.appId] : [])).length > 0 && (
             <div className="mt-6 space-y-3">
-              {(userData.apiKeys || (userData.apiKey ? [userData.apiKey] : [])).map((key: string) => {
+              {(userData.appIds || (userData.appId ? [userData.appId] : [])).map((key: string) => {
                 const appCampaigns = Object.entries(userData.earningsLog as Record<string, any> || {})
-                  .filter(([, entry]) => entry.apiKey === key)
+                  .filter(([, entry]) => entry.appId === key)
                   .sort(([, a], [, b]) => {
                     const timeA = a.lastUpdated ? new Date(a.lastUpdated).getTime() : 0;
                     const timeB = b.lastUpdated ? new Date(b.lastUpdated).getTime() : 0;
@@ -772,7 +772,7 @@ export default function DashboardPage() {
                   });
 
                 const autoLabel = appCampaigns.find(([, entry]) => !!entry.appName)?.[1]?.appName;
-                const explicitLabel = userData?.apiKeyLabels?.[key];
+                const explicitLabel = userData?.appIdLabels?.[key];
                 const label = explicitLabel || (autoLabel ? `${autoLabel} (Auto)` : 'Unlabeled App');
 
                 return (
@@ -815,7 +815,7 @@ export default function DashboardPage() {
                         )}
                       </div>
                       <button
-                        onClick={() => handleDeleteApiKey(key)}
+                        onClick={() => handleDeleteAppId(key)}
                         className="p-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 border border-red-100 dark:border-red-500/20 rounded-lg text-red-600 dark:text-red-400 transition-colors"
                         title="Delete App ID"
                       >
@@ -825,17 +825,17 @@ export default function DashboardPage() {
                     {/* Key row */}
                     <div className="flex items-center gap-2">
                       <div className="font-mono text-xs text-zinc-600 dark:text-zinc-400 truncate flex-grow bg-zinc-100 dark:bg-zinc-900/50 rounded-lg px-3 py-2 border border-zinc-200 dark:border-white/5">
-                        {showApiKey[key] ? key : "•".repeat(40)}
+                        {showAppId[key] ? key : "•".repeat(40)}
                       </div>
                       <button
-                        onClick={() => setShowApiKey(prev => ({ ...prev, [key]: !prev[key] }))}
+                        onClick={() => setShowAppId(prev => ({ ...prev, [key]: !prev[key] }))}
                         className="p-2 bg-white hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-white/10 rounded-lg text-zinc-600 dark:text-zinc-400 transition-colors shrink-0"
-                        title={showApiKey[key] ? "Hide App ID" : "Show App ID"}
+                        title={showAppId[key] ? "Hide App ID" : "Show App ID"}
                       >
-                        {showApiKey[key] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        {showAppId[key] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                       <button
-                        onClick={() => copyApiKey(key)}
+                        onClick={() => copyAppId(key)}
                         className="p-2 bg-white hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-white/10 rounded-lg text-zinc-600 dark:text-zinc-400 transition-colors shrink-0"
                         title="Copy App ID"
                       >
@@ -1010,7 +1010,7 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-          <McpServerConfig initialAppId={userData?.apiKeys?.[0] || userData?.apiKey} />
+          <McpServerConfig initialAppId={userData?.appIds?.[0] || userData?.appId} />
         </div>
       )}
 
@@ -1030,7 +1030,7 @@ import { AdTogether } from '@adtogether/web-sdk';
 import { AdTogetherBanner, AdTogetherInterstitial } from '@adtogether/web-sdk/react';
 
 // Initialize
-AdTogether.initialize({ appId: '${userData?.apiKeys?.[0] || userData?.apiKey || 'YOUR_APP_ID'}' });
+AdTogether.initialize({ appId: '${userData?.appIds?.[0] || userData?.appId || 'YOUR_APP_ID'}' });
 
 // Banner Ad
 <AdTogetherBanner 
@@ -1062,7 +1062,7 @@ const [showAd, setShowAd] = useState(false);
                 code={`import 'package:adtogether_sdk/adtogether_sdk.dart';
 
 // Initialize
-await AdTogether.initialize(appId: '${userData?.apiKeys?.[0] || userData?.apiKey || 'YOUR_APP_ID'}');
+await AdTogether.initialize(appId: '${userData?.appIds?.[0] || userData?.appId || 'YOUR_APP_ID'}');
 
 // Banner Ad
 AdTogetherBanner(
@@ -1093,7 +1093,7 @@ AdTogetherInterstitial.show(
                 code={`import { AdTogether, AdTogetherBanner, AdTogetherInterstitial } from '@adtogether/react-native-sdk';
 
 // Initialize
-AdTogether.initialize({ appId: '${userData?.apiKeys?.[0] || userData?.apiKey || 'YOUR_APP_ID'}' });
+AdTogether.initialize({ appId: '${userData?.appIds?.[0] || userData?.appId || 'YOUR_APP_ID'}' });
 
 // Banner Ad
 <AdTogetherBanner 
@@ -1124,7 +1124,7 @@ const [showAd, setShowAd] = useState(false);
                 code={`import AdTogether
 
 // Initialize
-AdTogether.initialize(appId: "${userData?.apiKeys?.[0] || userData?.apiKey || 'YOUR_APP_ID'}")
+AdTogether.initialize(appId: "${userData?.appIds?.[0] || userData?.appId || 'YOUR_APP_ID'}")
 
 // Banner Ad
 AdTogetherView(
@@ -1160,7 +1160,7 @@ import com.adtogether.sdk.views.AdTogetherView
 import com.adtogether.sdk.views.AdTogetherInterstitial
 
 // Initialize
-AdTogether.initialize(context, "${userData?.apiKeys?.[0] || userData?.apiKey || 'YOUR_APP_ID'}")
+AdTogether.initialize(context, "${userData?.appIds?.[0] || userData?.appId || 'YOUR_APP_ID'}")
 
 // Banner Ad
 AdTogetherView(
@@ -1203,14 +1203,14 @@ if (showAd) {
                 <CodeBlock
                   language="bash"
                   title="1. Fetch Ad (GET)"
-                  code={`curl -X GET "https://www.ad-together.org/api/ads/serve?country=global&adUnitId=YOUR_AD_UNIT_ID&adType=banner&apiKey=${userData?.apiKeys?.[0] || userData?.apiKey || 'YOUR_APP_ID'}&bundleId=com.example.myapp"`}
+                  code={`curl -X GET "https://www.ad-together.org/api/ads/serve?country=global&adUnitId=YOUR_AD_UNIT_ID&adType=banner&appId=${userData?.appIds?.[0] || userData?.appId || 'YOUR_APP_ID'}&bundleId=com.example.myapp"`}
                 />
                 <CodeBlock
                   language="bash"
                   title="2. Track Impression (POST)"
                   code={`curl -X POST "https://www.ad-together.org/api/ads/impression" \\
   -H "Content-Type: application/json" \\
-  -d '{"adId": "AD_ID", "token": "HMAC_TOKEN", "apiKey": "${userData?.apiKeys?.[0] || userData?.apiKey || 'YOUR_APP_ID'}", "bundleId": "com.example.myapp", "platform": "android"}'`}
+  -d '{"adId": "AD_ID", "token": "HMAC_TOKEN", "appId": "${userData?.appIds?.[0] || userData?.appId || 'YOUR_APP_ID'}", "bundleId": "com.example.myapp", "platform": "android"}'`}
                 />
               </div>
             </div>
@@ -1742,7 +1742,7 @@ if (showAd) {
               {previewAd.fromAppKey && (() => {
                 const realAdId = previewAd.adId;
                 const isBlocked = (userData?.blockedAdsByAppId?.[previewAd.fromAppKey] || []).includes(realAdId);
-                const appLabel = userData?.apiKeyLabels?.[previewAd.fromAppKey] || 'this app';
+                const appLabel = userData?.appIdLabels?.[previewAd.fromAppKey] || 'this app';
                 return (
                   <button
                     onClick={() => handleToggleBlockAdForApp(previewAd.fromAppKey, realAdId, isBlocked)}

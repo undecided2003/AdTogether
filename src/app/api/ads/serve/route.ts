@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const targetCountry = searchParams.get('country') || 'global';
     const adUnitId = searchParams.get('adUnitId');
-    const apiKey = searchParams.get('apiKey');
+    const appId = searchParams.get('appId') || searchParams.get('apiKey');
     const adType = searchParams.get('adType') || 'banner';
     const exclude = searchParams.get('exclude'); // ID of the last shown ad
     const bundleId = searchParams.get('bundleId'); // Optional from mobile SDKs
@@ -48,22 +48,39 @@ export async function GET(request: Request) {
     let viewerUid: string | null = null;
     let publisherBlockedAds: string[] = [];
     
-    if (!apiKey) {
-      return NextResponse.json({ error: 'App ID (apiKey) is required' }, { status: 400, headers: corsHeaders });
+    if (!appId) {
+      return NextResponse.json({ error: 'App ID is required' }, { status: 400, headers: corsHeaders });
     }
 
-    const pSnap = await db.collection('users').where('apiKey', '==', apiKey).limit(1).get();
-    if (!pSnap.empty) {
-      viewerUid = pSnap.docs[0].id;
-      const pData = pSnap.docs[0].data();
-      publisherBlockedAds = pData?.blockedAdsByAppId?.[apiKey] || [];
-    } else {
-      const pSnapArr = await db.collection('users').where('apiKeys', 'array-contains', apiKey).limit(1).get();
-      if (!pSnapArr.empty) {
-        viewerUid = pSnapArr.docs[0].id;
-        const pData = pSnapArr.docs[0].data();
-        publisherBlockedAds = pData?.blockedAdsByAppId?.[apiKey] || [];
-      }
+    const effectiveAppId = appId;
+    
+    // Find the viewer (publisher) account based on the App ID
+    // Sequential check: appId -> appIds -> apiKey -> apiKeys
+    const userSnap = await (async () => {
+      // 1. Try appId field
+      const snap1 = await db.collection('users').where('appId', '==', effectiveAppId).limit(1).get();
+      if (!snap1.empty) return snap1.docs[0];
+      
+      // 2. Try appIds array
+      const snap2 = await db.collection('users').where('appIds', 'array-contains', effectiveAppId).limit(1).get();
+      if (!snap2.empty) return snap2.docs[0];
+      
+      // 3. Fallback to legacy apiKey field
+      const snap3 = await db.collection('users').where('apiKey', '==', effectiveAppId).limit(1).get();
+      if (!snap3.empty) return snap3.docs[0];
+      
+      // 4. Fallback to legacy apiKeys array
+      const snap4 = await db.collection('users').where('apiKeys', 'array-contains', effectiveAppId).limit(1).get();
+      if (!snap4.empty) return snap4.docs[0];
+      
+      return null;
+    })();
+
+    if (userSnap) {
+      viewerUid = userSnap.id;
+      const pData = userSnap.data();
+      // Blocked ads are keyed by the specific App ID being used
+      publisherBlockedAds = pData?.blockedAdsByAppId?.[effectiveAppId] || [];
     }
 
     if (!viewerUid) {

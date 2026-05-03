@@ -26,8 +26,8 @@ if (typeof window !== 'undefined') {
 **`AdTogether.initialize()` accepts:**
 ```typescript
 interface AdTogetherOptions {
-  appId?: string;       // Your registered app ID (preferred)
-  apiKey?: string;      // Alternative name for appId
+  appId?: string;       // Your registered app ID (required)
+  apiKey?: string;      // @deprecated Use appId instead
   baseUrl?: string;     // Override API base URL (optional)
   bundleId?: string;    // Explicit site identifier (optional, auto-detected from window.location.hostname)
   allowSelfAds?: boolean; // Show own ads as fallback (default: true)
