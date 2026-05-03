@@ -79,7 +79,7 @@ This ensures you have the exact API signatures and security invariants required 
 ### CocoaPods
 
 ```ruby
-pod 'AdTogether', '~> 0.1.26'
+pod 'AdTogether', '~> 0.4.1'
 ```
 
 ### Initialize

@@ -1,6 +1,6 @@
 name: adtogether_sdk
 description: "The official AdTogether Flutter SDK — reciprocal ad exchange to increase conversions and grow your audience."
-version: 0.4.0
+version: 0.4.1
 homepage: "https://www.ad-together.org"
 repository: "https://github.com/undecided2003/adtogether-flutter-sdk"
 issue_tracker: "https://github.com/undecided2003/adtogether-flutter-sdk/issues"
@@ -18,8 +18,8 @@ screenshots:
   - description: "Premium AdTogether Interstitial Ad Experience"
     path: doc/preview_premium.png
 environment:
-  sdk: ^3.11.4
-  flutter: ">=1.17.0"
+  sdk: ">=3.3.0 <4.0.0"
+  flutter: ">=3.3.0"
 
 dependencies:
   flutter:

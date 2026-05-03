@@ -1,3 +1,6 @@
+## 0.4.1
+* **Sync**: Version parity (0.4.1) across all AdTogether SDKs.
+
 ## 0.4.0
 * **Security**: Standardized `appId` as the primary identifier across all platforms.
 * **Deprecation**: Formally deprecated `apiKey` in favor of `appId` to align with the AdTogether dashboard.
