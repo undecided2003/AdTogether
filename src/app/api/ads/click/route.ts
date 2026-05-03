@@ -36,7 +36,7 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const { adId, token, bundleId, environment, country, apiKey: legacyApiKey, appId: newAppId } = body;
-    const effectiveAppId = newAppId || appId || legacyApiKey;
+    const effectiveAppId = newAppId || legacyApiKey;
     const finalCountry = country || ipCountry;
 
     // Ignore local test traffic

@@ -713,9 +713,9 @@ export default function DashboardPage() {
               </div>
             </div>
             
-            {!showNewKeyForm && (
+            {!showNewAppIdForm && (
               <button
-                onClick={() => setShowNewKeyForm(true)}
+                onClick={() => setShowNewAppIdForm(true)}
                 className="w-full sm:w-auto bg-zinc-100 hover:bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-white px-5 py-2.5 rounded-xl font-medium transition-colors whitespace-nowrap flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
@@ -725,7 +725,7 @@ export default function DashboardPage() {
           </div>
 
           {/* New key creation form */}
-          {showNewKeyForm && (
+          {showNewAppIdForm && (
             <div className="mt-6 bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/20 rounded-xl p-5">
               <h4 className="text-sm font-semibold text-zinc-900 dark:text-white mb-3 flex items-center gap-2">
                 <Smartphone className="w-4 h-4 text-amber-500" />
@@ -735,8 +735,8 @@ export default function DashboardPage() {
                 <input
                   type="text"
                   placeholder='e.g. "My Blog" or "Adventure Book"'
-                  value={newKeyLabel}
-                  onChange={(e) => setNewKeyLabel(e.target.value)}
+                  value={newAppIdLabel}
+                  onChange={(e) => setNewAppIdLabel(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleGenerateAppId()}
                   className="flex-grow bg-white dark:bg-black/50 border border-zinc-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
                   autoFocus
@@ -744,13 +744,13 @@ export default function DashboardPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={handleGenerateAppId}
-                    disabled={generating || !newKeyLabel.trim()}
+                    disabled={generating || !newAppIdLabel.trim()}
                     className="px-4 py-2 bg-zinc-900 border border-transparent dark:bg-zinc-800 text-white dark:text-zinc-200 text-sm font-medium rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors cursor-pointer"
                   >
                     {generating ? "Generating..." : "Generate App ID"}
                   </button>
                   <button
-                    onClick={() => { setShowNewKeyForm(false); setNewKeyLabel(""); }}
+                    onClick={() => { setShowNewAppIdForm(false); setNewAppIdLabel(""); }}
                     className="p-2.5 rounded-xl border border-zinc-200 dark:border-white/10 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors"
                   >
                     <X className="w-4 h-4" />
