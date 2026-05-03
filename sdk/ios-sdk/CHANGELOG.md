@@ -1,5 +1,5 @@
-## 0.4.2
-* **Sync**: Version parity (0.4.2) across all AdTogether SDKs.
+## 0.4.3
+* **Sync**: Version parity (0.4.3) across all AdTogether SDKs.
 
 ## 0.4.0
 * **Security**: Standardized `appId` as the primary identifier across all platforms.

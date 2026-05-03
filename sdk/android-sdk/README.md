@@ -74,7 +74,7 @@ Add the dependency to your app-level `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.relaxsoftwareapps.adtogether:sdk:0.4.2")
+    implementation("com.relaxsoftwareapps.adtogether:sdk:0.4.3")
 }
 ```
 
