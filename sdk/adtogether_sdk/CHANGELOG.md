@@ -1,3 +1,7 @@
+## 0.4.2
+* **Fix**: Fixed example project Dart SDK constraints (`example/pubspec.yaml`) from `^3.11.4` to `">=3.3.0 <4.0.0"` to properly pass pub.dev package resolution and analysis.
+* **Sync**: Version parity (0.4.2) across all AdTogether SDKs.
+
 ## 0.4.1
 * **Fix**: Relaxed Dart SDK constraints to fix dependency resolution failures during pub.dev static analysis.
 * **Sync**: Version parity (0.4.1) across all AdTogether SDKs.

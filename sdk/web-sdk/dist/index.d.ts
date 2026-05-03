@@ -9,7 +9,9 @@ interface AdModel {
     adType?: AdType;
 }
 interface AdTogetherOptions {
+    /** The unique identifier for your application. */
     appId?: string;
+    /** @deprecated Use appId instead */
     apiKey?: string;
     baseUrl?: string;
     bundleId?: string;

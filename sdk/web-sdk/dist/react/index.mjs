@@ -1,6 +1,6 @@
 import {
   AdTogether
-} from "../chunk-EGEGGY7K.mjs";
+} from "../chunk-5UAFUJUK.mjs";
 
 // src/react/AdTogetherBanner.tsx
 import { useEffect, useRef, useState } from "react";

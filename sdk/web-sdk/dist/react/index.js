@@ -42,7 +42,12 @@ var AdTogether = class _AdTogether {
   }
   static initialize(options) {
     const sdk = _AdTogether.shared;
-    sdk.appId = options.apiKey || options.appId;
+    if (options.apiKey && !options.appId) {
+      console.warn('AdTogether: "apiKey" is deprecated. Please use "appId" instead.');
+      sdk.appId = options.apiKey;
+    } else {
+      sdk.appId = options.appId;
+    }
     if (options.bundleId) {
       sdk.bundleId = options.bundleId;
     } else if (typeof window !== "undefined") {
@@ -71,7 +76,7 @@ var AdTogether = class _AdTogether {
     }
     try {
       const sdk = _AdTogether.shared;
-      let url = `${sdk.baseUrl}/api/ads/serve?country=global&adUnitId=${adUnitId}&apiKey=${sdk.appId}`;
+      let url = `${sdk.baseUrl}/api/ads/serve?country=global&adUnitId=${adUnitId}&appId=${sdk.appId}`;
       if (adType) {
         url += `&adType=${adType}`;
       }
@@ -143,7 +148,7 @@ var AdTogether = class _AdTogether {
       body: JSON.stringify({
         adId,
         token,
-        apiKey: _AdTogether.shared.appId,
+        appId: _AdTogether.shared.appId,
         ..._AdTogether.shared.bundleId ? { bundleId: _AdTogether.shared.bundleId } : {},
         // Send platform and environment to match Flutter SDK
         platform: "web",
