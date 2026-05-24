@@ -1,0 +1,56 @@
+name: Create Release Tag
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version number'
+        required: true
+        default: '0.5.0'
+      tag_name:
+        description: 'Git tag name to create (defaults to v<version>)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  create-release-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Resolve tag name
+        id: resolve-tag
+        run: |
+          if [ -n "${{ inputs.tag_name }}" ]; then
+            echo "tag_name=${{ inputs.tag_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag_name=v${{ inputs.version }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check whether tag already exists
+        run: |
+          TAG_NAME="${{ steps.resolve-tag.outputs.tag_name }}"
+          if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+            echo "Tag '$TAG_NAME' already exists."
+            exit 1
+          fi
+
+      - name: Create and push release tag
+        run: |
+          TAG_NAME="${{ steps.resolve-tag.outputs.tag_name }}"
+          git tag "$TAG_NAME"
+          git push origin "refs/tags/$TAG_NAME"
+
+      - name: Output release tag
+        run: echo "Created tag ${{ steps.resolve-tag.outputs.tag_name }}"
