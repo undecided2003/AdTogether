@@ -1,4 +1,4 @@
-## 0.4.5
+## 0.5.0
 * **Fix**: Removed `package_info_plus` dependency — it was the last package transitively pulling in `http`, which triggers a pub.dev Pana infrastructure bug (`advisoriesUpdated must be a String`).
 * **Internal**: Replaced with lightweight native platform info detection using `dart:io` (no external packages).
 * **Result**: The SDK now has **zero transitive dependencies on `http`**, enabling clean pub.dev analysis.

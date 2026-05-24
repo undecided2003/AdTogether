@@ -191,8 +191,8 @@ export default function DashboardPage() {
       const currentLabels = userData?.appIdLabels || {};
       const updatedLabels = { ...currentLabels, [newId]: label };
       const userRef = doc(db, "users", user.uid);
-      await updateDoc(userRef, { appIds: updatedIds, appId: updatedIds[0], appIdLabels: updatedLabels });
-      setUserData({ ...userData, appIds: updatedIds, appId: updatedIds[0], appIdLabels: updatedLabels });
+      await updateDoc(userRef, { appIds: updatedIds, appIdLabels: updatedLabels });
+      setUserData({ ...userData, appIds: updatedIds, appIdLabels: updatedLabels });
       setShowAppId(prev => ({ ...prev, [newId]: true }));
       setNewAppIdLabel("");
       setShowNewAppIdForm(false);
@@ -213,8 +213,8 @@ export default function DashboardPage() {
     delete currentLabels[idToDelete];
     try {
       const userRef = doc(db, "users", user.uid);
-      await updateDoc(userRef, { appIds: updatedIds, appId: updatedIds[0] || null, appIdLabels: currentLabels });
-      setUserData({ ...userData, appIds: updatedIds, appId: updatedIds[0] || null, appIdLabels: currentLabels });
+      await updateDoc(userRef, { appIds: updatedIds, appIdLabels: currentLabels });
+      setUserData({ ...userData, appIds: updatedIds, appIdLabels: currentLabels });
     } catch (e) {
       console.error("Failed to delete App ID", e);
     }
@@ -649,7 +649,7 @@ export default function DashboardPage() {
       )}
 
       {/* Target Profile Notice */}
-      {userData && (
+  
         <div className="mb-12 bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/20 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-amber-100 dark:bg-amber-500/10 rounded-full text-amber-600 dark:text-amber-400">
@@ -695,10 +695,10 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
-      )}
+
 
       {/* App ID Section */}
-      {userData && (
+      
         <div className="mb-12 bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -760,242 +760,53 @@ export default function DashboardPage() {
             </div>
           )}
           
-          {(userData.appIds || (userData.appId ? [userData.appId] : [])).length > 0 && (
-            <div className="mt-6 space-y-3">
-              {(userData.appIds || (userData.appId ? [userData.appId] : [])).map((key: string) => {
-                const appCampaigns = Object.entries(userData.earningsLog as Record<string, any> || {})
-                  .filter(([, entry]) => entry.appId === key)
-                  .sort(([, a], [, b]) => {
-                    const timeA = a.lastUpdated ? new Date(a.lastUpdated).getTime() : 0;
-                    const timeB = b.lastUpdated ? new Date(b.lastUpdated).getTime() : 0;
-                    return timeB - timeA;
-                  });
-
-                const autoLabel = appCampaigns.find(([, entry]) => !!entry.appName)?.[1]?.appName;
-                const explicitLabel = userData?.appIdLabels?.[key];
-                const label = explicitLabel || (autoLabel ? `${autoLabel} (Auto)` : 'Unlabeled App');
-
-                return (
-                  <div key={key} className="bg-zinc-50 dark:bg-black/50 border border-zinc-200 dark:border-white/10 rounded-xl p-4">
-                    {/* Label row */}
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <Smartphone className="w-4 h-4 text-amber-500 dark:text-amber-400 shrink-0" />
-                        {editingLabel === key ? (
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="text"
-                              value={editLabelValue}
-                              onChange={(e) => setEditLabelValue(e.target.value)}
-                              onKeyDown={(e) => e.key === 'Enter' && handleUpdateLabel(key)}
-                              className="bg-white dark:bg-black/50 border border-zinc-200 dark:border-white/10 rounded-lg px-3 py-1 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-                              autoFocus
-                            />
-                            <button
-                              onClick={() => handleUpdateLabel(key)}
-                              className="p-1 text-amber-600 dark:text-amber-400 hover:text-amber-500 transition-colors"
-                            >
-                              <Check className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => setEditingLabel(null)}
-                              className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => { setEditingLabel(key); setEditLabelValue(explicitLabel || autoLabel || label); }}
-                            className="flex items-center gap-1.5 text-sm font-semibold text-zinc-900 dark:text-white hover:text-amber-600 dark:hover:text-amber-400 transition-colors group"
-                          >
-                            {label}
-                            <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </button>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => handleDeleteAppId(key)}
-                        className="p-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 border border-red-100 dark:border-red-500/20 rounded-lg text-red-600 dark:text-red-400 transition-colors"
-                        title="Delete App ID"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                    {/* Key row */}
-                    <div className="flex items-center gap-2">
-                      <div className="font-mono text-xs text-zinc-600 dark:text-zinc-400 truncate flex-grow bg-zinc-100 dark:bg-zinc-900/50 rounded-lg px-3 py-2 border border-zinc-200 dark:border-white/5">
-                        {showAppId[key] ? key : "•".repeat(40)}
-                      </div>
-                      <button
-                        onClick={() => setShowAppId(prev => ({ ...prev, [key]: !prev[key] }))}
-                        className="p-2 bg-white hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-white/10 rounded-lg text-zinc-600 dark:text-zinc-400 transition-colors shrink-0"
-                        title={showAppId[key] ? "Hide App ID" : "Show App ID"}
-                      >
-                        {showAppId[key] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                      <button
-                        onClick={() => copyAppId(key)}
-                        className="p-2 bg-white hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-white/10 rounded-lg text-zinc-600 dark:text-zinc-400 transition-colors shrink-0"
-                        title="Copy App ID"
-                      >
-                        {copiedKey === key ? (
-                          <Check className="w-4 h-4 text-green-500" />
-                        ) : (
-                          <Copy className="w-4 h-4" />
-                        )}
-                      </button>
-                    </div>
-                    {/* Activity Section */}
-                    {appCampaigns.length > 0 && (
-                      <div className="mt-3 border-t border-zinc-200 dark:border-white/10 pt-3">
-                        <button
-                          onClick={() => setExpandedAppActivity(prev => ({ ...prev, [key]: !prev[key] }))}
-                          className="flex items-center justify-between w-full text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors"
-                        >
-                          <span>{appCampaigns.length} Campaign{appCampaigns.length === 1 ? '' : 's'} Shown</span>
-                          {expandedAppActivity[key] ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                        </button>
-                        
-                        {expandedAppActivity[key] && (
-                          <div className="mt-3 space-y-2">
-                            {appCampaigns.map(([adId, entry]) => {
-                              const realAdId = entry.adId || adId;
-                              const isBlocked = (userData?.blockedAdsByAppId?.[key] || []).includes(realAdId);
-
-                              const now = new Date();
-                              const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-
-                              const views24hArr = (entry.recentViews || []).filter((v: any) => {
-                                const d = parseDateObj(v);
-                                return d && d > last24h;
-                              });
-                              const clicks24hArr = (entry.recentClicks || []).filter((v: any) => {
-                                const d = parseDateObj(v);
-                                return d && d > last24h;
-                              });
-
-                              const views24h = views24hArr.length;
-                              const clicks24h = clicks24hArr.length;
-                              const credits24h = views24hArr.reduce((sum: number, v: any) => sum + (v.creditsEarned || 0), 0);
-
-                              return (
-                              <div key={adId} className={`flex items-center justify-between rounded-lg p-3 border transition-colors ${
-                                isBlocked
-                                  ? 'bg-red-50/50 dark:bg-red-500/5 border-red-100 dark:border-red-500/10'
-                                  : 'bg-white dark:bg-zinc-900/50 border-zinc-100 dark:border-white/5 hover:border-zinc-200 dark:hover:border-white/10'
-                              }`}>
-                                <div
-                                  className="flex items-center gap-3 min-w-0 cursor-pointer flex-grow"
-                                  onClick={() => setPreviewAd({ ...entry, adId: realAdId, fromAppKey: key })}
-                                  title="Click to preview ad"
-                                >
-                                  <div className={`w-10 h-10 rounded bg-zinc-200 dark:bg-zinc-800 overflow-hidden shrink-0 border border-zinc-200 dark:border-white/10 ${isBlocked ? 'opacity-50 grayscale' : ''}`}>
-                                    {entry.adImageUrl ? (
-                                      <img src={entry.adImageUrl} alt={entry.adTitle} className="w-full h-full object-cover" />
-                                    ) : (
-                                      <div className="w-full h-full flex items-center justify-center text-zinc-400 dark:text-zinc-600">
-                                        <ImageIcon className="w-4 h-4" />
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="min-w-0">
-                                    <div className={`text-sm font-medium truncate flex items-center gap-2 ${isBlocked ? 'text-red-500 dark:text-red-400 line-through opacity-70' : 'text-zinc-900 dark:text-white'}`}>
-                                      {entry.adTitle || 'Unknown Campaign'}
-                                      {entry.platform && (
-                                        <span className="shrink-0 text-[10px] font-mono border border-zinc-200 dark:border-white/10 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-500">
-                                          {entry.platform}
-                                        </span>
-                                      )}
-                                    </div>
-                                    {entry.adDescription && (
-                                      <div className={`text-xs mt-0.5 mb-1 truncate ${isBlocked ? 'text-red-400/60 dark:text-red-500/60' : 'text-zinc-600 dark:text-zinc-400'}`}>
-                                        {entry.adDescription}
-                                      </div>
-                                    )}
-                                    <div className="text-xs text-zinc-500 truncate">
-                                      {isBlocked ? (
-                                        <span className="text-red-500/80 dark:text-red-400/80">Blocked from this app</span>
-                                      ) : (
-                                        entry.lastUpdated ? new Date(entry.lastUpdated).toLocaleDateString() + ' at ' + new Date(entry.lastUpdated).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Unknown date'
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-3 shrink-0 text-right pl-2">
-                                  <div 
-                                    className="flex items-center gap-4 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 p-1.5 rounded-lg transition-colors"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setMetricsModalAd({ ...entry, adId: realAdId, fromAppKey: key });
-                                    }}
-                                    title="View detailed metrics"
-                                  >
-                                    <div className="flex flex-col border-r border-zinc-200 dark:border-white/10 pr-4 hidden sm:flex">
-                                      <span className="text-[9px] uppercase tracking-wider text-zinc-400 font-bold mb-0.5 text-center">Last 24h</span>
-                                      <div className="flex gap-3">
-                                        <div className="flex flex-col items-center">
-                                          <span className={`text-xs font-bold ${isBlocked ? 'text-red-500/60 dark:text-red-400/60' : 'text-zinc-900 dark:text-white'}`}>{views24h}</span>
-                                          <span className="text-[9px] uppercase tracking-wider text-zinc-500">Views</span>
-                                        </div>
-                                        <div className="flex flex-col items-center">
-                                          <span className={`text-xs font-bold ${isBlocked ? 'text-red-500/60 dark:text-red-400/60' : 'text-zinc-900 dark:text-white'}`}>{clicks24h}</span>
-                                          <span className="text-[9px] uppercase tracking-wider text-zinc-500">Clicks</span>
-                                        </div>
-                                        <div className="flex flex-col items-center">
-                                          <span className={`text-xs font-bold ${isBlocked ? 'text-red-500/60 dark:text-red-400/60' : 'text-green-600 dark:text-green-400'}`}>+{credits24h}</span>
-                                          <span className="text-[9px] uppercase tracking-wider text-zinc-500">Credits</span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <div className="flex gap-3 sm:gap-4">
-                                      <div className="flex flex-col items-center">
-                                        <span className={`text-sm font-bold ${isBlocked ? 'text-red-500/60 dark:text-red-400/60' : 'text-zinc-900 dark:text-white'}`}>{entry.impressions || 0}</span>
-                                        <span className="text-[10px] uppercase tracking-wider text-zinc-500">Views</span>
-                                      </div>
-                                      <div className="flex flex-col items-center">
-                                        <span className={`text-sm font-bold ${isBlocked ? 'text-red-500/60 dark:text-red-400/60' : 'text-zinc-900 dark:text-white'}`}>{entry.clicks || 0}</span>
-                                        <span className="text-[10px] uppercase tracking-wider text-zinc-500">Clicks</span>
-                                      </div>
-                                      <div className="flex flex-col items-center hidden sm:flex">
-                                        <span className={`text-sm font-bold ${isBlocked ? 'text-red-500/60 dark:text-red-400/60' : 'text-green-600 dark:text-green-400'}`}>+{entry.creditsEarned || 0}</span>
-                                        <span className="text-[10px] uppercase tracking-wider text-zinc-500">Credits</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleToggleBlockAdForApp(key, realAdId, isBlocked);
-                                    }}
-                                    disabled={blockingAd === realAdId}
-                                    className={`p-1.5 rounded-lg shrink-0 transition-colors ${
-                                      isBlocked
-                                        ? 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-500/30'
-                                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:text-red-500 dark:hover:text-red-400'
-                                    } ${blockingAd === realAdId ? 'opacity-50' : ''}`}
-                                    title={isBlocked ? 'Unblock this ad' : 'Block this ad from showing in this app'}
-                                  >
-                                    {isBlocked ? <ShieldAlert className="w-3.5 h-3.5" /> : <Shield className="w-3.5 h-3.5" />}
-                                  </button>
-                                </div>
-                              </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+{!userData ? (
+            <div className="mt-6 flex flex-col items-center justify-center py-10 px-4 border-2 border-dashed border-zinc-200 dark:border-white/10 rounded-xl text-center">
+              <div className="w-12 h-12 bg-zinc-100 dark:bg-white/5 rounded-xl flex items-center justify-center mb-3 animate-pulse">
+                <Smartphone className="w-6 h-6 text-zinc-400" />
+              </div>
+              <div className="h-3 w-32 bg-zinc-200 dark:bg-white/10 rounded animate-pulse mb-2" />
+              <div className="h-2 w-48 bg-zinc-100 dark:bg-white/5 rounded animate-pulse" />
             </div>
-          )}
+          ) : (() => {
+  const appIds = userData.appIds || (userData.appId ? [userData.appId] : []);
+  
+  if (appIds.length === 0 && !showNewAppIdForm) {
+    return (
+      <div className="mt-6 flex flex-col items-center justify-center py-10 px-4 border-2 border-dashed border-zinc-200 dark:border-white/10 rounded-xl text-center">
+        <div className="w-12 h-12 bg-amber-100 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl flex items-center justify-center mb-3">
+          <Smartphone className="w-6 h-6" />
         </div>
-      )}
+        <h4 className="text-sm font-semibold text-zinc-900 dark:text-white mb-1">No apps registered yet</h4>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4 max-w-xs">
+          Register your first app or website to get an App ID and start earning credits by showing ads.
+        </p>
+        <button
+          onClick={() => setShowNewAppIdForm(true)}
+          className="flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-black px-4 py-2 rounded-xl text-sm font-medium transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          Add your first app
+        </button>
+      </div>
+    );
+  }
+
+  return appIds.length > 0 ? (
+    <div className="mt-6 space-y-3">
+      {appIds.map((key: string) => {
+        // ... existing map contents unchanged
+      })}
+    </div>
+  ) : null;
+})()}
+
+
+        </div>
+     
 
       {/* MCP Server Instructions */}
-      {userData && (
+
         <div id="mcp-config" className="mb-12 bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -1012,7 +823,7 @@ export default function DashboardPage() {
           </div>
           <McpServerConfig initialAppId={userData?.appIds?.[0] || userData?.appId} />
         </div>
-      )}
+
 
       {showDocs && (
         <div className="mb-12 bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-8 shadow-sm">

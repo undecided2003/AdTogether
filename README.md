@@ -102,9 +102,9 @@ Detailed instructions are provided in each SDK's local `README.md`.
 
 - **Web integration:** `npm install @adtogether/web-sdk`
 - **React Native integration:** `npm install @adtogether/react-native-sdk`
-- **Android integration:** Implement `com.relaxsoftwareapps.adtogether:sdk:0.3.0` inside your `build.gradle.kts`.
+- **Android integration:** Implement `com.relaxsoftwareapps.adtogether:sdk:0.4.5` inside your `build.gradle.kts`.
 - **iOS integration:** Add the Swift Package through Xcode directly from this repository link.
-- **Flutter integration:** Run `flutter pub add adtogether_sdk:^0.2.6`.
+- **Flutter integration:** Run `flutter pub add adtogether_sdk:^0.4.5`.
 
 ---
 
@@ -122,9 +122,19 @@ Whenever a new version tag (e.g., `v1.0.0`) is pushed to the `main` branch, the 
 
 ## 🤖 AI Assistant Integration (MCP)
 
-AdTogether provides a **Model Context Protocol (MCP)** server that allows AI assistants (like Claude Desktop or Cursor) to securely interact with your AdTogether campaigns and account data. 
+AdTogether provides a **Model Context Protocol (MCP)** server so AI assistants can interact with your campaigns and account data, scoped by App ID.
 
-To configure your AI assistant, add the following to your `mcp_config.json`, replacing `YOUR_APP_ID_HERE` with your actual AdTogether App ID from the dashboard:
+| Client | Transport | Endpoint |
+|--------|-----------|----------|
+| **Cursor** | Streamable HTTP | `https://www.ad-together.org/api/mcp?appId=YOUR_APP_ID` |
+| **Antigravity** | SSE | `https://www.ad-together.org/api/mcp/sse?appId=YOUR_APP_ID` |
+| **Claude Desktop** (stdio) | via `mcp-remote` | Bearer token to `/api/mcp` |
+
+**Cursor:** In MCP settings, add a **URL** server (not SSE) and paste the Streamable HTTP URL above.
+
+**Antigravity:** Use `"type": "sse"` with the SSE URL above.
+
+**Claude Desktop / stdio clients:**
 
 ```json
 {
@@ -143,7 +153,7 @@ To configure your AI assistant, add the following to your `mcp_config.json`, rep
 }
 ```
 
-This will give your AI assistant access to the `get_account_info`, `get_campaigns`, and `get_ad_together_documentation` tools, strictly scoped to your own account via the App ID.
+The dashboard MCP panel includes copy-ready URLs and JSON for Cursor and Antigravity.
 
 ---
 

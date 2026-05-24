@@ -55,24 +55,10 @@ export async function GET(request: Request) {
     const effectiveAppId = appId;
     
     // Find the viewer (publisher) account based on the App ID
-    // Sequential check: appId -> appIds -> apiKey -> apiKeys
+    // Check appIds array
     const userSnap = await (async () => {
-      // 1. Try appId field
-      const snap1 = await db.collection('users').where('appId', '==', effectiveAppId).limit(1).get();
-      if (!snap1.empty) return snap1.docs[0];
-      
-      // 2. Try appIds array
-      const snap2 = await db.collection('users').where('appIds', 'array-contains', effectiveAppId).limit(1).get();
-      if (!snap2.empty) return snap2.docs[0];
-      
-      // 3. Fallback to legacy apiKey field
-      const snap3 = await db.collection('users').where('apiKey', '==', effectiveAppId).limit(1).get();
-      if (!snap3.empty) return snap3.docs[0];
-      
-      // 4. Fallback to legacy apiKeys array
-      const snap4 = await db.collection('users').where('apiKeys', 'array-contains', effectiveAppId).limit(1).get();
-      if (!snap4.empty) return snap4.docs[0];
-      
+      const snap = await db.collection('users').where('appIds', 'array-contains', effectiveAppId).limit(1).get();
+      if (!snap.empty) return snap.docs[0];
       return null;
     })();
 

@@ -1,0 +1,139 @@
+﻿[2026-04-14T05:21:17.609Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[2026-04-14T05:21:17.610Z] > authorizing via signed-in user (relax.soft.llc@gmail.com)
+[2026-04-14T05:21:17.610Z] [iam] checking project adtogether-15453 for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[2026-04-14T05:21:17.611Z] Checked if tokens are valid: true, expires at: 1776146494485
+[2026-04-14T05:21:17.611Z] Checked if tokens are valid: true, expires at: 1776146494485
+[2026-04-14T05:21:17.612Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/adtogether-15453:testIamPermissions [none]
+[2026-04-14T05:21:17.613Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/adtogether-15453:testIamPermissions x-goog-quota-user=projects/adtogether-15453
+[2026-04-14T05:21:17.613Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/adtogether-15453:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[2026-04-14T05:21:17.801Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/adtogether-15453:testIamPermissions 200
+[2026-04-14T05:21:17.801Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/adtogether-15453:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[2026-04-14T05:21:17.802Z] Checked if tokens are valid: true, expires at: 1776146494485
+[2026-04-14T05:21:17.802Z] Checked if tokens are valid: true, expires at: 1776146494485
+[2026-04-14T05:21:17.803Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/adtogether-15453 [none]
+[2026-04-14T05:21:18.225Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/adtogether-15453 200
+[2026-04-14T05:21:18.225Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/adtogether-15453 {"projectId":"adtogether-15453","projectNumber":"971040864420","displayName":"adtogether","name":"projects/adtogether-15453","resources":{"hostingSite":"adtogether-15453"},"state":"ACTIVE","etag":"1_b39a46dc-e970-4042-95ad-25682efd0bc8"}
+[2026-04-14T05:21:20.921Z] defaultcredentials: writing to file C:\Users\kevin\AppData\Roaming\firebase\relax_soft.llc_gmail.com_application_default_credentials.json
+[2026-04-14T05:21:20.923Z] Checked if tokens are valid: true, expires at: 1776146494485
+[2026-04-14T05:21:20.923Z] Checked if tokens are valid: true, expires at: 1776146494485
+[2026-04-14T05:21:20.923Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/adtogether-15453/sites pageToken=&pageSize=10
+[2026-04-14T05:21:21.749Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/adtogether-15453/sites 200
+[2026-04-14T05:21:21.749Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/adtogether-15453/sites {"sites":[{"name":"projects/adtogether-15453/sites/adtogether-15453","defaultUrl":"https://adtogether-15453.web.app","appId":"1:971040864420:web:e922ae983b2c188942ce31","type":"DEFAULT_SITE"}]}
+[2026-04-14T05:21:21.750Z] Checked if tokens are valid: true, expires at: 1776146494485
+[2026-04-14T05:21:21.750Z] Checked if tokens are valid: true, expires at: 1776146494485
+[2026-04-14T05:21:21.750Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/-/webApps/1:971040864420:web:e922ae983b2c188942ce31/config [none]
+[2026-04-14T05:21:22.152Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/-/webApps/1:971040864420:web:e922ae983b2c188942ce31/config 200
+[2026-04-14T05:21:22.152Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/-/webApps/1:971040864420:web:e922ae983b2c188942ce31/config {"projectId":"adtogether-15453","appId":"1:971040864420:web:e922ae983b2c188942ce31","storageBucket":"adtogether-15453.firebasestorage.app","apiKey":"AIzaSyA4YZtvA9If1eXEgVbvc6dYOQC7lERgc-k","authDomain":"adtogether-15453.firebaseapp.com","messagingSenderId":"971040864420","measurementId":"G-447YE2Y9PD","projectNumber":"971040864420","version":"2"}
+
+   Thank you for trying our early preview of Next.js support on Firebase Hosting.
+   During the preview, support is best-effort and breaking changes can be expected. Proceed with caution.
+   The integration is known to work with Next.js version 12 - 15.0. You may encounter errors.
+
+   Documentation: https://firebase.google.com/docs/hosting/frameworks/nextjs
+   File a bug: https://github.com/firebase/firebase-tools/issues/new?template=bug_report.md
+   Submit a feature request: https://github.com/firebase/firebase-tools/issues/new?template=feature_request.md
+
+   We'd love to learn from you. Express your interest in helping us shape the future of Firebase Hosting: https://goo.gle/41enW5X
+
+node.exe : 
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+WARNING: Your package.json contains a custom build that is being ignored. Only the Next.js default build script (e.g, 
+"next build") is respected. If you have a more advanced build process you should build a custom integration 
+https://firebase.google.com/docs/hosting/express
+
+[2026-04-14T05:21:29.966Z] Checked if tokens are valid: true, expires at: 1776146494485
+[2026-04-14T05:21:29.966Z] Checked if tokens are valid: true, expires at: 1776146494485
+[2026-04-14T05:21:29.966Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/adtogether-15453/sites/adtogether-15453 [none]
+[2026-04-14T05:21:30.576Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/adtogether-15453/sites/adtogether-15453 200
+[2026-04-14T05:21:30.576Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/adtogether-15453/sites/adtogether-15453 {"name":"projects/adtogether-15453/sites/adtogether-15453","defaultUrl":"https://adtogether-15453.web.app","appId":"1:971040864420:web:e922ae983b2c188942ce31","type":"DEFAULT_SITE"}
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\kevin\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\Users\kevin\Next\AdTogether\package-lock.json
+
+
+▲ Next.js 16.2.2 (Turbopack)
+
+- Environments: .env.local
+
+
+  Creating an optimized production build ...
+
+
+
+[334.40ms] [@tailwindcss/postcss] src\app\globals.css
+[  0.10ms]   ↳ Quick bail check
+[ 57.73ms]   ↳ Setup compiler
+[  0.47ms]     ↳ PostCSS AST -> Tailwind CSS AST
+[ 57.21ms]     ↳ Create compiler
+[  0.36ms]   ↳ Register full rebuild paths
+[ 19.77ms]   ↳ Setup scanner
+[ 48.09ms]   ↳ Scan for candidates
+[ 33.62ms]   ↳ Register dependency messages
+[ 65.25ms]   ↳ Build utilities
+[102.90ms]   ↳ Optimization
+[  2.93ms]     ↳ AST -> CSS
+[ 83.22ms]     ↳ Lightning CSS
+[ 16.64ms]     ↳ CSS -> PostCSS AST
+[  5.65ms]   ↳ Update PostCSS AST
+
+
+✓ Compiled successfully in 12.6s
+
+  Running TypeScript ...
+
+  Finished TypeScript in 5.6s ...
+
+  Collecting page data using 14 workers ...
+
+  Generating static pages using 14 workers (0/12) ...
+
+  Generating static pages using 14 workers (3/12) 
+
+⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+
+  Generating static pages using 14 workers (6/12) 
+
+  Generating static pages using 14 workers (9/12) 
+
+✓ Generating static pages using 14 workers (12/12) in 1282ms
+
+  Finalizing page optimization ...
+
+
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/ads/click
+├ ƒ /api/ads/impression
+├ ƒ /api/ads/serve
+├ ○ /apple-icon.png
+├ ○ /create-ad
+├ ○ /dashboard
+├ ○ /docs
+├ ƒ /edit-ad/[id]
+└ ○ /login
+
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+
+Building a Cloud Function to run this application. This is needed due to:
+ • non-static component /api/ads/click/route
+ • non-static component /api/ads/impression/route
+ • non-static component /api/ads/serve/route
+ • non-static component /edit-ad/[id]/page
+
+[2026-04-14T05:21:57.309Z] Error: EBUSY: resource busy or locked, unlink 'C:\Users\kevin\Next\AdTogether\.firebase\adtogether-15453\functions\.next\dev\cache\turbopack\52faae3d\00002279.sst'
+
+Error: An unexpected error has occurred.

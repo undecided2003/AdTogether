@@ -1,6 +1,6 @@
 # AdTogether Web SDK — LLM Integration Reference
 
-**Version:** 0.1.26
+**Version:** 0.4.5
 
 **Package:** `@adtogether/web-sdk`
 **Distribution:** NPM (for React/Next.js) or CDN script tag (for plain HTML)
@@ -27,7 +27,6 @@ if (typeof window !== 'undefined') {
 ```typescript
 interface AdTogetherOptions {
   appId?: string;       // Your registered app ID (required)
-  apiKey?: string;      // @deprecated Use appId instead
   baseUrl?: string;     // Override API base URL (optional)
   bundleId?: string;    // Explicit site identifier (optional, auto-detected from window.location.hostname)
   allowSelfAds?: boolean; // Show own ads as fallback (default: true)

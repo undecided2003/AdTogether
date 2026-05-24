@@ -1,6 +1,6 @@
 # AdTogether REST API — LLM Integration Reference
 
-**Version:** 0.1.26
+**Version:** 0.4.5
 
 > **Integration Guide:** For custom environments without a dedicated SDK, you can directly interface with the AdTogether Ad Serving API.
 
@@ -16,7 +16,7 @@ curl -X GET "https://www.ad-together.org/api/ads/serve?country=global&adType=ban
 | Param | Required | Description |
 |-------|----------|-------------|
 | `adUnitId` | no | Optional label for the ad placement (e.g. `home_banner`). Used for analytics grouping only. |
-| `appId` | **yes** | Your registered app ID (Legacy `apiKey` is supported but deprecated) |
+| `appId` | **yes** | Your registered app ID |
 | `country` | no | Country code or `"global"` (default) |
 | `bundleId` | no | Your app's bundle/package identifier |
 | `allowSelfAds` | no | Show own ads as fallback (default: `true`) |
@@ -73,7 +73,7 @@ curl -X POST "https://www.ad-together.org/api/ads/click" \
 |-------|----------|-------------|
 | `adId` | **yes** | The ad ID from the serve response |
 | `token` | **yes** | HMAC signature from the serve response (requests without valid token are rejected) |
-| `appId` | **yes** | Your registered app ID (Legacy `apiKey` is supported but deprecated) |
+| `appId` | **yes** | Your registered app ID |
 | `bundleId` | no | Your app's bundle/package identifier |
 | `platform` | no | Platform identifier (e.g. `"android"`, `"ios"`, `"web"`, `"macos"`) |
 | `environment` | no | `"development"` or `"production"` |

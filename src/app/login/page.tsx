@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail, sendEmailVerification } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged, sendPasswordResetEmail, sendEmailVerification, signInWithRedirect, getRedirectResult } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
+import { useEffect, useState } from "react";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, LogIn, ArrowLeft } from "lucide-react";
@@ -17,19 +17,67 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const router = useRouter();
 
+  // Check if user is already logged in or returning from Google redirect
+  useEffect(() => {
+    let isMounted = true;
+
+    // 1. Check if they just returned from Google Redirect
+    console.log("[Auth Debug] authDomain:", auth.config.authDomain, "origin:", window.location.hostname);
+    getRedirectResult(auth).then(async (result) => {
+      console.log("[Auth Debug] getRedirectResult resolved:", result ? "has user" : "null (no pending redirect)");
+      if (result?.user) {
+        await createOrUpdateUserDoc(result.user);
+        if (isMounted) router.replace("/dashboard");
+      }
+    }).catch((err) => {
+      console.error("[Auth Debug] getRedirectResult error:", err.code, err.message);
+      if (isMounted) setError(`Redirect login failed: ${err.code} - ${err.message}`);
+    });
+
+    // 2. Normal auth state listener
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        console.log("User already logged in, syncing Firestore user doc before redirect...");
+        await createOrUpdateUserDoc(user);
+        if (isMounted) router.replace("/dashboard");
+      } else {
+        if (isMounted) setCheckingAuth(false);
+      }
+    });
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, [router]);
+
   const createOrUpdateUserDoc = async (user: any) => {
-    const userRef = doc(db, "users", user.uid);
-    const userSnap = await getDoc(userRef);
-    if (!userSnap.exists()) {
-      await setDoc(userRef, {
-        uid: user.uid,
-        email: user.email,
-        credits: 75, // Starter credits!
-        country: "Unknown", // Can be updated later
-        createdAt: new Date().toISOString(),
-      });
+    try {
+      console.log("Syncing user to Firestore:", user.uid);
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) {
+        console.log("Creating new user document...");
+        await setDoc(userRef, {
+          uid: user.uid,
+          email: user.email,
+          credits: 75,
+          country: "Unknown",
+          appIds: [],
+          appIdLabels: {},
+          creditNotificationStage: 'none',
+          createdAt: new Date().toISOString(),
+        });
+        console.log("User document created successfully.");
+      } else {
+        console.log("User document already exists.");
+      }
+    } catch (err: any) {
+      console.error("Firestore sync failed:", err);
+      // We don't throw here so the user can still access the dashboard 
+      // even if Firestore sync has a minor hiccup
     }
   };
 
@@ -42,6 +90,7 @@ export default function LoginPage() {
       if (isLogin) {
         const cred = await signInWithEmailAndPassword(auth, email, password);
         await createOrUpdateUserDoc(cred.user);
+        router.replace("/dashboard");
       } else {
         if (password !== confirmPassword) {
           setError("Passwords do not match.");
@@ -52,8 +101,8 @@ export default function LoginPage() {
         await createOrUpdateUserDoc(cred.user);
         // Send verification email on signup
         await sendEmailVerification(cred.user);
+        router.replace("/dashboard");
       }
-      router.push("/dashboard");
     } catch (err: any) {
       const code = err.code || "";
       if (code === "auth/user-not-found") setError("No account found with this email.");
@@ -71,14 +120,13 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
     setSuccessMessage("");
+    
     try {
       const provider = new GoogleAuthProvider();
-      const cred = await signInWithPopup(auth, provider);
-      await createOrUpdateUserDoc(cred.user);
-      router.push("/dashboard");
+      await signInWithRedirect(auth, provider);
+      // Page redirects to Google — execution stops here
     } catch (err: any) {
-      setError(err.message || "Failed to authenticate with Google");
-    } finally {
+      setError(err.message || "Failed to initiate Google sign in");
       setLoading(false);
     }
   };
@@ -104,6 +152,15 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+  if (checkingAuth || (loading && !error && !successMessage)) {
+    return (
+      <div className="flex-grow flex flex-col items-center justify-center py-12">
+        <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-zinc-500 animate-pulse">Authenticating...</p>
+      </div>
+    );
+  }
 
   // Forgot Password View
   if (showForgotPassword) {
@@ -138,6 +195,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
                   className="w-full bg-zinc-100 dark:bg-black/50 border border-zinc-200 dark:border-white/10 rounded-xl py-3 pl-10 pr-4 text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
                 />
               </div>
@@ -183,10 +241,11 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="username"
                 className="w-full bg-zinc-100 dark:bg-black/50 border border-zinc-200 dark:border-white/10 rounded-xl py-3 pl-10 pr-4 text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
               />
             </div>
-            
+
             <div className="relative text-zinc-900 dark:text-white">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400 dark:text-zinc-500" />
               <input
@@ -195,6 +254,7 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete={isLogin ? "current-password" : "new-password"}
                 className="w-full bg-zinc-100 dark:bg-black/50 border border-zinc-200 dark:border-white/10 rounded-xl py-3 pl-10 pr-4 text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
               />
             </div>
@@ -208,6 +268,7 @@ export default function LoginPage() {
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  autoComplete="new-password"
                   className="w-full bg-zinc-100 dark:bg-black/50 border border-zinc-200 dark:border-white/10 rounded-xl py-3 pl-10 pr-4 text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
                 />
               </div>
@@ -254,10 +315,10 @@ export default function LoginPage() {
             className="mt-6 w-full bg-white border border-zinc-200 dark:border-transparent text-zinc-900 font-semibold rounded-xl py-3 transition-all duration-300 flex justify-center items-center gap-3 hover:bg-zinc-50 dark:hover:bg-zinc-100 shadow-md dark:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed group"
           >
             <div className="relative w-5 h-5 group-hover:scale-110 transition-transform">
-              <Image 
-                src="/google.png" 
-                alt="Google" 
-                fill 
+              <Image
+                src="/google.png"
+                alt="Google"
+                fill
                 className="object-contain"
               />
             </div>

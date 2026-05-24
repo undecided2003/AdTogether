@@ -4,9 +4,17 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
 
+// For signInWithRedirect to work, authDomain MUST match the app's origin.
+// Modern browsers block cross-origin storage access, so getRedirectResult()
+// can't read credentials stored by a different-origin auth handler.
+// On localhost, Next.js rewrites proxy /__/auth/* to Firebase (see next.config.ts).
+// On production (Firebase Hosting), /__/auth/* is served natively.
+
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  authDomain: typeof window !== "undefined"
+    ? window.location.hostname
+    : process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,

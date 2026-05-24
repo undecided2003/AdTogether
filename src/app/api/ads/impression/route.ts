@@ -4,6 +4,7 @@ import { adminDb as db } from '@/lib/firebase-admin';
 import crypto from 'crypto';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { getCountryTier, getTierMultiplier } from '@/lib/country-tiers';
+import { sendResendEmail } from '@/lib/resend';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -84,33 +85,18 @@ export async function POST(request: Request) {
 
     let publisherRef: any = null;
     if (effectiveAppId) {
-      // 1. Try appId field
-      const pSnapAppId = await db.collection('users').where('appId', '==', effectiveAppId).limit(1).get();
-      if (!pSnapAppId.empty) {
-        publisherRef = pSnapAppId.docs[0].ref;
-      } else {
-        // 2. Try appIds array
-        const pSnapAppIds = await db.collection('users').where('appIds', 'array-contains', effectiveAppId).limit(1).get();
-        if (!pSnapAppIds.empty) {
-          publisherRef = pSnapAppIds.docs[0].ref;
-        } else {
-          // 3. Fallback to legacy apiKey field
-          const pSnapApiKey = await db.collection('users').where('apiKey', '==', effectiveAppId).limit(1).get();
-          if (!pSnapApiKey.empty) {
-            publisherRef = pSnapApiKey.docs[0].ref;
-          } else {
-            // 4. Fallback to legacy apiKeys array
-            const pSnapApiKeys = await db.collection('users').where('apiKeys', 'array-contains', effectiveAppId).limit(1).get();
-            if (!pSnapApiKeys.empty) {
-              publisherRef = pSnapApiKeys.docs[0].ref;
-            }
-          }
-        }
+      // Check appIds array
+      const pSnapAppIds = await db.collection('users').where('appIds', 'array-contains', effectiveAppId).limit(1).get();
+      if (!pSnapAppIds.empty) {
+        publisherRef = pSnapAppIds.docs[0].ref;
       }
     }
 
     const adRef = db.collection('ads').doc(adId);
     let outOfCredits = false;
+    let sendCreditNotification = false;
+    let creditNotificationType: 'low' | 'out_of_credits' | null = null;
+    let creditNotificationEmail: string | null = null;
 
     // Use runTransaction to safely process impression and deduct/add credits
     await db.runTransaction(async (transaction: any) => {
@@ -201,22 +187,45 @@ export async function POST(request: Request) {
           const userData = userSnap.data();
           if (userData) {
             const currentCredits = userData.credits || 0;
+            const email = userData.email;
+            const currentNotificationStage = userData.creditNotificationStage || 'none';
+            const nextCredits = currentCredits - creditCost;
+            let nextNotificationStage = currentNotificationStage;
 
             if (currentCredits <= -5) {
               // No credits left (and hit the negative limit), deactivate ad and don't deduct
               transaction.update(adRef, { active: false });
               outOfCredits = true;
             } else {
-              // Deduct safely
               const dateKey = new Date().toISOString().split('T')[0];
               const dailySpend = userData.dailySpend || {};
               dailySpend[dateKey] = (dailySpend[dateKey] || 0) + creditCost;
 
+              if (nextCredits <= 0) {
+                nextNotificationStage = 'out_of_credits';
+                if (currentNotificationStage !== 'out_of_credits' && currentCredits > 0 && email) {
+                  sendCreditNotification = true;
+                  creditNotificationType = 'out_of_credits';
+                  creditNotificationEmail = email;
+                }
+              } else if (nextCredits < 25) {
+                nextNotificationStage = 'low';
+                if (currentNotificationStage !== 'low' && currentCredits >= 25 && email) {
+                  sendCreditNotification = true;
+                  creditNotificationType = 'low';
+                  creditNotificationEmail = email;
+                }
+              } else {
+                nextNotificationStage = 'none';
+              }
+
               transaction.update(userRef, { 
-                credits: currentCredits - creditCost,
-                dailySpend 
+                credits: nextCredits,
+                dailySpend,
+                creditNotificationStage: nextNotificationStage,
               });
-              if (currentCredits - creditCost <= -5) {
+
+              if (nextCredits <= -5) {
                 transaction.update(adRef, { active: false });
               }
             }
@@ -259,11 +268,22 @@ export async function POST(request: Request) {
              const dateKey = new Date().toISOString().split('T')[0];
              const dailyEarnings = pData.dailyEarnings || {};
              dailyEarnings[dateKey] = (dailyEarnings[dateKey] || 0) + creditCost;
-             
+             const nextPublisherCredits = pCredits + creditCost;
+             let nextPublisherNotificationStage = pData.creditNotificationStage || 'none';
+
+             if (nextPublisherCredits >= 25) {
+               nextPublisherNotificationStage = 'none';
+             } else if (nextPublisherCredits <= 0) {
+               nextPublisherNotificationStage = 'out_of_credits';
+             } else {
+               nextPublisherNotificationStage = 'low';
+             }
+
              transaction.update(publisherRef, { 
-               credits: pCredits + creditCost, 
+               credits: nextPublisherCredits,
                earningsLog,
-               dailyEarnings
+               dailyEarnings,
+               creditNotificationStage: nextPublisherNotificationStage,
              });
           }
         }
@@ -303,6 +323,28 @@ export async function POST(request: Request) {
         }
       }
     });
+
+    if (sendCreditNotification && creditNotificationType && creditNotificationEmail) {
+      const resendApiKey = secretsData.RESEND_API_KEY || process.env.RESEND_API_KEY;
+      const subject = creditNotificationType === 'low'
+        ? 'Your AdTogether credits are running low'
+        : 'Your AdTogether account has reached zero credits';
+      const html = creditNotificationType === 'low'
+        ? `<p>Hi there,</p>
+           <p>Your AdTogether account just dropped below 25 credits. Keep earning more credits by showing ads in your app so your campaigns keep running.</p>
+           <p><strong>Tip:</strong> Display more ads or use higher-value interstitial ads to earn credits faster.</p>
+           <p>Visit your dashboard to manage your campaigns and start earning again.</p>`
+        : `<p>Hi there,</p>
+           <p>Your AdTogether account has reached zero credits. Your campaigns will stop running until you earn more credits by showing ads.</p>
+           <p>Please open the dashboard and display more ads to earn credits again.</p>`;
+
+      await sendResendEmail({
+        apiKey: resendApiKey || '',
+        to: creditNotificationEmail,
+        subject,
+        html,
+      });
+    }
 
     if (outOfCredits) {
       return NextResponse.json(

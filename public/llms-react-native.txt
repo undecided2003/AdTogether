@@ -1,6 +1,6 @@
 # AdTogether React Native SDK — LLM Integration Reference
 
-**Version:** 0.1.26
+**Version:** 0.4.5
 
 **Package:** `@adtogether/react-native-sdk`
 **Distribution:** NPM
@@ -29,7 +29,6 @@ AdTogether.initialize({ appId: 'YOUR_APP_ID' });
 ```typescript
 interface AdTogetherOptions {
   appId?: string;       // Your registered app ID (required)
-  apiKey?: string;      // @deprecated Use appId instead
   baseUrl?: string;     // Override API base URL (optional)
   bundleId?: string;    // Explicit bundle/package ID (optional, auto-detected — see below)
   allowSelfAds?: boolean; // Show own ads as fallback (default: true)

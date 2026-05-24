@@ -116,7 +116,7 @@ ext["mavenCentralRepositoryUsername"] = System.getenv("ORG_GRADLE_PROJECT_mavenC
 ext["mavenCentralRepositoryPassword"] = System.getenv("ORG_GRADLE_PROJECT_mavenCentralPassword")
 
 group = "com.relaxsoftwareapps.adtogether"
-version = "0.4.3"
+version = "0.5.0"
 
 publishing {
     publications {
@@ -124,7 +124,7 @@ publishing {
             from(components["release"])
             groupId = "com.relaxsoftwareapps.adtogether"
             artifactId = "sdk"
-            version = "0.4.3"
+            version = "0.5.0"
             pom {
                 name.set("AdTogether SDK")
                 description.set("The official AdTogether Android SDK — reciprocal ad exchange to increase conversions and grow your audience.")

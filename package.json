@@ -1,10 +1,10 @@
 {
   "name": "adtogether",
-  "version": "0.4.1",
+  "version": "0.4.5",
   "private": true,
   "scripts": {
-    "dev": "next dev --webpack",
-    "build": "next build --webpack",
+    "dev": "cross-env IS_WEBPACK_TEST=true next dev --webpack",
+    "build": "cross-env IS_WEBPACK_TEST=true next build --webpack",
     "start": "next start",
     "lint": "eslint"
   },
@@ -30,6 +30,7 @@
     "eslint-config-next": "16.2.2",
     "tailwindcss": "^4.2.2",
     "ts-node": "^10.9.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "cross-env": "^7.0.3"
   }
 }
