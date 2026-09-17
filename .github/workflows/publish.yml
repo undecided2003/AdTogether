@@ -86,16 +86,36 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+
+      # Makes the job safe to re-run: a version that is already on Maven Central cannot be
+      # uploaded twice (Sonatype rejects duplicate deployments), so repeat runs only verify.
+      - name: Resolve version and check Maven Central
+        id: release-state
+        run: |
+          VERSION="$(sed -n 's/^version = "\(.*\)"/\1/p' build.gradle.kts | head -1)"
+          METADATA="https://repo1.maven.org/maven2/com/relaxsoftwareapps/adtogether/sdk/maven-metadata.xml"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if curl -fsS "$METADATA" | grep -q "<version>${VERSION}</version>"; then
+            echo "::notice::com.relaxsoftwareapps.adtogether:sdk:$VERSION is already on Maven Central — skipping the upload steps and verifying only."
+            echo "already_published=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "already_published=false" >> "$GITHUB_OUTPUT"
+          fi
+        working-directory: sdk/android-sdk
+
       - name: Set up JDK 17
+        if: steps.release-state.outputs.already_published != 'true'
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
       
       - name: Setup Gradle
+        if: steps.release-state.outputs.already_published != 'true'
         uses: gradle/actions/setup-gradle@v3
 
       - name: Import GPG key for keyserver upload
+        if: steps.release-state.outputs.already_published != 'true'
         run: |
           echo "${{ secrets.SIGNING_KEY }}" | gpg --batch --import
           echo "GPG key imported. Key info:"
@@ -104,6 +124,7 @@ jobs:
       # --- Removed manual stripping of GPG armor to prevent corruption ---
 
       - name: Publish GPG key to keyservers
+        if: steps.release-state.outputs.already_published != 'true'
         run: |
           KEY_ID="${{ secrets.SIGNING_KEY_ID }}"
           echo "Publishing key $KEY_ID to keyservers..."
@@ -223,6 +244,12 @@ jobs:
   publish-flutter:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # Automated publishing: pub.dev validates the GitHub Actions OIDC token
+    # (configured in the package admin as repo `undecided2003/AdTogether`,
+    # workflow file `publish.yml`). `flutter pub publish` picks the token up
+    # automatically — no long-lived OAuth secret is stored or needed.
+    permissions:
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -249,19 +276,6 @@ jobs:
             exit 0
           fi
 
-          mkdir -p ~/.config/dart
-          # Write credentials to multiple potential locations used by different versions
-          printf '%s' "$PUB_DEV_CREDENTIALS" > ~/.config/dart/pub-credentials.json
-          printf '%s' "$PUB_DEV_CREDENTIALS" > ~/.config/dart/credentials.json
-          if [ -d "${PUB_CACHE:-}" ]; then
-            printf '%s' "$PUB_DEV_CREDENTIALS" > "$PUB_CACHE/pub-credentials.json"
-            printf '%s' "$PUB_DEV_CREDENTIALS" > "$PUB_CACHE/credentials.json"
-          else
-            mkdir -p ~/.pub-cache
-            printf '%s' "$PUB_DEV_CREDENTIALS" > ~/.pub-cache/pub-credentials.json
-            printf '%s' "$PUB_DEV_CREDENTIALS" > ~/.pub-cache/credentials.json
-          fi
-
           # `flutter pub publish` has been observed to hang on CI runners *after* a
           # successful upload (the v0.5.3 run burned the default 6h job timeout). Bound it
           # with `timeout` and use the pub.dev API — not the exit code — as the source of truth.
@@ -283,8 +297,6 @@ jobs:
           echo "❌ Could not verify adtogether_sdk $VERSION on pub.dev (publish exit code: $PUBLISH_EXIT)"
           exit 1
         working-directory: sdk/adtogether_sdk
-        env:
-          PUB_DEV_CREDENTIALS: ${{ secrets.PUB_DEV_CREDENTIALS }}
 
   # --- iOS SDK (SPM / CocoaPods) ---
   build-ios:
