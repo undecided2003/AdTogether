@@ -1,3 +1,7 @@
+## 0.5.4
+* **Fix**: `AdTogetherBanner` ad images now use `BoxFit.contain` instead of `BoxFit.cover` in the standard, compact and interstitial layouts, so creatives are no longer cropped and keep their original aspect ratio.
+* **Fix**: Letterboxed images are drawn on a theme-aware background (`0xFF111827` in dark mode, `0xFFF3F4F6` in light mode) instead of transparent space, so ads blend with the host app's theme.
+
 ## 0.5.0
 * **Fix**: Removed `package_info_plus` dependency — it was the last package transitively pulling in `http`, which triggers a pub.dev Pana infrastructure bug (`advisoriesUpdated must be a String`).
 * **Internal**: Replaced with lightweight native platform info detection using `dart:io` (no external packages).

@@ -1,8 +1,8 @@
 # AdTogether Flutter SDK — LLM Integration Reference
 
-**Version:** 0.4.5
+**Version:** 0.5.4
 
-**Package:** `adtogether_sdk: ^0.4.5`
+**Package:** `adtogether_sdk: ^0.5.4`
 **Distribution:** pub.dev
 **Targets:** Android, iOS, and Flutter Web — all from ONE Dart package
 
@@ -31,12 +31,12 @@ void main() async {
 static Future<void> initialize({
   required String appId,
   String? baseUrl,       // Override API base URL (optional)
-  String? bundleId,      // Explicit bundle/package ID (optional, auto-detected via package_info_plus)
+  String? bundleId,      // Explicit bundle/package ID (optional, auto-detected via dart:io on mobile)
   bool allowSelfAds = true,
 })
 ```
 
-**Auto-detected metadata:** The SDK automatically detects `appName`, `appVersion`, and `bundleId` using the `package_info_plus` package. Impression/click tracking payloads include `platform` (e.g. `"android"`, `"ios"`, `"web"`), `environment: "development"|"production"`, `appName`, and `appVersion`.
+**Auto-detected metadata:** The SDK automatically detects `appName`, `appVersion`, and `bundleId` using lightweight native APIs (`dart:io` on mobile, `window.location.hostname` on web) — no external packages required. Impression/click tracking payloads include `platform` (e.g. `"android"`, `"ios"`, `"web"`), `environment: "development"|"production"`, `appName`, and `appVersion`.
 
 ### Banner Ad
 

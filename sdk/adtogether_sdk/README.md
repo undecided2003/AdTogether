@@ -19,7 +19,7 @@ This SDK allows Flutter developers to easily integrate AdTogether ads into their
 > **Developer Account Required**: Before integrating the SDK, you must create a developer account at [https://www.ad-together.org](https://www.ad-together.org) to generate your `appId` and configure your ad units. Integration will not work without a valid `appId`.
 
 <p align="center">
-  <img src="https://www.ad-together.org/dashboard.png" width="800" alt="Developer Dashboard">
+  <img src="https://www.ad-together.org/dashboard.webp" width="800" alt="Developer Dashboard">
 </p>
 
 ### 🖼️ Visualizing the Experience
@@ -73,7 +73,7 @@ Add the dependency to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  adtogether_sdk: ^0.5.0
+  adtogether_sdk: ^0.5.4
 ```
 
 Then run:
@@ -102,7 +102,7 @@ void main() async {
 |-------------|-----------|----------|-------------|
 | `appId`     | `String`  | ✅       | Your registered App ID from the AdTogether Dashboard. |
 | `baseUrl`   | `String?` | ❌       | Override the API base URL (useful for staging/testing environments). |
-| `bundleId`  | `String?` | ❌       | Explicitly set your app's bundle/package identifier. If omitted, it is auto-detected via `package_info_plus` on mobile and from `window.location.hostname` on web. |
+| `bundleId`  | `String?` | ❌       | Explicitly set your app's bundle/package identifier. If omitted, it is auto-detected via native platform APIs (`dart:io`) on mobile and from `window.location.hostname` on web. |
 | `allowSelfAds` | `bool` | ❌ (default: `true`) | Whether to show your own ads as a fallback when no other ads are available. |
 
 ```dart
@@ -265,6 +265,8 @@ This SDK depends on the following packages:
 |-----------------------|---------|
 | [`url_launcher`](https://pub.dev/packages/url_launcher) | Opening ad click-through URLs in the device browser. |
 | [`visibility_detector`](https://pub.dev/packages/visibility_detector) | Viewability-based impression tracking for banner ads. |
+
+> **Note (v0.5.0):** The `package_info_plus` dependency was removed in `0.5.0`. Bundle ID, app name, and version are now auto-detected using lightweight native APIs (`dart:io` on mobile, `window.location.hostname` on web) with zero transitive dependencies on the `http` package.
 
 ## Additional Information
 

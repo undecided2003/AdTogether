@@ -6,10 +6,20 @@ on:
       - 'v*'
   workflow_dispatch:
 
+# Never let two releases publish over each other.
+concurrency:
+  group: publish-sdks-${{ github.ref }}
+  cancel-in-progress: false
+
+# Needed by the iOS job to push the bare semver tag (SwiftPM cannot resolve `v0.5.4`).
+permissions:
+  contents: write
+
 jobs:
   # --- Web SDK (npm) ---
   publish-web:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -24,6 +34,14 @@ jobs:
         working-directory: sdk/web-sdk
       - name: Publish to npm
         run: |
+          set -euo pipefail
+          NAME="$(node -p "require('./package.json').name")"
+          VERSION="$(node -p "require('./package.json').version")"
+          # Re-running a workflow must not fail just because the version already exists.
+          if npm view "${NAME}@${VERSION}" version >/dev/null 2>&1; then
+            echo "::notice::${NAME}@${VERSION} is already published on npm — nothing to do."
+            exit 0
+          fi
           echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
           npm publish --access public --no-git-checks
         working-directory: sdk/web-sdk
@@ -33,6 +51,7 @@ jobs:
   # --- React Native SDK (npm) ---
   publish-react-native:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -47,6 +66,14 @@ jobs:
         working-directory: sdk/react-native-sdk
       - name: Publish to npm
         run: |
+          set -euo pipefail
+          NAME="$(node -p "require('./package.json').name")"
+          VERSION="$(node -p "require('./package.json').version")"
+          # Re-running a workflow must not fail just because the version already exists.
+          if npm view "${NAME}@${VERSION}" version >/dev/null 2>&1; then
+            echo "::notice::${NAME}@${VERSION} is already published on npm — nothing to do."
+            exit 0
+          fi
           echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
           npm publish --access public --no-git-checks
         working-directory: sdk/react-native-sdk
@@ -56,6 +83,7 @@ jobs:
   # --- Android SDK (Maven Central) ---
   publish-android:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK 17
@@ -170,9 +198,31 @@ jobs:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
 
+      # An upload alone does not reach Maven Central: the Sonatype Central Portal deployment
+      # must also be released. `publishToMavenCentral(..., automaticRelease = true)` in
+      # build.gradle.kts takes care of that, and this step proves the artifact is downloadable.
+      - name: Verify release is live on Maven Central
+        run: |
+          VERSION="$(sed -n 's/^version = "\(.*\)"/\1/p' build.gradle.kts | head -1)"
+          echo "Expecting com.relaxsoftwareapps.adtogether:sdk:$VERSION on Maven Central..."
+          METADATA="https://repo1.maven.org/maven2/com/relaxsoftwareapps/adtogether/sdk/maven-metadata.xml"
+          for ATTEMPT in $(seq 1 30); do
+            if curl -fsS "$METADATA" | grep -q "<version>${VERSION}</version>"; then
+              echo "✅ sdk:$VERSION is live on Maven Central (attempt $ATTEMPT)"
+              exit 0
+            fi
+            echo "⏳ sdk:$VERSION not visible yet (attempt $ATTEMPT/30) — Maven Central indexing can take 10-30 minutes..."
+            sleep 60
+          done
+          echo "❌ sdk:$VERSION was not found in $METADATA after 30 minutes."
+          echo "Check Sonatype Central Portal → Deployments: the upload may be stuck as VALIDATED (unpublished)."
+          exit 1
+        working-directory: sdk/android-sdk
+
   # --- Flutter SDK (pub.dev) ---
   publish-flutter:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -185,27 +235,120 @@ jobs:
 
       - name: Publish Flutter SDK
         run: |
+          set -uo pipefail
+          VERSION="$(sed -n 's/^version: *//p' pubspec.yaml | head -1 | tr -d '[:space:]')"
+          API="https://pub.dev/api/packages/adtogether_sdk"
+          echo "Resolved adtogether_sdk version: $VERSION"
+
+          version_is_live() {
+            curl -fsS "$API" | grep -qE "\"version\": *\"$VERSION\""
+          }
+
+          if version_is_live; then
+            echo "::notice::adtogether_sdk $VERSION is already published on pub.dev — nothing to do."
+            exit 0
+          fi
+
           mkdir -p ~/.config/dart
           # Write credentials to multiple potential locations used by different versions
-          printf '%s' '${{ secrets.PUB_DEV_CREDENTIALS }}' > ~/.config/dart/pub-credentials.json
-          printf '%s' '${{ secrets.PUB_DEV_CREDENTIALS }}' > ~/.config/dart/credentials.json
-          if [ -d "$PUB_CACHE" ]; then
-            printf '%s' '${{ secrets.PUB_DEV_CREDENTIALS }}' > "$PUB_CACHE/pub-credentials.json"
-            printf '%s' '${{ secrets.PUB_DEV_CREDENTIALS }}' > "$PUB_CACHE/credentials.json"
+          printf '%s' "$PUB_DEV_CREDENTIALS" > ~/.config/dart/pub-credentials.json
+          printf '%s' "$PUB_DEV_CREDENTIALS" > ~/.config/dart/credentials.json
+          if [ -d "${PUB_CACHE:-}" ]; then
+            printf '%s' "$PUB_DEV_CREDENTIALS" > "$PUB_CACHE/pub-credentials.json"
+            printf '%s' "$PUB_DEV_CREDENTIALS" > "$PUB_CACHE/credentials.json"
           else
             mkdir -p ~/.pub-cache
-            printf '%s' '${{ secrets.PUB_DEV_CREDENTIALS }}' > ~/.pub-cache/pub-credentials.json
-            printf '%s' '${{ secrets.PUB_DEV_CREDENTIALS }}' > ~/.pub-cache/credentials.json
+            printf '%s' "$PUB_DEV_CREDENTIALS" > ~/.pub-cache/pub-credentials.json
+            printf '%s' "$PUB_DEV_CREDENTIALS" > ~/.pub-cache/credentials.json
           fi
-          flutter pub publish --force
-        working-directory: sdk/adtogether_sdk
 
-  # --- iOS SDK (SPM) ---
+          # `flutter pub publish` has been observed to hang on CI runners *after* a
+          # successful upload (the v0.5.3 run burned the default 6h job timeout). Bound it
+          # with `timeout` and use the pub.dev API — not the exit code — as the source of truth.
+          set +e
+          timeout 600 flutter pub publish --force
+          PUBLISH_EXIT=$?
+          set -e
+          echo "flutter pub publish exited with code $PUBLISH_EXIT"
+
+          for ATTEMPT in $(seq 1 30); do
+            if version_is_live; then
+              echo "✅ adtogether_sdk $VERSION is live on pub.dev (verified on attempt $ATTEMPT)"
+              exit 0
+            fi
+            echo "⏳ adtogether_sdk $VERSION not visible on pub.dev yet (attempt $ATTEMPT/30)..."
+            sleep 20
+          done
+
+          echo "❌ Could not verify adtogether_sdk $VERSION on pub.dev (publish exit code: $PUBLISH_EXIT)"
+          exit 1
+        working-directory: sdk/adtogether_sdk
+        env:
+          PUB_DEV_CREDENTIALS: ${{ secrets.PUB_DEV_CREDENTIALS }}
+
+  # --- iOS SDK (SPM / CocoaPods) ---
   build-ios:
     runs-on: macos-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          # `git subtree split` needs the full history of sdk/ios-sdk.
+          fetch-depth: 0
+
       - name: Build iOS SDK
         run: swift build
         working-directory: sdk/ios-sdk
+
+      # Swift Package Manager only resolves *bare* semantic version tags, so `v0.5.4`
+      # (pushed by release.yml) is invisible to it — a `0.5.4` tag is required for the
+      # `.package(url: ".../AdTogether.git", from: "0.5.4")` instructions we publish.
+      - name: Tag this repository with the bare semver version for SwiftPM
+        run: |
+          set -euo pipefail
+          VERSION="$(sed -n 's/.*spec\.version *= *"\([^"]*\)".*/\1/p' sdk/ios-sdk/AdTogether.podspec | head -1)"
+          echo "Resolved iOS SDK version: $VERSION"
+
+          if git ls-remote --tags origin "refs/tags/$VERSION" | grep -q "refs/tags/$VERSION"; then
+            echo "::notice::Tag $VERSION already exists in this repository — leaving it untouched."
+            exit 0
+          fi
+
+          git push origin "${GITHUB_SHA}:refs/tags/$VERSION"
+          echo "✅ Tagged ${GITHUB_SHA:0:7} as $VERSION for Swift Package Manager"
+
+      # Swift Package Manager and the podspec both resolve this SDK from the standalone
+      # adtogether-ios-sdk repository by version tag, so the sources must be mirrored and
+      # tagged there — a build alone never reaches consumers.
+      # Requires a `SDK_SYNC_TOKEN` secret (fine-grained PAT with contents:write on
+      # undecided2003/adtogether-ios-sdk). Without it the step skips with a warning.
+      - name: Mirror sources and tag the release in adtogether-ios-sdk
+        env:
+          SDK_SYNC_TOKEN: ${{ secrets.SDK_SYNC_TOKEN }}
+        run: |
+          set -euo pipefail
+          VERSION="$(sed -n 's/.*spec\.version *= *"\([^"]*\)".*/\1/p' sdk/ios-sdk/AdTogether.podspec | head -1)"
+          echo "Resolved iOS SDK version: $VERSION"
+
+          if [ -z "${SDK_SYNC_TOKEN:-}" ]; then
+            echo "::warning::SDK_SYNC_TOKEN is not configured — skipping the push to adtogether-ios-sdk. SPM/CocoaPods consumers will not see $VERSION until this runs with a token that can write to that repository."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote add ios-sdk "https://x-access-token:${SDK_SYNC_TOKEN}@github.com/undecided2003/adtogether-ios-sdk.git"
+
+          SPLIT="$(git subtree split --prefix=sdk/ios-sdk)"
+          echo "Subtree split commit: $SPLIT"
+
+          git push ios-sdk "$SPLIT:refs/heads/main"
+          echo "✅ Pushed sdk/ios-sdk to adtogether-ios-sdk main"
+
+          if git ls-remote --tags ios-sdk "refs/tags/$VERSION" | grep -q "refs/tags/$VERSION"; then
+            echo "::notice::Tag $VERSION already exists in adtogether-ios-sdk — leaving it untouched."
+          else
+            git push ios-sdk "$SPLIT:refs/tags/$VERSION"
+            echo "✅ Tagged adtogether-ios-sdk with $VERSION"
+          fi
 

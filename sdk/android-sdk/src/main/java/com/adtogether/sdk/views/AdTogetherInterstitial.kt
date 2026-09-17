@@ -175,10 +175,11 @@ fun AdTogetherInterstitial(
                                     AsyncImage(
                                         model = ad.imageUrl,
                                         contentDescription = ad.title,
-                                        contentScale = ContentScale.Crop,
+                                        contentScale = ContentScale.Fit,
                                         modifier = Modifier
                                             .weight(1f)
                                             .fillMaxHeight()
+                                            .background(MaterialTheme.colorScheme.surfaceVariant)
                                             .clickable {
                                                 coroutineScope.launch { AdTogether.trackClick(ad.id, ad.token) }
                                                 ad.clickUrl?.let { url ->

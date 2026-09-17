@@ -57,10 +57,13 @@ dependencies {
 }
 
 group = "com.relaxsoftwareapps.adtogether"
-version = "0.5.0"
+version = "0.5.4"
 
 mavenPublishing {
-    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+    // automaticRelease = true is required for CI: without it Gradle only uploads the
+    // deployment to the Sonatype Central Portal and it stays unpublished until someone
+    // clicks "Publish" in the web UI (which is why 0.5.0 never reached Maven Central).
+    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL, true)
 
     pom {
         name.set("AdTogether Android SDK")

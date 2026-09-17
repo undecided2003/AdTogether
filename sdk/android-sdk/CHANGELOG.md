@@ -1,3 +1,8 @@
+## 0.5.4
+* **Fix**: Ad images now render with `ContentScale.Fit` instead of `ContentScale.Crop`, so banner and interstitial creatives are no longer cropped and keep the aspect ratio they were designed with.
+* **Fix**: Ad images are letterboxed on a theme-aware background (`MaterialTheme.colorScheme.surfaceVariant`) instead of transparent space, so ads blend with the host app's light/dark theme.
+* **Release**: Maven Central deployments are now released automatically by CI. Version `0.5.0` had been uploaded to the Sonatype Central Portal but was never released, so `0.5.4` is the first build that actually lands in Maven Central.
+
 ## 0.5.0
 * **Sync**: Version parity (0.5.0) across all AdTogether SDKs.
 

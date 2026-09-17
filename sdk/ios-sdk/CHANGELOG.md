@@ -1,3 +1,8 @@
+## 0.5.4
+* **Fix**: Ad images now use `.aspectRatio(contentMode: .fit)` instead of `.fill`, so banner and interstitial creatives are no longer cropped and keep their original aspect ratio.
+* **Fix**: Ad images are letterboxed on a theme-aware background colour (light and dark mode) instead of transparent space, so ads blend with the host app's appearance.
+* **Distribution**: The iOS SDK is now mirrored and tagged in [adtogether-ios-sdk](https://github.com/undecided2003/adtogether-ios-sdk), so Swift Package Manager and CocoaPods integrations resolve this release by version tag.
+
 ## 0.5.0
 * **Sync**: Version parity (0.5.0) across all AdTogether SDKs.
 

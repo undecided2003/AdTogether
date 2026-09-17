@@ -146,11 +146,12 @@ fun AdTogetherView(
                             AsyncImage(
                                 model = ad.imageUrl,
                                 contentDescription = ad.title,
-                                contentScale = ContentScale.Crop,
+                                contentScale = ContentScale.Fit,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .aspectRatio(1.77f) // 16:9
                                     .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
                             )
 
                             // Badge
@@ -206,11 +207,12 @@ fun AdTogetherView(
                         AsyncImage(
                             model = ad.imageUrl,
                             contentDescription = ad.title,
-                            contentScale = ContentScale.Crop,
+                            contentScale = ContentScale.Fit,
                             modifier = Modifier
                                 .width(80.dp)
                                 .aspectRatio(1f)
                                 .clip(RoundedCornerShape(topStart = 12.dp, bottomStart = 12.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
                         )
                     }
 

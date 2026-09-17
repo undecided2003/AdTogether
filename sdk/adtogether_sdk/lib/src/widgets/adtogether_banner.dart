@@ -204,11 +204,16 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
           SizedBox(
             width: widget.size.height,
             height: widget.size.height,
-            child: Image.network(
-              _adData!.imageUrl!,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.image_not_supported, color: Colors.grey),
+            child: ColoredBox(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFF111827)
+                  : const Color(0xFFF3F4F6),
+              child: Image.network(
+                _adData!.imageUrl!,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) =>
+                    const Icon(Icons.image_not_supported, color: Colors.grey),
+              ),
             ),
           ),
         Expanded(
@@ -308,14 +313,20 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
               child: AspectRatio(
                 aspectRatio: 16 / 9,
                 child: _adData!.imageUrl != null
-                    ? Image.network(
-                        _adData!.imageUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            const Icon(
-                              Icons.image_not_supported,
-                              color: Colors.grey,
-                            ),
+                    ? Container(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFF111827)
+                            : const Color(0xFFF3F4F6),
+                        child: Image.network(
+                          _adData!.imageUrl!,
+                          fit: BoxFit.contain,
+                          width: double.infinity,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(
+                                Icons.image_not_supported,
+                                color: Colors.grey,
+                              ),
+                        ),
                       )
                     : Container(color: Colors.grey.withValues(alpha: 0.2)),
               ),
@@ -382,12 +393,17 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.network(
-                    _adData!.imageUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => const Icon(
-                      Icons.image_not_supported,
-                      color: Colors.grey,
+                  Container(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0xFF111827)
+                        : const Color(0xFFF3F4F6),
+                    child: Image.network(
+                      _adData!.imageUrl!,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.image_not_supported,
+                        color: Colors.grey,
+                      ),
                     ),
                   ),
                   Positioned(

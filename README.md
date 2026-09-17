@@ -31,7 +31,7 @@
 We provide a seamless, high-performance API and a suite of native SDKs across web, mobile, and cross-platform ecosystems, enabling you to integrate native advertising into any environment.
 
 <p align="center">
-  <img src="https://www.ad-together.org/dashboard.png" width="800" alt="Developer Dashboard">
+  <img src="https://www.ad-together.org/dashboard.webp" width="800" alt="Developer Dashboard">
 </p>
 
 ### 🖼️ Visual Examples
@@ -46,6 +46,7 @@ We provide a seamless, high-performance API and a suite of native SDKs across we
 - **Universal Ad Exchange**: Earn credits by showing ads, and spend credits to showcase your own campaigns.
 - **Increase Conversions**: Promote your app across the network and drive real installs from engaged users.
 - **Multi-Platform SDKs**: First-class support for Web, React Native, Android, iOS, and Flutter.
+- **CMS & Website Builders**: Drop-in universal HTML snippets for WordPress, Wix, Squarespace, Weebly, and Webflow.
 - **High Performance**: Built on a highly scalable Next.js 16 & Firebase backend infrastructure.
 - **Developer-First Integration**: Modern hooks, composables, and declarative APIs designed for modern app architectures.
 - **Automated Workflows**: Fully configured GitHub Actions CI/CD to handle automated testing and publishing to npm, Maven Central, pub.dev, and SPM.
@@ -102,9 +103,10 @@ Detailed instructions are provided in each SDK's local `README.md`.
 
 - **Web integration:** `npm install @adtogether/web-sdk`
 - **React Native integration:** `npm install @adtogether/react-native-sdk`
-- **Android integration:** Implement `com.relaxsoftwareapps.adtogether:sdk:0.4.5` inside your `build.gradle.kts`.
+- **Android integration:** Implement `com.relaxsoftwareapps.adtogether:sdk:0.5.4` inside your `build.gradle.kts`.
 - **iOS integration:** Add the Swift Package through Xcode directly from this repository link.
-- **Flutter integration:** Run `flutter pub add adtogether_sdk:^0.4.5`.
+- **Flutter integration:** Run `flutter pub add adtogether_sdk:^0.5.4`.
+- **CMS / HTML:** Paste `<script src="https://www.ad-together.org/sdk.js" defer></script>` and `<div data-ad-unit="YOUR_AD_UNIT_ID"></div>`.
 
 ---
 

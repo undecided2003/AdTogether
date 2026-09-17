@@ -59,12 +59,13 @@ public struct AdTogetherView: View {
                                     ZStack(alignment: .topTrailing) {
                                         AsyncImage(url: imageUrl) { image in
                                             image.resizable()
-                                                 .aspectRatio(1.77, contentMode: .fill)
+                                                 .aspectRatio(contentMode: .fit)
                                         } placeholder: {
                                             Color.gray.opacity(0.2)
-                                                 .aspectRatio(1.77, contentMode: .fill)
+                                                 .aspectRatio(1.77, contentMode: .fit)
                                         }
                                         .frame(maxWidth: .infinity)
+                                        .background(colorScheme == .dark ? Color(red: 0.07, green: 0.09, blue: 0.14) : Color(red: 0.95, green: 0.96, blue: 0.96))
                                         .clipped()
                                         
                                         // Badge
@@ -101,11 +102,12 @@ public struct AdTogetherView: View {
                                 if let imageUrlString = adModel.imageUrl, let imageUrl = URL(string: imageUrlString) {
                                     AsyncImage(url: imageUrl) { image in
                                         image.resizable()
-                                             .aspectRatio(contentMode: .fill)
+                                             .aspectRatio(contentMode: .fit)
                                     } placeholder: {
                                         Color.gray.opacity(0.2)
                                     }
                                     .frame(width: 80, height: 80)
+                                    .background(colorScheme == .dark ? Color(red: 0.07, green: 0.09, blue: 0.14) : Color(red: 0.95, green: 0.96, blue: 0.96))
                                     .clipped()
                                 }
                                 
