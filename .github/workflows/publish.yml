@@ -93,10 +93,10 @@ jobs:
         id: release-state
         run: |
           VERSION="$(sed -n 's/^version = "\(.*\)"/\1/p' build.gradle.kts | head -1)"
-          METADATA="https://repo1.maven.org/maven2/com/relaxsoftwareapps/adtogether/sdk/maven-metadata.xml"
+          METADATA="https://repo1.maven.org/maven2/com/relaxsoftwareapps/adtogether/adtogether-sdk/maven-metadata.xml"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           if curl -fsS "$METADATA" | grep -q "<version>${VERSION}</version>"; then
-            echo "::notice::com.relaxsoftwareapps.adtogether:sdk:$VERSION is already on Maven Central — skipping the upload steps and verifying only."
+            echo "::notice::com.relaxsoftwareapps.adtogether:adtogether-sdk:$VERSION is already on Maven Central — skipping the upload steps and verifying only."
             echo "already_published=true" >> "$GITHUB_OUTPUT"
           else
             echo "already_published=false" >> "$GITHUB_OUTPUT"
@@ -225,8 +225,8 @@ jobs:
       - name: Verify release is live on Maven Central
         run: |
           VERSION="$(sed -n 's/^version = "\(.*\)"/\1/p' build.gradle.kts | head -1)"
-          echo "Expecting com.relaxsoftwareapps.adtogether:sdk:$VERSION on Maven Central..."
-          METADATA="https://repo1.maven.org/maven2/com/relaxsoftwareapps/adtogether/sdk/maven-metadata.xml"
+          echo "Expecting com.relaxsoftwareapps.adtogether:adtogether-sdk:$VERSION on Maven Central..."
+          METADATA="https://repo1.maven.org/maven2/com/relaxsoftwareapps/adtogether/adtogether-sdk/maven-metadata.xml"
           for ATTEMPT in $(seq 1 30); do
             if curl -fsS "$METADATA" | grep -q "<version>${VERSION}</version>"; then
               echo "✅ sdk:$VERSION is live on Maven Central (attempt $ATTEMPT)"
@@ -244,17 +244,32 @@ jobs:
   publish-flutter:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # Automated publishing: pub.dev validates the GitHub Actions OIDC token
-    # (configured in the package admin as repo `undecided2003/AdTogether`,
-    # workflow file `publish.yml`). `flutter pub publish` picks the token up
-    # automatically — no long-lived OAuth secret is stored or needed.
+    # Primary auth: the PUB_DEV_CREDENTIALS secret (pub.dev OAuth2 credentials JSON),
+    # restored to the Dart config dir below. Fallback: pub.dev GitHub Actions OIDC
+    # automated publishing (configured in the package admin as repo
+    # `undecided2003/AdTogether`, workflow file `publish.yml`).
     permissions:
       id-token: write
+    env:
+      PUB_DEV_CREDENTIALS: ${{ secrets.PUB_DEV_CREDENTIALS }}
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+
+      - name: Restore pub.dev credentials
+        # Without this file the pub client falls back to the interactive Google
+        # OAuth browser flow, which hangs forever on CI (the v0.5.3 run burned
+        # the full 6h job timeout waiting for authorization).
+        run: |
+          if [ -z "$PUB_DEV_CREDENTIALS" ]; then
+            echo "::warning::PUB_DEV_CREDENTIALS is not set — relying on pub.dev OIDC automated publishing."
+            exit 0
+          fi
+          mkdir -p "$HOME/.config/dart"
+          printenv PUB_DEV_CREDENTIALS > "$HOME/.config/dart/pub-credentials.json"
+          echo "pub.dev credentials restored to ~/.config/dart/pub-credentials.json"
       
       - name: Install dependencies
         run: flutter pub get

@@ -3,7 +3,7 @@
 
 
 
-[![Maven Central](https://img.shields.io/maven-central/v/com.relaxsoftwareapps.adtogether/sdk)](https://central.sonatype.com/namespace/com.relaxsoftwareapps.adtogether)
+[![Maven Central](https://img.shields.io/maven-central/v/com.relaxsoftwareapps.adtogether/adtogether-sdk)](https://central.sonatype.com/namespace/com.relaxsoftwareapps.adtogether)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 <p align="center">
@@ -74,7 +74,7 @@ Add the dependency to your app-level `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.relaxsoftwareapps.adtogether:sdk:0.5.4")
+    implementation("com.relaxsoftwareapps.adtogether:adtogether-sdk:0.5.4")
 }
 ```
 

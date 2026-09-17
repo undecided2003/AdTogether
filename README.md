@@ -59,7 +59,7 @@ AdTogether provides native SDKs for the most popular platforms. All code is mana
 |----------|----------|-------------------------|-------------|
 | **🌐 Web** | [`./sdk/web-sdk`](./sdk/web-sdk) | npm: `@adtogether/web-sdk` | Lightweight TypeScript SDK for React and Vanilla JS. Features hooks and native React components. |
 | **⚛️ React Native** | [`./sdk/react-native-sdk`](./sdk/react-native-sdk) | npm: `@adtogether/react-native-sdk` | Native SDK for React Native featuring full ad component integrations. |
-| **🤖 Android** | [`./sdk/android-sdk`](./sdk/android-sdk) | Maven: `com.relaxsoftwareapps.adtogether:sdk` | Native Kotlin SDK with full Jetpack Compose support, offering lifecycle-aware ad loading. |
+| **🤖 Android** | [`./sdk/android-sdk`](./sdk/android-sdk) | Maven: `com.relaxsoftwareapps.adtogether:adtogether-sdk` | Native Kotlin SDK with full Jetpack Compose support, offering lifecycle-aware ad loading. |
 | **🍎 iOS** | [`./sdk/ios-sdk`](./sdk/ios-sdk) | SPM / CocoaPods | Swift-native iOS SDK requiring iOS 15.0+ with high-performance native ad rendering. |
 | **💙 Flutter** | [`./sdk/adtogether_sdk`](./sdk/adtogether_sdk) | pub.dev: `adtogether_sdk` | Cross-platform Dart SDK offering beautiful, performant customizable ad widgets. |
 
@@ -103,7 +103,7 @@ Detailed instructions are provided in each SDK's local `README.md`.
 
 - **Web integration:** `npm install @adtogether/web-sdk`
 - **React Native integration:** `npm install @adtogether/react-native-sdk`
-- **Android integration:** Implement `com.relaxsoftwareapps.adtogether:sdk:0.5.4` inside your `build.gradle.kts`.
+- **Android integration:** Implement `com.relaxsoftwareapps.adtogether:adtogether-sdk:0.5.4` inside your `build.gradle.kts`.
 - **iOS integration:** Add the Swift Package through Xcode directly from this repository link.
 - **Flutter integration:** Run `flutter pub add adtogether_sdk:^0.5.4`.
 - **CMS / HTML:** Paste `<script src="https://www.ad-together.org/sdk.js" defer></script>` and `<div data-ad-unit="YOUR_AD_UNIT_ID"></div>`.

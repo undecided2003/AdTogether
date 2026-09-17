@@ -2,7 +2,7 @@
 
 **Version:** 0.5.4
 
-**Package:** `com.relaxsoftwareapps.adtogether:sdk`
+**Package:** `com.relaxsoftwareapps.adtogether:adtogether-sdk`
 **Distribution:** Maven Central
 **Targets:** Android API 21+ (minSdk 21)
 **Frameworks:** Jetpack Compose, XML Views
@@ -15,7 +15,7 @@ Add to your module-level `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.relaxsoftwareapps.adtogether:sdk:0.5.4")
+    implementation("com.relaxsoftwareapps.adtogether:adtogether-sdk:0.5.4")
 }
 ```
 
