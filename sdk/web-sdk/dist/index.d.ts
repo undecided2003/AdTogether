@@ -1,4 +1,8 @@
 type AdType = 'banner' | 'interstitial';
+interface ViewabilityMetrics {
+    visiblePercent: number;
+    visibleDurationMs: number;
+}
 interface AdModel {
     id: string;
     title: string;
@@ -31,15 +35,10 @@ declare class AdTogether {
     assertInitialized(): boolean;
     private lastAdId?;
     static fetchAd(adUnitId?: string, adType?: AdType): Promise<AdModel>;
-    static trackImpression(adId: string, token?: string): void;
+    private static buildServeUrl;
+    static trackImpression(adId: string, token?: string, viewability?: ViewabilityMetrics): void;
     static trackClick(adId: string, token?: string): void;
-    /**
-     * Detect the user's country code from the browser locale.
-     * Uses Intl API (most reliable) with navigator.language as fallback.
-     * Returns an ISO 3166-1 alpha-2 code like "US", "DE", "JP", or null.
-     */
-    private static detectCountry;
     private static trackEvent;
 }
 
-export { type AdModel, AdTogether, type AdTogetherOptions, type AdType };
+export { type AdModel, AdTogether, type AdTogetherOptions, type AdType, type ViewabilityMetrics };

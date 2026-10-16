@@ -53,12 +53,6 @@ const nextConfig: NextConfig = {
     resolveAlias: {
       ...(tailwindPath ? { 'tailwindcss': tailwindPath } : {}),
     },
-    external: [
-      'firebase-admin',
-      'firebase-admin/app',
-      'firebase-admin/auth',
-      'firebase-admin/firestore',
-    ],
   },
 } as any;
 

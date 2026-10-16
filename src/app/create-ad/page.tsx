@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { auth, db, storage } from "@/lib/firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { auth, storage } from "@/lib/firebase";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
@@ -52,6 +51,7 @@ export default function CreateAdPage() {
   };
 
   const handleGenerate = async () => {
+    if (!user) return;
     if (!clickUrl) {
       setError("Please enter a Destination URL first so we know what to scrape.");
       return;
@@ -67,7 +67,10 @@ export default function CreateAdPage() {
     try {
       const response = await fetch('/api/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await user.getIdToken()}`,
+        },
         body: JSON.stringify({ clickUrl }),
       });
       const res = await response.json();
@@ -118,38 +121,31 @@ export default function CreateAdPage() {
     setError("");
 
     try {
-      // Screen Ad Content via API route
-      const screenResponse = await fetch('/api/screen', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, description, clickUrl }),
-      });
-      const screeningRes = await screenResponse.json();
-      if (!screeningRes.success) {
-        throw new Error(screeningRes.error || "Ad screening failed.");
-      }
-      
-      if (!screeningRes.passed) {
-        throw new Error(`Ad rejected by policy: ${screeningRes.reason || "Violates content guidelines."}`);
-      }
-
       // 1. Upload Image to Firebase Storage
       const storageRef = ref(storage, `ads/${user.uid}/${Date.now()}_${imageFile.name}`);
       const uploadTask = await uploadBytesResumable(storageRef, imageFile);
       const imageUrl = await getDownloadURL(uploadTask.ref);
 
-      // 2. Save Data to Firestore
-      await addDoc(collection(db, "ads"), {
-        ownerUid: user.uid,
-        title,
-        description,
-        imageUrl,
-        clickUrl,
-        targetCountries,
-        adType,
-        active: true,
-        createdAt: new Date().toISOString(),
+      // 2. Server-side screening and campaign creation
+      const campaignResponse = await fetch('/api/campaigns', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await user.getIdToken()}`,
+        },
+        body: JSON.stringify({
+          title,
+          description,
+          imageUrl,
+          clickUrl,
+          targetCountries,
+          adType,
+        }),
       });
+      const campaignResult = await campaignResponse.json();
+      if (!campaignResponse.ok || !campaignResult.success) {
+        throw new Error(campaignResult.error || 'Failed to create campaign.');
+      }
 
       setSuccess(true);
       setTimeout(() => {
@@ -175,10 +171,10 @@ export default function CreateAdPage() {
         Back to Dashboard
       </Link>
 
-      <div className="bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-3xl p-8 md:p-12 relative overflow-hidden shadow-2xl">
+      <div className="bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-3xl p-5 sm:p-8 md:p-12 relative overflow-hidden shadow-2xl">
         <button 
           onClick={() => router.push("/dashboard")}
-          className="absolute top-6 right-6 p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all z-20"
+          className="absolute top-4 right-4 md:top-6 md:right-6 p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all z-20"
           title="Cancel"
           type="button"
         >

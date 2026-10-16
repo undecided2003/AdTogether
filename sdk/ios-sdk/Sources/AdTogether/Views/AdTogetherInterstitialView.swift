@@ -21,12 +21,14 @@ public struct AdTogetherInterstitialView: View {
     @State private var isLoading = true
     @State private var hasError = false
     @State private var impressionTracked = false
+    @State private var impressionVisibilityGeneration = 0
     @State private var canClose = false
     @State private var countdown: Int
     
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.openURL) var openURL
     @Environment(\.verticalSizeClass) var verticalSizeClass
+    @Environment(\.scenePhase) private var scenePhase
     
     private var isLandscape: Bool {
         return verticalSizeClass == .compact
@@ -224,13 +226,23 @@ public struct AdTogetherInterstitialView: View {
                     .padding(.trailing, 20)
                 }
                 .onAppear {
-                    handleImpression(ad: adModel)
+                    scheduleImpression(ad: adModel)
+                }
+                .onDisappear {
+                    cancelScheduledImpression()
                 }
             }
         }
         .onAppear {
             if isLoading {
                 loadAd()
+            }
+        }
+        .onChange(of: scenePhase) { phase in
+            if phase != .active {
+                cancelScheduledImpression()
+            } else if let ad {
+                scheduleImpression(ad: ad)
             }
         }
     }
@@ -277,7 +289,29 @@ public struct AdTogetherInterstitialView: View {
     private func handleImpression(ad: AdModel) {
         guard !impressionTracked else { return }
         impressionTracked = true
-        AdTogether.trackImpression(adId: ad.id, token: ad.token)
+        AdTogether.trackImpression(
+            adId: ad.id,
+            token: ad.token,
+            nativeAttestation: ad.nativeAttestation,
+            visiblePercent: 100,
+            visibleDurationMs: 1_000
+        )
+    }
+
+    private func scheduleImpression(ad: AdModel) {
+        guard !impressionTracked, scenePhase == .active else { return }
+        impressionVisibilityGeneration += 1
+        let generation = impressionVisibilityGeneration
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            guard scenePhase == .active,
+                  impressionVisibilityGeneration == generation,
+                  !impressionTracked else { return }
+            handleImpression(ad: ad)
+        }
+    }
+
+    private func cancelScheduledImpression() {
+        impressionVisibilityGeneration += 1
     }
     
     private func handleAdClick(ad: AdModel) {

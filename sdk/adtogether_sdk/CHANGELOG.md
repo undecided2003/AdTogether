@@ -1,3 +1,7 @@
+## 0.5.6
+* **Security**: Build ad-serve URLs with Uri query parameters, discard a response whose ad type differs from the requested type, and stop reporting client-derived country values.
+* **Viewability**: Built-in banner and interstitial widgets report an impression only after one continuous visible second while the app is active.
+
 ## 0.5.4
 * **Fix**: `AdTogetherBanner` ad images now use `BoxFit.contain` instead of `BoxFit.cover` in the standard, compact and interstitial layouts, so creatives are no longer cropped and keep their original aspect ratio.
 * **Fix**: Letterboxed images are drawn on a theme-aware background (`0xFF111827` in dark mode, `0xFFF3F4F6` in light mode) instead of transparent space, so ads blend with the host app's theme.

@@ -1,6 +1,6 @@
 # AdTogether Web SDK — LLM Integration Reference
 
-**Version:** 0.4.5
+**Version:** 0.5.6
 
 **Package:** `@adtogether/web-sdk`
 **Distribution:** NPM (for React/Next.js) or CDN script tag (for plain HTML)
@@ -103,7 +103,7 @@ export default function MyComponent() {
 ### Option B: CDN Script Tag (Plain HTML)
 
 ```html
-<script src="https://www.ad-together.org/sdk.js" defer></script>
+<script src="https://www.ad-together.org/sdk.js" data-app-id="YOUR_APP_ID" defer></script>
 
 <!-- Banner Ad — the SDK auto-populates this div -->
 <div id="adtogether-ad-1" data-ad-unit="home_banner"></div> <!-- optional placement label -->

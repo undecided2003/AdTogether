@@ -27,6 +27,7 @@ import {
   Html5Logo
 } from '@/components/FrameworkLogos';
 import McpServerConfig from '@/components/McpServerConfig';
+import PlatformGuideModal, { Platform } from '@/components/PlatformGuideModal';
 
 function PlatformBadge({ label, color }: { label: string; color: string }) {
   return (
@@ -121,6 +122,7 @@ function CodeBlock({
 
 export default function DocsPage() {
   const [showAlert, setShowAlert] = useState(true);
+  const [selectedCmsTab, setSelectedCmsTab] = useState<Platform>('wordpress');
 
   return (
     <div className="text-zinc-900 dark:text-white">
@@ -137,12 +139,12 @@ export default function DocsPage() {
             </span>
           </h1>
           <p className="text-xl text-zinc-600 dark:text-gray-400 max-w-2xl leading-relaxed">
-            <strong>"Show an ad, get an ad shown"</strong> — the reciprocal ad exchange designed to <strong>increase conversions</strong> and grow your application's audience globally.
+            <strong>"Show an ad, get an ad shown"</strong> — the reciprocal ad exchange designed to <strong>increase conversions</strong> and grow your application&apos;s audience globally.
           </p>
         </header>
         
         {/* Important: Developer Account Required Notice */}
-        <div className="relative group overflow-hidden bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-500/10 dark:to-orange-500/5 border border-amber-200 dark:border-amber-500/20 rounded-3xl p-8 mb-12 shadow-xl shadow-amber-500/5">
+        <div className="relative group overflow-hidden bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-500/10 dark:to-orange-500/5 border border-amber-200 dark:border-amber-500/20 rounded-3xl p-6 md:p-8 mb-12 shadow-xl shadow-amber-500/5">
           <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 blur-[80px] rounded-full -mr-32 -mt-32 pointer-events-none" />
           
           <div className="flex flex-col lg:flex-row items-center gap-10 relative z-10">
@@ -182,7 +184,7 @@ export default function DocsPage() {
             <div className="flex-[1.4] w-full">
               <div className="relative border border-amber-200/50 dark:border-amber-500/20 rounded-2xl overflow-hidden shadow-2xl group-hover:scale-[1.02] transition-transform duration-500">
                 <ZoomableImage 
-                  src="/dashboard.png" 
+                  src="/dashboard.webp" 
                   alt="AdTogether Developer Dashboard" 
                   className="w-full aspect-video object-cover" 
                 />
@@ -261,7 +263,7 @@ export default function DocsPage() {
                       <X className="w-2.5 h-2.5 text-white/90" />
                     </div>
                     <ZoomableImage 
-                      src="/previews/preview_standard.png" 
+                      src="/previews/preview_standard.webp" 
                       alt="Banner Ad" 
                       className="w-full h-full object-contain"
                     />
@@ -294,7 +296,7 @@ export default function DocsPage() {
                     </div>
                     <div className="w-full h-full bg-black flex items-center justify-center">
                       <ZoomableImage 
-                        src="/previews/preview_premium.png" 
+                        src="/previews/preview_premium.webp" 
                         alt="Interstitial Ad Example" 
                         className="w-full h-full object-contain"
                       />
@@ -316,14 +318,15 @@ export default function DocsPage() {
           </div>
 
           <p className="text-zinc-600 dark:text-gray-400 max-w-3xl mb-8 leading-relaxed">
-            AdTogether is distributed as <strong className="text-zinc-900 dark:text-white">five separate SDK packages</strong> — each
+            AdTogether is distributed as <strong className="text-zinc-900 dark:text-white">five SDK packages</strong> plus a{' '}
+            <strong className="text-zinc-900 dark:text-white">lightweight HTML snippet</strong> for CMS and website builders — each
             optimized for its target platform. The Flutter SDK is special: it
             wraps the native Android and iOS cores under the hood, giving
             Flutter developers a single Dart API that works everywhere.
           </p>
 
           {/* Visual Architecture Diagram */}
-          <div className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 rounded-3xl p-8 md:p-10 overflow-hidden relative shadow-sm dark:shadow-none">
+          <div className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 rounded-3xl p-6 md:p-10 overflow-hidden relative shadow-sm dark:shadow-none">
             <div className="absolute top-0 left-0 w-80 h-80 bg-amber-600/5 blur-[120px] rounded-full pointer-events-none" />
 
             {/* Top Row: Entry Points */}
@@ -341,6 +344,7 @@ export default function DocsPage() {
                     { label: 'Flutter (Dart)', icon: <FlutterLogo className="w-4 h-4" />, color: 'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-500/10 border-blue-300 dark:border-blue-500/20' },
                     { label: 'Native iOS (Swift)', icon: <AppleLogo className="w-4 h-4" />, color: 'text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-500/10 border-orange-300 dark:border-orange-500/20' },
                     { label: 'Native Android (Kotlin)', icon: <AndroidLogo className="w-4 h-4" />, color: 'text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-500/10 border-purple-300 dark:border-purple-500/20' },
+                    { label: 'HTML Snippet (No-Code)', icon: <Globe className="w-4 h-4" />, color: 'text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-500/10 border-amber-300 dark:border-amber-500/20 border-dashed' },
                   ].map(({ label, icon, color }) => (
                     <span
                       key={label}
@@ -370,6 +374,7 @@ export default function DocsPage() {
                     { sdk: 'Flutter SDK', platforms: 'Android + iOS + Web (one package)' },
                     { sdk: 'iOS SDK', platforms: 'SwiftUI / UIKit apps' },
                     { sdk: 'Android SDK', platforms: 'Compose / View-based apps' },
+                    { sdk: 'HTML Snippet', platforms: 'WordPress, Wix, Squarespace, Weebly, Webflow' },
                   ].map(({ sdk, platforms }) => (
                     <div key={sdk} className="flex items-start gap-3">
                       <Check className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
@@ -436,49 +441,132 @@ export default function DocsPage() {
 
 
           <div className="grid md:grid-cols-2 gap-8">
-            {/* ─── REST API ─── */}
-            <section className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 p-8 rounded-3xl hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors md:col-span-2">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="p-3 bg-red-500/20 rounded-xl text-red-400">
-                  <Globe className="w-6 h-6" />
-                </div>
-                <div className="flex items-center gap-3">
-                  <h2 className="text-2xl font-semibold">REST API endpoints</h2>
-                  <Link href="/llms-rest.txt" prefetch={false} className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 bg-zinc-200 dark:bg-white/10 text-zinc-600 dark:text-zinc-400 rounded hover:bg-amber-100 hover:text-amber-700 dark:hover:bg-amber-500/20 dark:hover:text-amber-400 transition-colors flex items-center gap-1">
-                    <Bot className="w-3 h-3" />
-                    LLM
-                  </Link>
+            {/* ─── CMS & Website Builders ─── */}
+            <section className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 p-6 md:p-8 rounded-3xl hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors relative overflow-hidden md:col-span-2">
+              <div className="flex justify-between items-start mb-6">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2.5 bg-amber-500/10 rounded-xl">
+                    <Globe className="w-7 h-7 text-amber-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-semibold">CMS & Website Builders</h2>
+                    <p className="text-zinc-600 dark:text-gray-400 text-sm mt-1">
+                      Step-by-step guides for popular no-code platforms.
+                    </p>
+                  </div>
                 </div>
               </div>
-              <p className="text-zinc-600 dark:text-gray-400 mb-6 max-w-3xl">
-                For complete control, or if you are building an integration for a custom platform, you can directly interact with the AdTogether Ad Serving REST API.
-              </p>
 
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3">
-                    Fetch Ad
-                  </p>
-                  <CodeBlock language="bash" title="GET /api/ads/serve">
-{`curl -X GET "https://www.ad-together.org/api/ads/serve?country=global"`}
-                  </CodeBlock>
+              <div className="bg-white dark:bg-black/50 rounded-2xl border border-zinc-200 dark:border-white/10 overflow-hidden">
+                <div className="flex overflow-x-auto border-b border-zinc-200 dark:border-white/10 hide-scrollbar">
+                  {[
+                    { id: 'wordpress', name: 'WordPress' },
+                    { id: 'wix', name: 'Wix' },
+                    { id: 'squarespace', name: 'Squarespace' },
+                    { id: 'weebly', name: 'Weebly' },
+                    { id: 'webflow', name: 'Webflow' }
+                  ].map(platform => (
+                    <button
+                      key={platform.id}
+                      onClick={() => setSelectedCmsTab(platform.id as Platform)}
+                      className={`px-6 py-4 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
+                        selectedCmsTab === platform.id
+                          ? 'border-amber-500 text-amber-600 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-500/5'
+                          : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/5'
+                      }`}
+                    >
+                      {platform.name}
+                    </button>
+                  ))}
                 </div>
-                
-                <div>
-                  <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3">
-                    Track Impression
-                  </p>
-                  <CodeBlock language="bash" title="POST /api/ads/impression">
-{`curl -X POST "https://www.ad-together.org/api/ads/impression" \\
-  -H "Content-Type: application/json" \\
-  -d '{"adId": "123456", "token": "HMAC_TOKEN_FROM_FETCH"}'`}
-                  </CodeBlock>
+
+                <div className="p-6">
+                  {selectedCmsTab === 'wordpress' && (
+                    <div className="space-y-4">
+                      <h4 className="font-semibold text-lg text-zinc-900 dark:text-white">Add ads to WordPress</h4>
+                      <ol className="list-decimal pl-5 space-y-3 text-zinc-600 dark:text-zinc-400">
+                        <li><strong>Open your Page or Post editor:</strong> Navigate to the page or post where you want the ad to appear.</li>
+                        <li><strong>Add a Custom HTML Block:</strong> Click the '+' button to add a new block, search for 'Custom HTML', and add it to your layout.</li>
+                        <li><strong>Paste your code:</strong> Copy the HTML snippet below and paste it into the block. Click 'Preview' to test it.</li>
+                      </ol>
+                      <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 rounded-lg text-sm border border-blue-100 dark:border-blue-900/50">
+                        <strong>Site-wide Ads:</strong> Want ads on every page? Use a plugin like <strong>WPCode</strong> to automatically inject the script into your site&apos;s header or footer.
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedCmsTab === 'wix' && (
+                    <div className="space-y-4">
+                      <h4 className="font-semibold text-lg text-zinc-900 dark:text-white">Add ads to Wix</h4>
+                      <ol className="list-decimal pl-5 space-y-3 text-zinc-600 dark:text-zinc-400">
+                        <li><strong>Add an Embed Element:</strong> In the Wix Editor, click '+' (Add Elements) &gt; Embed Code &gt; Embed HTML.</li>
+                        <li><strong>Paste the Snippet:</strong> Select 'Code', paste your snippet below, and click Update.</li>
+                        <li><strong>Resize the Box:</strong> Drag the corners of the embed box to fit your desired banner size (e.g., 320x50 or 728x90).</li>
+                      </ol>
+                      <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 rounded-lg text-sm border border-amber-100 dark:border-amber-900/50">
+                        <strong>Wix Limitations:</strong> Wix places on-page embeds in a sandboxed iframe. For full-screen interstitials, you must inject the code via <strong>Settings &gt; Custom Code</strong> in your Wix Dashboard (requires Premium).
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedCmsTab === 'squarespace' && (
+                    <div className="space-y-4">
+                      <h4 className="font-semibold text-lg text-zinc-900 dark:text-white">Add ads to Squarespace</h4>
+                      <ol className="list-decimal pl-5 space-y-3 text-zinc-600 dark:text-zinc-400">
+                        <li><strong>Edit your page layout:</strong> Click 'Edit' on the page where you want the ad.</li>
+                        <li><strong>Add a Code Block:</strong> Hover over an insertion point, click '+', and select the 'Code' block.</li>
+                        <li><strong>Paste & Save:</strong> Make sure 'HTML' is selected and 'Display Source' is UNCHECKED. Paste your code and save.</li>
+                      </ol>
+                      <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 rounded-lg text-sm border border-amber-100 dark:border-amber-900/50">
+                        <strong>Editor Preview Disabled:</strong> Squarespace disables scripts while you are logged in to the editor. You must view your live site (or use an incognito window) to see the ad load.
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedCmsTab === 'weebly' && (
+                    <div className="space-y-4">
+                      <h4 className="font-semibold text-lg text-zinc-900 dark:text-white">Add ads to Weebly</h4>
+                      <ol className="list-decimal pl-5 space-y-3 text-zinc-600 dark:text-zinc-400">
+                        <li><strong>Drag the Embed Code element:</strong> From the left sidebar, find the 'Embed Code' (&lt;/&gt;) element and drag it onto your page.</li>
+                        <li><strong>Edit Custom HTML:</strong> Click inside the element and select 'Edit Custom HTML'.</li>
+                        <li><strong>Paste & Publish:</strong> Paste your snippet below. Publish your site to see the ad live.</li>
+                      </ol>
+                    </div>
+                  )}
+
+                  {selectedCmsTab === 'webflow' && (
+                    <div className="space-y-4">
+                      <h4 className="font-semibold text-lg text-zinc-900 dark:text-white">Add ads to Webflow</h4>
+                      <ol className="list-decimal pl-5 space-y-3 text-zinc-600 dark:text-zinc-400">
+                        <li><strong>Add an Embed Component:</strong> Open the Add panel (+) and drag an 'Embed' component onto your canvas.</li>
+                        <li><strong>Paste the Snippet:</strong> In the code editor window that appears, paste your snippet below.</li>
+                        <li><strong>Publish to test:</strong> Webflow does not execute scripts in the Designer. Publish to your .webflow.io staging domain to test.</li>
+                      </ol>
+                      <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 rounded-lg text-sm border border-blue-100 dark:border-blue-900/50">
+                        <strong>Site-wide Head Code:</strong> If you want sitewide tracking, you can also place the script tag in your Project Settings &gt; Custom Code.
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-6 pt-6 border-t border-zinc-200 dark:border-white/10">
+                    <h5 className="text-sm font-semibold mb-3 uppercase tracking-wider text-zinc-500">Universal HTML Snippet</h5>
+                    <CodeBlock language="html" title="HTML Snippet">
+                      {`<!-- Load AdTogether SDK -->
+<script src="https://www.ad-together.org/sdk.js" data-app-id="YOUR_APP_ID" defer></script>
+
+<!-- Ad Banner Container -->
+<div 
+  data-ad-unit="YOUR_AD_UNIT_ID" 
+  style="width: 100%; min-height: 50px;"
+></div>`}
+                    </CodeBlock>
+                  </div>
                 </div>
               </div>
             </section>
 
             {/* ─── Web Integration ─── */}
-            <section className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 p-8 rounded-3xl hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors">
+            <section className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 p-6 md:p-8 rounded-3xl hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors">
               <div className="flex items-center space-x-3 mb-3">
                 <div className="p-2.5 bg-pink-500/10 rounded-xl">
                   <ReactLogo className="w-7 h-7" />
@@ -565,18 +653,20 @@ export default function MyComponent() {
 }`}
               </CodeBlock>
 
-              <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3 mt-6">
-                Alternative: Plain HTML (CDN)
-              </p>
-              <CodeBlock language="html" title="index.html">
-                {`<script src="https://www.ad-together.org/sdk.js" defer></script>
+              <div className="mt-6">
+                <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3">
+                  Alternative: Plain HTML (CDN)
+                </p>
+                <CodeBlock language="html" title="index.html">
+                  {`<script src="https://www.ad-together.org/sdk.js" data-app-id="YOUR_APP_ID" defer></script>
 <!-- Banner Ad -->
 <div id="adtogether-ad" data-ad-unit="YOUR_AD_UNIT_ID"></div>`}
-              </CodeBlock>
+                </CodeBlock>
+              </div>
             </section>
 
             {/* ─── Flutter Integration ─── */}
-            <section className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 p-8 rounded-3xl hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors relative overflow-hidden">
+            <section className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 p-6 md:p-8 rounded-3xl hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors relative overflow-hidden">
               <div className="absolute top-3 right-3 px-2.5 py-1 bg-green-100 dark:bg-green-500/10 border border-green-300 dark:border-green-500/20 rounded-full text-green-700 dark:text-green-400 text-[10px] font-bold uppercase tracking-wider">
                 3-in-1
               </div>
@@ -654,7 +744,7 @@ AdTogetherInterstitial.show(
             </section>
 
             {/* ─── Native iOS ─── */}
-            <section className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 p-8 rounded-3xl hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors">
+            <section className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 p-6 md:p-8 rounded-3xl hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors">
               <div className="flex items-center space-x-3 mb-3">
                 <div className="p-2.5 bg-orange-500/10 rounded-xl">
                   <AppleLogo className="w-7 h-7 text-orange-500" />
@@ -670,17 +760,18 @@ AdTogetherInterstitial.show(
               <div className="flex flex-wrap gap-2 mb-6">
                 <PlatformBadge label="SwiftUI" color="text-orange-600 dark:text-orange-400 border-orange-300 dark:border-orange-500/30" />
                 <PlatformBadge label="UIKit" color="text-orange-600 dark:text-orange-400 border-orange-300 dark:border-orange-500/30" />
+                <PlatformBadge label="App Attest" color="text-orange-600 dark:text-orange-400 border-orange-300 dark:border-orange-500/30" />
               </div>
               <p className="text-zinc-600 dark:text-gray-400 mb-6">
-                Pure Swift SDK for native iOS and iPadOS apps. Distributed via
-                Swift Package Manager.
+                Pure Swift SDK for native iOS and iPadOS apps with built-in Apple App Attest support. Distributed via
+                Swift Package Manager and CocoaPods.
               </p>
 
               <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3">
                 Distribution
               </p>
               <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
-                Swift Package Manager — add via Xcode or <code className="text-orange-700 dark:text-orange-300 bg-orange-100 dark:bg-orange-500/10 px-1.5 py-0.5 rounded">Package.swift</code>
+                Swift Package Manager or CocoaPods
               </p>
 
               <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3">
@@ -689,8 +780,15 @@ AdTogetherInterstitial.show(
               <CodeBlock title="Package.swift">
 {`.package(
   url: "https://github.com/undecided2003/AdTogether.git",
-  from: "0.4.5"
+  from: "0.5.6"
 )`}
+              </CodeBlock>
+
+              <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3 mt-6">
+                CocoaPods alternative
+              </p>
+              <CodeBlock language="ruby" title="Podfile">
+{`pod 'AdTogether', '~> 0.5.6'`}
               </CodeBlock>
 
               <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3 mt-6">
@@ -742,7 +840,7 @@ struct ContentView: View {
             </section>
 
             {/* ─── Native Android ─── */}
-            <section className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 p-8 rounded-3xl hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors">
+            <section className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 p-6 md:p-8 rounded-3xl hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors">
               <div className="flex items-center space-x-3 mb-3">
                 <div className="p-2.5 bg-purple-500/10 rounded-xl">
                   <AndroidLogo className="w-7 h-7" />
@@ -758,9 +856,10 @@ struct ContentView: View {
               <div className="flex flex-wrap gap-2 mb-6">
                 <PlatformBadge label="Jetpack Compose" color="text-purple-600 dark:text-purple-400 border-purple-300 dark:border-purple-500/30" />
                 <PlatformBadge label="XML Views" color="text-purple-600 dark:text-purple-400 border-purple-300 dark:border-purple-500/30" />
+                <PlatformBadge label="Play Integrity" color="text-purple-600 dark:text-purple-400 border-purple-300 dark:border-purple-500/30" />
               </div>
               <p className="text-zinc-600 dark:text-gray-400 mb-6">
-                Kotlin-first SDK for native Android apps. Distributed via Maven
+                Kotlin-first SDK for native Android apps with Google Play Integrity attestation. Distributed via Maven
                 Central.
               </p>
 
@@ -776,7 +875,7 @@ struct ContentView: View {
               </p>
               <CodeBlock title="build.gradle.kts">
 {`dependencies {
-    implementation("com.relaxsoftwareapps.adtogether:sdk:0.4.5")
+    implementation("com.relaxsoftwareapps.adtogether:adtogether-sdk:0.5.6")
 }`}
               </CodeBlock>
 
@@ -828,7 +927,7 @@ fun MainScreen() {
             </section>
 
             {/* ─── React Native ─── */}
-            <section className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 p-8 rounded-3xl hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors md:col-span-2">
+            <section className="bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10 p-6 md:p-8 rounded-3xl hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors md:col-span-2">
               <div className="flex items-center space-x-3 mb-3">
                 <div className="p-3 bg-blue-500/20 rounded-xl text-blue-400">
                   <Smartphone className="w-6 h-6" />

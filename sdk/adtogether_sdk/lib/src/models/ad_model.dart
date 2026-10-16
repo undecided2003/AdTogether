@@ -15,7 +15,7 @@ class AdModel {
   /// An optional URL for the creative image of the ad.
   final String? imageUrl;
 
-  /// An HMAC token used to verify impression and click tracking.
+  /// A short-lived signed grant used to authorize impression and click tracking.
   final String? token;
 
   /// The type of the ad, typically 'banner' or 'interstitial'.

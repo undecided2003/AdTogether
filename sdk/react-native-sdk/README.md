@@ -18,14 +18,14 @@ This SDK allows React Native developers to easily integrate AdTogether ads into 
 > **Developer Account Required**: Before integrating the SDK, you must create a developer account at [https://www.ad-together.org](https://www.ad-together.org) to generate your `appId` and configure your ad units. Integration will not work without a valid `appId`.
 
 <p align="center">
-  <img src="https://www.ad-together.org/dashboard.png" width="800" alt="Developer Dashboard">
+  <img src="https://www.ad-together.org/dashboard.webp" width="800" alt="Developer Dashboard">
 </p>
 
 ### 🖼️ Visualizing the Experience
 
 | **Native Banner Ad** | **Interstitial Full-Screen** |
 |:---:|:---:|
-| ![Banner Example](https://www.ad-together.org/previews/preview_standard.png) | ![Interstitial Example](https://www.ad-together.org/previews/preview_premium.png) |
+| ![Banner Example](https://www.ad-together.org/previews/preview_standard.webp) | ![Interstitial Example](https://www.ad-together.org/previews/preview_premium.webp) |
 | *Adaptive React Native Banner Component* | *Full-Screen Interstitial Experience* |
 
 ## Features
@@ -54,12 +54,12 @@ AdTogether provides an official Model Context Protocol (MCP) server that gives y
       "mcp-remote@latest",
       "https://www.ad-together.org/api/mcp",
       "--header",
-      "Authorization: Bearer YOUR_APP_ID_HERE"
+      "Authorization: Bearer YOUR_FRESH_FIREBASE_ID_TOKEN"
     ]
   }
 }
 ```
-This ensures you have the exact API signatures and security invariants required to integrate AdTogether successfully without hallucinations.
+Use a fresh Firebase ID token from the signed-in account owner; App IDs cannot authenticate MCP requests. This ensures you have the exact API signatures and security invariants required to integrate AdTogether successfully without hallucinations.
 
 ---
 
@@ -85,6 +85,10 @@ AdTogether.initialize({
   // bundleId: 'com.example.app' // optional: auto-detected when possible
 });
 ```
+
+## Native attestation
+
+React Native does not yet provide a Play Integrity or Apple App Attest bridge. Do not enable native-attestation enforcement for an App ID used by this SDK. Use a separate App ID after native proof support is added.
 
 ## Usage
 

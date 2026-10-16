@@ -1,12 +1,21 @@
 "use client";
 
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged, sendPasswordResetEmail, sendEmailVerification, signInWithRedirect, getRedirectResult } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged, sendPasswordResetEmail, sendEmailVerification, signInWithRedirect, getRedirectResult, type User } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { useEffect, useState } from "react";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, runTransaction } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, LogIn, ArrowLeft } from "lucide-react";
 import Image from "next/image";
+
+function authErrorDetails(error: unknown): { code: string; message: string } {
+  if (!error || typeof error !== "object") return { code: "", message: "" };
+  const candidate = error as { code?: unknown; message?: unknown };
+  return {
+    code: typeof candidate.code === "string" ? candidate.code : "",
+    message: typeof candidate.message === "string" ? candidate.message : "",
+  };
+}
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -29,8 +38,17 @@ export default function LoginPage() {
     getRedirectResult(auth).then(async (result) => {
       console.log("[Auth Debug] getRedirectResult resolved:", result ? "has user" : "null (no pending redirect)");
       if (result?.user) {
-        await createOrUpdateUserDoc(result.user);
-        if (isMounted) router.replace("/dashboard");
+        const provisioning = await createOrUpdateUserDoc(result.user);
+        if (provisioning === "ready" && isMounted) {
+          router.replace("/dashboard");
+        } else if (isMounted) {
+          setCheckingAuth(false);
+          if (provisioning === "unverified") {
+            setSuccessMessage("Verify your email address, then sign in to activate your account.");
+          } else {
+            setError("We could not set up your account. Please try again.");
+          }
+        }
       }
     }).catch((err) => {
       console.error("[Auth Debug] getRedirectResult error:", err.code, err.message);
@@ -41,8 +59,17 @@ export default function LoginPage() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         console.log("User already logged in, syncing Firestore user doc before redirect...");
-        await createOrUpdateUserDoc(user);
-        if (isMounted) router.replace("/dashboard");
+        const provisioning = await createOrUpdateUserDoc(user);
+        if (provisioning === "ready" && isMounted) {
+          router.replace("/dashboard");
+        } else if (isMounted) {
+          setCheckingAuth(false);
+          if (provisioning === "unverified") {
+            setSuccessMessage("Verify your email address, then sign in to activate your account.");
+          } else {
+            setError("We could not set up your account. Please try again.");
+          }
+        }
       } else {
         if (isMounted) setCheckingAuth(false);
       }
@@ -53,31 +80,41 @@ export default function LoginPage() {
     };
   }, [router]);
 
-  const createOrUpdateUserDoc = async (user: any) => {
+  const createOrUpdateUserDoc = async (user: User): Promise<"ready" | "unverified" | "failed"> => {
     try {
+      // The Firestore rule also enforces this claim before it grants the
+      // initial credit balance. Reload and refresh the token so a user who
+      // has just completed verification can be provisioned on their next
+      // sign-in without a stale credential.
+      await user.reload();
+      if (!user.emailVerified) {
+        return "unverified";
+      }
+      await user.getIdToken(true);
       console.log("Syncing user to Firestore:", user.uid);
       const userRef = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userRef);
-      if (!userSnap.exists()) {
-        console.log("Creating new user document...");
-        await setDoc(userRef, {
-          uid: user.uid,
-          email: user.email,
-          credits: 75,
-          country: "Unknown",
-          appIds: [],
-          appIdLabels: {},
-          creditNotificationStage: 'none',
-          createdAt: new Date().toISOString(),
-        });
-        console.log("User document created successfully.");
-      } else {
-        console.log("User document already exists.");
-      }
-    } catch (err: any) {
+      await runTransaction(db, async (transaction) => {
+        const userSnap = await transaction.get(userRef);
+        if (!userSnap.exists()) {
+          console.log("Creating new user document...");
+          transaction.set(userRef, {
+            uid: user.uid,
+            email: user.email,
+            credits: 75,
+            country: "Unknown",
+            appIds: [],
+            appIdLabels: {},
+            creditNotificationStage: 'none',
+            createdAt: new Date().toISOString(),
+          });
+        } else {
+          console.log("User document already exists.");
+        }
+      });
+      return "ready";
+    } catch (err: unknown) {
       console.error("Firestore sync failed:", err);
-      // We don't throw here so the user can still access the dashboard 
-      // even if Firestore sync has a minor hiccup
+      return "failed";
     }
   };
 
@@ -89,8 +126,14 @@ export default function LoginPage() {
     try {
       if (isLogin) {
         const cred = await signInWithEmailAndPassword(auth, email, password);
-        await createOrUpdateUserDoc(cred.user);
-        router.replace("/dashboard");
+        const provisioning = await createOrUpdateUserDoc(cred.user);
+        if (provisioning === "ready") {
+          router.replace("/dashboard");
+        } else if (provisioning === "unverified") {
+          setSuccessMessage("Verify your email address, then sign in to activate your account.");
+        } else {
+          setError("We could not set up your account. Please try again.");
+        }
       } else {
         if (password !== confirmPassword) {
           setError("Passwords do not match.");
@@ -98,19 +141,20 @@ export default function LoginPage() {
           return;
         }
         const cred = await createUserWithEmailAndPassword(auth, email, password);
-        await createOrUpdateUserDoc(cred.user);
-        // Send verification email on signup
         await sendEmailVerification(cred.user);
-        router.replace("/dashboard");
+        setIsLogin(true);
+        setPassword("");
+        setConfirmPassword("");
+        setSuccessMessage("Check your email for a verification link. Sign in after verifying to activate your account.");
       }
-    } catch (err: any) {
-      const code = err.code || "";
+    } catch (err: unknown) {
+      const { code, message } = authErrorDetails(err);
       if (code === "auth/user-not-found") setError("No account found with this email.");
       else if (code === "auth/wrong-password") setError("Incorrect password.");
       else if (code === "auth/email-already-in-use") setError("An account with this email already exists.");
       else if (code === "auth/weak-password") setError("Password must be at least 6 characters.");
       else if (code === "auth/invalid-email") setError("Please enter a valid email address.");
-      else setError(err.message || "Failed to authenticate");
+      else setError(message || "Failed to authenticate");
     } finally {
       setLoading(false);
     }
@@ -125,8 +169,8 @@ export default function LoginPage() {
       const provider = new GoogleAuthProvider();
       await signInWithRedirect(auth, provider);
       // Page redirects to Google — execution stops here
-    } catch (err: any) {
-      setError(err.message || "Failed to initiate Google sign in");
+    } catch (err: unknown) {
+      setError(authErrorDetails(err).message || "Failed to initiate Google sign in");
       setLoading(false);
     }
   };
@@ -143,11 +187,11 @@ export default function LoginPage() {
     try {
       await sendPasswordResetEmail(auth, email);
       setSuccessMessage("Password reset email sent! Check your inbox.");
-    } catch (err: any) {
-      const code = err.code || "";
+    } catch (err: unknown) {
+      const { code, message } = authErrorDetails(err);
       if (code === "auth/user-not-found") setError("No account found with this email.");
       else if (code === "auth/invalid-email") setError("Please enter a valid email address.");
-      else setError(err.message || "Failed to send reset email.");
+      else setError(message || "Failed to send reset email.");
     } finally {
       setLoading(false);
     }
@@ -166,7 +210,7 @@ export default function LoginPage() {
   if (showForgotPassword) {
     return (
       <div className="flex-grow flex flex-col items-center justify-center py-12 animate-in fade-in zoom-in duration-500 rounded-2xl">
-        <div className="w-full max-w-md p-8 bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-3xl backdrop-blur-xl shadow-2xl relative overflow-hidden text-zinc-900 dark:text-white">
+        <div className="w-full max-w-md p-6 sm:p-8 bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-3xl backdrop-blur-xl shadow-2xl relative overflow-hidden text-zinc-900 dark:text-white">
           <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 dark:bg-amber-500/5 blur-[80px] rounded-full pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-orange-500/10 dark:bg-orange-500/5 blur-[80px] rounded-full pointer-events-none" />
 
@@ -179,9 +223,9 @@ export default function LoginPage() {
               Back to login
             </button>
 
-            <h2 className="text-3xl font-extrabold text-zinc-900 dark:text-white text-center mb-2">
+            <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white text-center mb-2">
               Reset Password
-            </h2>
+            </h1>
             <p className="text-zinc-600 dark:text-zinc-400 text-center mb-8 text-sm">
               Enter your email and we&apos;ll send you a reset link
             </p>
@@ -219,15 +263,15 @@ export default function LoginPage() {
 
   return (
     <div className="flex-grow flex flex-col items-center justify-center py-12 animate-in fade-in zoom-in duration-500 rounded-2xl">
-      <div className="w-full max-w-md p-8 bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-3xl backdrop-blur-xl shadow-2xl relative overflow-hidden">
+      <div className="w-full max-w-md p-6 sm:p-8 bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-3xl backdrop-blur-xl shadow-2xl relative overflow-hidden">
         {/* Glow effect */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 dark:bg-blue-500/5 blur-[80px] rounded-full pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/10 dark:bg-purple-500/5 blur-[80px] rounded-full pointer-events-none" />
 
         <div className="relative z-10">
-          <h2 className="text-3xl font-extrabold text-zinc-900 dark:text-white text-center mb-2">
+          <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white text-center mb-2">
             {isLogin ? "Welcome Back" : "Join AdTogether"}
-          </h2>
+          </h1>
           <p className="text-zinc-600 dark:text-zinc-400 text-center mb-8 text-sm">
             {isLogin ? "Log in to show an ad and get an ad shown" : "Join the reciprocal ad exchange to increase conversions"}
           </p>
@@ -316,7 +360,7 @@ export default function LoginPage() {
           >
             <div className="relative w-5 h-5 group-hover:scale-110 transition-transform">
               <Image
-                src="/google.png"
+                src="/google.webp"
                 alt="Google"
                 fill
                 className="object-contain"

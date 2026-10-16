@@ -83,25 +83,77 @@ export const AdTogetherBanner: React.FC<AdTogetherBannerProps> = ({
 
   // Impression tracking
   useEffect(() => {
-    if (!adData || isLoading || hasError || !containerRef.current) return;
+    if (!adData || isLoading || hasError || !isVisible || !containerRef.current) return;
+
+    let visibleTimer: ReturnType<typeof setTimeout> | null = null;
+    let visibleSince: number | null = null;
+    let latestVisibleRatio = 0;
+
+    const clearVisibleTimer = () => {
+      if (visibleTimer) clearTimeout(visibleTimer);
+      visibleTimer = null;
+      visibleSince = null;
+    };
+
+    const startVisibleTimer = () => {
+      if (visibleTimer || impressionTrackedRef.current || document.visibilityState !== 'visible') return;
+
+      visibleSince = Date.now();
+      visibleTimer = setTimeout(() => {
+        const visibleDurationMs = visibleSince === null ? 0 : Date.now() - visibleSince;
+        const visiblePercent = Math.round(latestVisibleRatio * 100);
+        visibleTimer = null;
+        visibleSince = null;
+
+        if (
+          impressionTrackedRef.current ||
+          !isVisible ||
+          !container.isConnected ||
+          document.visibilityState !== 'visible' ||
+          visiblePercent < 50 ||
+          visibleDurationMs < 1000
+        ) return;
+
+        impressionTrackedRef.current = true;
+        AdTogether.trackImpression(adData.id, adData.token, { visiblePercent, visibleDurationMs });
+        observer.disconnect();
+      }, 1000);
+    };
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && entries[0].intersectionRatio >= 0.5 && !impressionTrackedRef.current) {
-          impressionTrackedRef.current = true;
-          AdTogether.trackImpression(adData.id, adData.token);
-          observer.disconnect();
+        const entry = entries[0];
+        if (!entry) return;
+
+        latestVisibleRatio = entry.intersectionRatio;
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.5 && document.visibilityState === 'visible') {
+          startVisibleTimer();
+        } else {
+          clearVisibleTimer();
         }
       },
-      { threshold: 0.5 }
+      { threshold: [0, 0.5] }
     );
 
-    observer.observe(containerRef.current);
+    const container = containerRef.current;
+    const handleVisibilityChange = () => {
+      clearVisibleTimer();
+      if (document.visibilityState === 'visible') {
+        latestVisibleRatio = 0;
+        observer.unobserve(container);
+        observer.observe(container);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    observer.observe(container);
 
     return () => {
+      clearVisibleTimer();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       observer.disconnect();
     };
-  }, [adData, isLoading, hasError]);
+  }, [adData, isLoading, hasError, isVisible]);
 
   const handleContainerClick = () => {
     if (!adData) return;

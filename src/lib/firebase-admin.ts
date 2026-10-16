@@ -26,4 +26,5 @@ try {
 }
 
 export const adminDb = admin.firestore();
+export const adminAuth = admin.auth();
 export const FieldValue = admin.firestore.FieldValue;

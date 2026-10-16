@@ -1,4 +1,4 @@
-import { AdModel, AdType, AdTogetherOptions } from './types';
+import { AdModel, AdType, AdTogetherOptions, ViewabilityMetrics } from './types';
 import { NativeModules, Platform } from 'react-native';
 
 export class AdTogether {
@@ -116,23 +116,14 @@ export class AdTogether {
 
     try {
       const sdk = AdTogether.shared;
-      let url = `${sdk.baseUrl}/api/ads/serve?country=global&adUnitId=${adUnitId}&appId=${sdk.appId}`;
-      if (adType) {
-        url += `&adType=${adType}`;
-      }
-      if (sdk.lastAdId) {
-        url += `&exclude=${sdk.lastAdId}`;
-      }
-      if (sdk.bundleId) {
-        url += `&bundleId=${sdk.bundleId}`;
-      }
-      
-      // Pass allowSelfAds (removed platform from fetch URL to match other SDKs)
-      url += `&allowSelfAds=${sdk.allowSelfAds}`;
+      const url = AdTogether.buildServeUrl(sdk, adUnitId, adType);
 
       const response = await fetch(url);
       if (response.ok) {
-        const ad = await response.json();
+        const ad = await response.json() as AdModel;
+        if (adType && ad.adType !== adType) {
+          throw new Error('Received an ad with a different type than requested: ' + (ad.adType ?? 'missing'));
+        }
         sdk.lastAdId = ad.id;
         return ad;
       } else if (response.status === 401 || response.status === 403) {
@@ -146,76 +137,43 @@ export class AdTogether {
     }
   }
 
-  static trackImpression(adId: string, token?: string) {
-    this.trackEvent('/api/ads/impression', adId, token);
+  private static buildServeUrl(sdk: AdTogether, adUnitId: string, adType?: AdType): string {
+    const url = new URL(sdk.baseUrl);
+    url.pathname = url.pathname.replace(/\/+$/, '') + '/api/ads/serve';
+    url.search = '';
+    url.hash = '';
+
+    url.searchParams.set('adUnitId', adUnitId);
+    url.searchParams.set('appId', sdk.appId ?? '');
+    url.searchParams.set('allowSelfAds', String(sdk.allowSelfAds));
+    url.searchParams.set('platform', Platform.OS);
+    if (adType) {
+      url.searchParams.set('adType', adType);
+    }
+    if (sdk.lastAdId) {
+      url.searchParams.set('exclude', sdk.lastAdId);
+    }
+    if (sdk.bundleId) {
+      url.searchParams.set('bundleId', sdk.bundleId);
+    }
+
+    return url.toString();
+  }
+
+  static trackImpression(adId: string, token?: string, viewability?: ViewabilityMetrics) {
+    this.trackEvent('/api/ads/impression', adId, token, viewability);
   }
 
   static trackClick(adId: string, token?: string) {
     this.trackEvent('/api/ads/click', adId, token);
   }
 
-  /**
-   * Detect country code from the device locale.
-   * Tries expo-localization first, then NativeModules, then Intl API.
-   */
-  private static detectCountry(): string | null {
-    // 1. Try expo-localization
-    try {
-      const ExpoLocalization = require('expo-localization');
-      if (ExpoLocalization?.region) {
-        return ExpoLocalization.region; // e.g. "US"
-      }
-      // expo-localization v3+ uses getLocales()
-      if (ExpoLocalization?.getLocales) {
-        const locales = ExpoLocalization.getLocales();
-        if (locales?.[0]?.regionCode) {
-          return locales[0].regionCode;
-        }
-      }
-    } catch (_) {}
-
-    // 2. Try RN NativeModules (I18nManager or SettingsManager)
-    try {
-      if (Platform.OS === 'ios') {
-        const settings = NativeModules.SettingsManager?.settings;
-        const locale = settings?.AppleLocale || settings?.AppleLanguages?.[0];
-        if (locale) {
-          const parts = locale.replace('_', '-').split('-');
-          if (parts.length >= 2) {
-            const region = parts[parts.length - 1].toUpperCase();
-            if (region.length === 2) return region;
-          }
-        }
-      } else if (Platform.OS === 'android') {
-        const locale = NativeModules.I18nManager?.localeIdentifier;
-        if (locale) {
-          const parts = locale.replace('_', '-').split('-');
-          if (parts.length >= 2) {
-            const region = parts[parts.length - 1].toUpperCase();
-            if (region.length === 2) return region;
-          }
-        }
-      }
-    } catch (_) {}
-
-    // 3. Fallback: Intl API (available in Hermes & JSC)
-    try {
-      if (typeof Intl !== 'undefined' && Intl.DateTimeFormat) {
-        const resolved = Intl.DateTimeFormat().resolvedOptions();
-        if (resolved.locale) {
-          const parts = resolved.locale.split('-');
-          if (parts.length >= 2) {
-            const region = parts[parts.length - 1].toUpperCase();
-            if (region.length === 2) return region;
-          }
-        }
-      }
-    } catch (_) {}
-
-    return null;
-  }
-
-  private static trackEvent(endpoint: string, adId: string, token?: string) {
+  private static trackEvent(
+    endpoint: string,
+    adId: string,
+    token?: string,
+    viewability?: ViewabilityMetrics
+  ) {
     if (!AdTogether.shared.assertInitialized()) return;
     
     fetch(`${AdTogether.shared.baseUrl}${endpoint}`, {
@@ -231,7 +189,7 @@ export class AdTogether {
         // Send platform and environment to match Flutter SDK
         platform: Platform.OS,
         environment: __DEV__ ? 'development' : 'production',
-        country: AdTogether.detectCountry(),
+        ...(viewability ? viewability : {}),
       }),
     }).catch(console.error);
   }

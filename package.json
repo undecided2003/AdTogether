@@ -2,6 +2,9 @@
   "name": "adtogether",
   "version": "0.4.5",
   "private": true,
+  "engines": {
+    "node": "22"
+  },
   "scripts": {
     "dev": "cross-env IS_WEBPACK_TEST=true next dev --webpack",
     "build": "cross-env IS_WEBPACK_TEST=true next build --webpack",
@@ -13,11 +16,13 @@
     "@modelcontextprotocol/sdk": "^1.29.0",
     "firebase": "^12.11.0",
     "firebase-admin": "^13.7.0",
+    "google-auth-library": "^10.6.1",
     "lightningcss": "^1.32.0",
     "lucide-react": "^1.7.0",
     "next": "16.2.2",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "recharts": "^3.9.2",
     "uuid": "^13.0.0",
     "zod": "^4.4.2"
   },
@@ -26,11 +31,11 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cross-env": "^7.0.3",
     "eslint": "^9",
     "eslint-config-next": "16.2.2",
     "tailwindcss": "^4.2.2",
     "ts-node": "^10.9.2",
-    "typescript": "^5",
-    "cross-env": "^7.0.3"
+    "typescript": "^5"
   }
 }

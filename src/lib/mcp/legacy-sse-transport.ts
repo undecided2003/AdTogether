@@ -59,6 +59,12 @@ export class LegacyWebSseTransport implements Transport {
     this.writer(`event: message\ndata: ${JSON.stringify(message)}\n\n`);
   }
 
+  sendPing(): void {
+    if (this.writer && !this.closed) {
+      this.writer(`: ping\n\n`);
+    }
+  }
+
   async close(): Promise<void> {
     if (this.closed) return;
     this.closed = true;

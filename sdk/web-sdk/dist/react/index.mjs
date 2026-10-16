@@ -1,6 +1,6 @@
 import {
   AdTogether
-} from "../chunk-5UAFUJUK.mjs";
+} from "../chunk-NXWVGW5H.mjs";
 
 // src/react/AdTogetherBanner.tsx
 import { useEffect, useRef, useState } from "react";
@@ -56,22 +56,59 @@ var AdTogetherBanner = ({
     };
   }, [adUnitId, onAdLoaded, onAdFailedToLoad]);
   useEffect(() => {
-    if (!adData || isLoading || hasError || !containerRef.current) return;
+    if (!adData || isLoading || hasError || !isVisible || !containerRef.current) return;
+    let visibleTimer = null;
+    let visibleSince = null;
+    let latestVisibleRatio = 0;
+    const clearVisibleTimer = () => {
+      if (visibleTimer) clearTimeout(visibleTimer);
+      visibleTimer = null;
+      visibleSince = null;
+    };
+    const startVisibleTimer = () => {
+      if (visibleTimer || impressionTrackedRef.current || document.visibilityState !== "visible") return;
+      visibleSince = Date.now();
+      visibleTimer = setTimeout(() => {
+        const visibleDurationMs = visibleSince === null ? 0 : Date.now() - visibleSince;
+        const visiblePercent = Math.round(latestVisibleRatio * 100);
+        visibleTimer = null;
+        visibleSince = null;
+        if (impressionTrackedRef.current || !isVisible || !container.isConnected || document.visibilityState !== "visible" || visiblePercent < 50 || visibleDurationMs < 1e3) return;
+        impressionTrackedRef.current = true;
+        AdTogether.trackImpression(adData.id, adData.token, { visiblePercent, visibleDurationMs });
+        observer.disconnect();
+      }, 1e3);
+    };
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && entries[0].intersectionRatio >= 0.5 && !impressionTrackedRef.current) {
-          impressionTrackedRef.current = true;
-          AdTogether.trackImpression(adData.id, adData.token);
-          observer.disconnect();
+        const entry = entries[0];
+        if (!entry) return;
+        latestVisibleRatio = entry.intersectionRatio;
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.5 && document.visibilityState === "visible") {
+          startVisibleTimer();
+        } else {
+          clearVisibleTimer();
         }
       },
-      { threshold: 0.5 }
+      { threshold: [0, 0.5] }
     );
-    observer.observe(containerRef.current);
+    const container = containerRef.current;
+    const handleVisibilityChange = () => {
+      clearVisibleTimer();
+      if (document.visibilityState === "visible") {
+        latestVisibleRatio = 0;
+        observer.unobserve(container);
+        observer.observe(container);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    observer.observe(container);
     return () => {
+      clearVisibleTimer();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       observer.disconnect();
     };
-  }, [adData, isLoading, hasError]);
+  }, [adData, isLoading, hasError, isVisible]);
   const handleContainerClick = () => {
     if (!adData) return;
     AdTogether.trackClick(adData.id, adData.token);
@@ -273,8 +310,38 @@ var AdTogetherInterstitial = ({
   }, [isOpen, adData, closeDelay]);
   useEffect2(() => {
     if (!adData || !isOpen || impressionTrackedRef.current) return;
-    impressionTrackedRef.current = true;
-    AdTogether.trackImpression(adData.id, adData.token);
+    let visibleTimer = null;
+    let visibleSince = null;
+    const clearVisibleTimer = () => {
+      if (visibleTimer) clearTimeout(visibleTimer);
+      visibleTimer = null;
+      visibleSince = null;
+    };
+    const startVisibleTimer = () => {
+      if (visibleTimer || impressionTrackedRef.current || document.visibilityState !== "visible") return;
+      visibleSince = Date.now();
+      visibleTimer = setTimeout(() => {
+        const visibleDurationMs = visibleSince === null ? 0 : Date.now() - visibleSince;
+        visibleTimer = null;
+        visibleSince = null;
+        if (impressionTrackedRef.current || document.visibilityState !== "visible" || visibleDurationMs < 1e3) return;
+        impressionTrackedRef.current = true;
+        AdTogether.trackImpression(adData.id, adData.token, {
+          visiblePercent: 100,
+          visibleDurationMs
+        });
+      }, 1e3);
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") startVisibleTimer();
+      else clearVisibleTimer();
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    startVisibleTimer();
+    return () => {
+      clearVisibleTimer();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [adData, isOpen]);
   const handleAdClick = useCallback(() => {
     if (!adData) return;

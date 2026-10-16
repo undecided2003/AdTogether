@@ -76,23 +76,13 @@ var AdTogether = class _AdTogether {
     }
     try {
       const sdk = _AdTogether.shared;
-      let url = `${sdk.baseUrl}/api/ads/serve?country=global&adUnitId=${adUnitId}&appId=${sdk.appId}`;
-      if (adType) {
-        url += `&adType=${adType}`;
-      }
-      if (sdk.lastAdId) {
-        url += `&exclude=${sdk.lastAdId}`;
-      }
-      if (sdk.bundleId) {
-        url += `&bundleId=${sdk.bundleId}`;
-      }
-      url += `&allowSelfAds=${sdk.allowSelfAds}`;
-      if (typeof window !== "undefined") {
-        url += `&sourceUrl=${encodeURIComponent(window.location.href)}`;
-      }
+      const url = _AdTogether.buildServeUrl(sdk, adUnitId, adType);
       const response = await fetch(url);
       if (response.ok) {
         const ad = await response.json();
+        if (adType && ad.adType !== adType) {
+          throw new Error("Received an ad with a different type than requested: " + (ad.adType ?? "missing"));
+        }
         sdk.lastAdId = ad.id;
         return ad;
       } else if (response.status === 401 || response.status === 403) {
@@ -104,41 +94,37 @@ var AdTogether = class _AdTogether {
       throw err;
     }
   }
-  static trackImpression(adId, token) {
-    this.trackEvent("/api/ads/impression", adId, token);
+  static buildServeUrl(sdk, adUnitId, adType) {
+    const fallbackBaseUrl = typeof window !== "undefined" ? window.location.origin : "https://www.ad-together.org";
+    const url = new URL(sdk.baseUrl || fallbackBaseUrl, fallbackBaseUrl);
+    url.pathname = url.pathname.replace(/\/+$/, "") + "/api/ads/serve";
+    url.search = "";
+    url.hash = "";
+    url.searchParams.set("adUnitId", adUnitId);
+    url.searchParams.set("appId", sdk.appId ?? "");
+    url.searchParams.set("allowSelfAds", String(sdk.allowSelfAds));
+    url.searchParams.set("platform", "web");
+    if (adType) {
+      url.searchParams.set("adType", adType);
+    }
+    if (sdk.lastAdId) {
+      url.searchParams.set("exclude", sdk.lastAdId);
+    }
+    if (sdk.bundleId) {
+      url.searchParams.set("bundleId", sdk.bundleId);
+    }
+    if (typeof window !== "undefined") {
+      url.searchParams.set("sourceUrl", window.location.href);
+    }
+    return url.toString();
+  }
+  static trackImpression(adId, token, viewability) {
+    this.trackEvent("/api/ads/impression", adId, token, viewability);
   }
   static trackClick(adId, token) {
     this.trackEvent("/api/ads/click", adId, token);
   }
-  /**
-   * Detect the user's country code from the browser locale.
-   * Uses Intl API (most reliable) with navigator.language as fallback.
-   * Returns an ISO 3166-1 alpha-2 code like "US", "DE", "JP", or null.
-   */
-  static detectCountry() {
-    try {
-      if (typeof Intl !== "undefined" && Intl.DateTimeFormat) {
-        const resolved = Intl.DateTimeFormat().resolvedOptions();
-        if (resolved.locale) {
-          const parts = resolved.locale.split("-");
-          if (parts.length >= 2) {
-            const region = parts[parts.length - 1].toUpperCase();
-            if (region.length === 2) return region;
-          }
-        }
-      }
-      if (typeof navigator !== "undefined" && navigator.language) {
-        const parts = navigator.language.split("-");
-        if (parts.length >= 2) {
-          const region = parts[parts.length - 1].toUpperCase();
-          if (region.length === 2) return region;
-        }
-      }
-    } catch (_) {
-    }
-    return null;
-  }
-  static trackEvent(endpoint, adId, token) {
+  static trackEvent(endpoint, adId, token, viewability) {
     if (!_AdTogether.shared.assertInitialized()) return;
     fetch(`${_AdTogether.shared.baseUrl}${endpoint}`, {
       method: "POST",
@@ -150,10 +136,11 @@ var AdTogether = class _AdTogether {
         token,
         appId: _AdTogether.shared.appId,
         ..._AdTogether.shared.bundleId ? { bundleId: _AdTogether.shared.bundleId } : {},
+        ...endpoint === "/api/ads/impression" && typeof window !== "undefined" ? { pagePath: window.location.pathname } : {},
+        ...endpoint === "/api/ads/impression" && viewability ? viewability : {},
         // Send platform and environment to match Flutter SDK
         platform: "web",
-        environment: typeof process !== "undefined" && process.env?.NODE_ENV === "development" ? "development" : "production",
-        country: _AdTogether.detectCountry()
+        environment: typeof process !== "undefined" && process.env?.NODE_ENV === "development" ? "development" : "production"
       })
     }).catch(console.error);
   }
@@ -212,22 +199,59 @@ var AdTogetherBanner = ({
     };
   }, [adUnitId, onAdLoaded, onAdFailedToLoad]);
   (0, import_react.useEffect)(() => {
-    if (!adData || isLoading || hasError || !containerRef.current) return;
+    if (!adData || isLoading || hasError || !isVisible || !containerRef.current) return;
+    let visibleTimer = null;
+    let visibleSince = null;
+    let latestVisibleRatio = 0;
+    const clearVisibleTimer = () => {
+      if (visibleTimer) clearTimeout(visibleTimer);
+      visibleTimer = null;
+      visibleSince = null;
+    };
+    const startVisibleTimer = () => {
+      if (visibleTimer || impressionTrackedRef.current || document.visibilityState !== "visible") return;
+      visibleSince = Date.now();
+      visibleTimer = setTimeout(() => {
+        const visibleDurationMs = visibleSince === null ? 0 : Date.now() - visibleSince;
+        const visiblePercent = Math.round(latestVisibleRatio * 100);
+        visibleTimer = null;
+        visibleSince = null;
+        if (impressionTrackedRef.current || !isVisible || !container.isConnected || document.visibilityState !== "visible" || visiblePercent < 50 || visibleDurationMs < 1e3) return;
+        impressionTrackedRef.current = true;
+        AdTogether.trackImpression(adData.id, adData.token, { visiblePercent, visibleDurationMs });
+        observer.disconnect();
+      }, 1e3);
+    };
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && entries[0].intersectionRatio >= 0.5 && !impressionTrackedRef.current) {
-          impressionTrackedRef.current = true;
-          AdTogether.trackImpression(adData.id, adData.token);
-          observer.disconnect();
+        const entry = entries[0];
+        if (!entry) return;
+        latestVisibleRatio = entry.intersectionRatio;
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.5 && document.visibilityState === "visible") {
+          startVisibleTimer();
+        } else {
+          clearVisibleTimer();
         }
       },
-      { threshold: 0.5 }
+      { threshold: [0, 0.5] }
     );
-    observer.observe(containerRef.current);
+    const container = containerRef.current;
+    const handleVisibilityChange = () => {
+      clearVisibleTimer();
+      if (document.visibilityState === "visible") {
+        latestVisibleRatio = 0;
+        observer.unobserve(container);
+        observer.observe(container);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    observer.observe(container);
     return () => {
+      clearVisibleTimer();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       observer.disconnect();
     };
-  }, [adData, isLoading, hasError]);
+  }, [adData, isLoading, hasError, isVisible]);
   const handleContainerClick = () => {
     if (!adData) return;
     AdTogether.trackClick(adData.id, adData.token);
@@ -429,8 +453,38 @@ var AdTogetherInterstitial = ({
   }, [isOpen, adData, closeDelay]);
   (0, import_react2.useEffect)(() => {
     if (!adData || !isOpen || impressionTrackedRef.current) return;
-    impressionTrackedRef.current = true;
-    AdTogether.trackImpression(adData.id, adData.token);
+    let visibleTimer = null;
+    let visibleSince = null;
+    const clearVisibleTimer = () => {
+      if (visibleTimer) clearTimeout(visibleTimer);
+      visibleTimer = null;
+      visibleSince = null;
+    };
+    const startVisibleTimer = () => {
+      if (visibleTimer || impressionTrackedRef.current || document.visibilityState !== "visible") return;
+      visibleSince = Date.now();
+      visibleTimer = setTimeout(() => {
+        const visibleDurationMs = visibleSince === null ? 0 : Date.now() - visibleSince;
+        visibleTimer = null;
+        visibleSince = null;
+        if (impressionTrackedRef.current || document.visibilityState !== "visible" || visibleDurationMs < 1e3) return;
+        impressionTrackedRef.current = true;
+        AdTogether.trackImpression(adData.id, adData.token, {
+          visiblePercent: 100,
+          visibleDurationMs
+        });
+      }, 1e3);
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") startVisibleTimer();
+      else clearVisibleTimer();
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    startVisibleTimer();
+    return () => {
+      clearVisibleTimer();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [adData, isOpen]);
   const handleAdClick = (0, import_react2.useCallback)(() => {
     if (!adData) return;

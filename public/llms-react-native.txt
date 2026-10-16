@@ -1,6 +1,6 @@
 # AdTogether React Native SDK — LLM Integration Reference
 
-**Version:** 0.4.5
+**Version:** 0.5.6
 
 **Package:** `@adtogether/react-native-sdk`
 **Distribution:** NPM
@@ -43,6 +43,10 @@ interface AdTogetherOptions {
 If none of these are available, a `console.warn` is emitted. For best results, either provide `bundleId` manually in `initialize()` or install one of the supported packages.
 
 **Tracking metadata:** Impression/click tracking payloads include `platform` (from `Platform.OS`) and `environment: "development"|"production"` (based on `__DEV__`).
+
+### Native Attestation
+
+React Native does not yet provide a Play Integrity or App Attest bridge. Do not enable native-attestation enforcement for an App ID used by this SDK. Use a separate App ID after native proof support is added.
 
 ### Banner Ad
 

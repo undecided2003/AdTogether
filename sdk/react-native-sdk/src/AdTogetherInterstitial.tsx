@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Modal, SafeAreaView, useColorScheme, Linking, useWindowDimensions, ScrollView } from 'react-native';
+import { AppState, View, Text, Image, TouchableOpacity, StyleSheet, Modal, SafeAreaView, useColorScheme, Linking, useWindowDimensions, ScrollView } from 'react-native';
 import { AdTogether } from './AdTogether';
 import { AdModel } from './types';
 
@@ -31,6 +31,18 @@ export const AdTogetherInterstitial: React.FC<AdTogetherInterstitialProps> = ({
   const isLandscape = width > height;
   
   const impressionTrackedRef = useRef(false);
+  const appStateRef = useRef(AppState.currentState);
+  const [appState, setAppState] = useState(appStateRef.current);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      // Keep the timer guard current before React renders the state update
+      // and cleans up the timeout.
+      appStateRef.current = nextAppState;
+      setAppState(nextAppState);
+    });
+    return () => subscription.remove();
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -64,24 +76,26 @@ export const AdTogetherInterstitial: React.FC<AdTogetherInterstitialProps> = ({
     };
   }, [adUnitId, isOpen, closeDelay, onAdLoaded, onAdFailedToLoad, onClose]);
 
-  // Track impression and start timer
+  // The modal is full-screen; require one continuous second while the app is active.
   useEffect(() => {
-    if (isOpen && adData && !isLoading && !hasError && !impressionTrackedRef.current) {
-      impressionTrackedRef.current = true;
-      AdTogether.trackImpression(adData.id, adData.token);
-      
-      const timer = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      
-      return () => clearInterval(timer);
+    if (!isOpen || !adData || isLoading || hasError || appState !== 'active' || impressionTrackedRef.current) {
+      return;
     }
+    const timer = setTimeout(() => {
+      if (!impressionTrackedRef.current && appStateRef.current === 'active') {
+        impressionTrackedRef.current = true;
+        AdTogether.trackImpression(adData.id, adData.token, { visiblePercent: 100, visibleDurationMs: 1000 });
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [isOpen, adData, isLoading, hasError, appState]);
+
+  useEffect(() => {
+    if (!isOpen || !adData || isLoading || hasError) return;
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
   }, [isOpen, adData, isLoading, hasError]);
 
   const handlePress = () => {

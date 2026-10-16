@@ -72,23 +72,13 @@ var AdTogether = class _AdTogether {
     }
     try {
       const sdk = _AdTogether.shared;
-      let url = `${sdk.baseUrl}/api/ads/serve?country=global&adUnitId=${adUnitId}&appId=${sdk.appId}`;
-      if (adType) {
-        url += `&adType=${adType}`;
-      }
-      if (sdk.lastAdId) {
-        url += `&exclude=${sdk.lastAdId}`;
-      }
-      if (sdk.bundleId) {
-        url += `&bundleId=${sdk.bundleId}`;
-      }
-      url += `&allowSelfAds=${sdk.allowSelfAds}`;
-      if (typeof window !== "undefined") {
-        url += `&sourceUrl=${encodeURIComponent(window.location.href)}`;
-      }
+      const url = _AdTogether.buildServeUrl(sdk, adUnitId, adType);
       const response = await fetch(url);
       if (response.ok) {
         const ad = await response.json();
+        if (adType && ad.adType !== adType) {
+          throw new Error("Received an ad with a different type than requested: " + (ad.adType ?? "missing"));
+        }
         sdk.lastAdId = ad.id;
         return ad;
       } else if (response.status === 401 || response.status === 403) {
@@ -100,41 +90,37 @@ var AdTogether = class _AdTogether {
       throw err;
     }
   }
-  static trackImpression(adId, token) {
-    this.trackEvent("/api/ads/impression", adId, token);
+  static buildServeUrl(sdk, adUnitId, adType) {
+    const fallbackBaseUrl = typeof window !== "undefined" ? window.location.origin : "https://www.ad-together.org";
+    const url = new URL(sdk.baseUrl || fallbackBaseUrl, fallbackBaseUrl);
+    url.pathname = url.pathname.replace(/\/+$/, "") + "/api/ads/serve";
+    url.search = "";
+    url.hash = "";
+    url.searchParams.set("adUnitId", adUnitId);
+    url.searchParams.set("appId", sdk.appId ?? "");
+    url.searchParams.set("allowSelfAds", String(sdk.allowSelfAds));
+    url.searchParams.set("platform", "web");
+    if (adType) {
+      url.searchParams.set("adType", adType);
+    }
+    if (sdk.lastAdId) {
+      url.searchParams.set("exclude", sdk.lastAdId);
+    }
+    if (sdk.bundleId) {
+      url.searchParams.set("bundleId", sdk.bundleId);
+    }
+    if (typeof window !== "undefined") {
+      url.searchParams.set("sourceUrl", window.location.href);
+    }
+    return url.toString();
+  }
+  static trackImpression(adId, token, viewability) {
+    this.trackEvent("/api/ads/impression", adId, token, viewability);
   }
   static trackClick(adId, token) {
     this.trackEvent("/api/ads/click", adId, token);
   }
-  /**
-   * Detect the user's country code from the browser locale.
-   * Uses Intl API (most reliable) with navigator.language as fallback.
-   * Returns an ISO 3166-1 alpha-2 code like "US", "DE", "JP", or null.
-   */
-  static detectCountry() {
-    try {
-      if (typeof Intl !== "undefined" && Intl.DateTimeFormat) {
-        const resolved = Intl.DateTimeFormat().resolvedOptions();
-        if (resolved.locale) {
-          const parts = resolved.locale.split("-");
-          if (parts.length >= 2) {
-            const region = parts[parts.length - 1].toUpperCase();
-            if (region.length === 2) return region;
-          }
-        }
-      }
-      if (typeof navigator !== "undefined" && navigator.language) {
-        const parts = navigator.language.split("-");
-        if (parts.length >= 2) {
-          const region = parts[parts.length - 1].toUpperCase();
-          if (region.length === 2) return region;
-        }
-      }
-    } catch (_) {
-    }
-    return null;
-  }
-  static trackEvent(endpoint, adId, token) {
+  static trackEvent(endpoint, adId, token, viewability) {
     if (!_AdTogether.shared.assertInitialized()) return;
     fetch(`${_AdTogether.shared.baseUrl}${endpoint}`, {
       method: "POST",
@@ -146,10 +132,11 @@ var AdTogether = class _AdTogether {
         token,
         appId: _AdTogether.shared.appId,
         ..._AdTogether.shared.bundleId ? { bundleId: _AdTogether.shared.bundleId } : {},
+        ...endpoint === "/api/ads/impression" && typeof window !== "undefined" ? { pagePath: window.location.pathname } : {},
+        ...endpoint === "/api/ads/impression" && viewability ? viewability : {},
         // Send platform and environment to match Flutter SDK
         platform: "web",
-        environment: typeof process !== "undefined" && process.env?.NODE_ENV === "development" ? "development" : "production",
-        country: _AdTogether.detectCountry()
+        environment: typeof process !== "undefined" && process.env?.NODE_ENV === "development" ? "development" : "production"
       })
     }).catch(console.error);
   }

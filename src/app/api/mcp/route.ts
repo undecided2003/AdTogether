@@ -35,14 +35,20 @@ async function handleStreamableMcp(req: Request): Promise<Response> {
     try {
       parsedBody = await req.json();
     } catch {
-      return jsonRpcError(400, -32000, 'Bad Request: Invalid JSON body');
+      return jsonRpcError(400, -32700, 'Parse error: Invalid JSON body');
     }
 
+    // 1. Existing active stateful session
     if (sessionId && sessions.has(sessionId)) {
       const { transport } = sessions.get(sessionId)!;
-      return transport.handleRequest(req, { authInfo, parsedBody });
+      const res = await transport.handleRequest(req, { authInfo, parsedBody });
+      Object.entries(MCP_CORS_HEADERS).forEach(([k, v]) => {
+        if (!res.headers.has(k)) res.headers.set(k, v);
+      });
+      return res;
     }
 
+    // 2. New stateful session initialization
     if (!sessionId && isInitializeRequest(parsedBody)) {
       const server = createAdTogetherMcpServer();
       const transport = new WebStandardStreamableHTTPServerTransport({
@@ -61,25 +67,63 @@ async function handleStreamableMcp(req: Request): Promise<Response> {
       };
 
       await server.connect(transport);
-      return transport.handleRequest(req, { authInfo, parsedBody });
+      const res = await transport.handleRequest(req, { authInfo, parsedBody });
+      Object.entries(MCP_CORS_HEADERS).forEach(([k, v]) => {
+        if (!res.headers.has(k)) res.headers.set(k, v);
+      });
+      return res;
     }
 
-    if (sessionId) {
-      return jsonRpcError(404, -32001, 'Session not found');
-    }
+    // 3. Stateless request or serverless instance fallback
+    // If the session was lost due to serverless scaling, or if the client operates statelessly
+    try {
+      const server = createAdTogetherMcpServer();
+      const transport = new WebStandardStreamableHTTPServerTransport({
+        sessionIdGenerator: undefined,
+      });
 
-    return jsonRpcError(400, -32000, 'Bad Request: Mcp-Session-Id header is required');
+      await server.connect(transport);
+      const res = await transport.handleRequest(req, { authInfo, parsedBody });
+      Object.entries(MCP_CORS_HEADERS).forEach(([k, v]) => {
+        if (!res.headers.has(k)) res.headers.set(k, v);
+      });
+      return res;
+    } catch (err: any) {
+      if (sessionId) {
+        return jsonRpcError(404, -32001, `Session expired or not found on this instance: ${sessionId}`);
+      }
+      return jsonRpcError(500, -32603, `Internal error processing MCP request: ${err?.message || String(err)}`);
+    }
   }
 
   if (req.method === 'GET') {
-    if (!sessionId) {
-      return new Response('Missing session ID', { status: 400, headers: MCP_CORS_HEADERS });
+    if (sessionId && sessions.has(sessionId)) {
+      const { transport } = sessions.get(sessionId)!;
+      const res = await transport.handleRequest(req, { authInfo });
+      Object.entries(MCP_CORS_HEADERS).forEach(([k, v]) => {
+        if (!res.headers.has(k)) res.headers.set(k, v);
+      });
+      return res;
     }
-    const session = sessions.get(sessionId);
-    if (!session) {
-      return new Response('Session not found', { status: 404, headers: MCP_CORS_HEADERS });
+
+    // Stateless GET request
+    try {
+      const server = createAdTogetherMcpServer();
+      const transport = new WebStandardStreamableHTTPServerTransport({
+        sessionIdGenerator: undefined,
+      });
+      await server.connect(transport);
+      const res = await transport.handleRequest(req, { authInfo });
+      Object.entries(MCP_CORS_HEADERS).forEach(([k, v]) => {
+        if (!res.headers.has(k)) res.headers.set(k, v);
+      });
+      return res;
+    } catch {
+      return new Response('Not Acceptable: Client must accept text/event-stream or provide valid session ID', {
+        status: 400,
+        headers: MCP_CORS_HEADERS,
+      });
     }
-    return session.transport.handleRequest(req, { authInfo });
   }
 
   if (req.method === 'DELETE') {
@@ -88,9 +132,15 @@ async function handleStreamableMcp(req: Request): Promise<Response> {
     }
     const session = sessions.get(sessionId);
     if (!session) {
-      return new Response('Session not found', { status: 404, headers: MCP_CORS_HEADERS });
+      return new Response('Session not found or already closed', { status: 200, headers: MCP_CORS_HEADERS });
     }
-    return session.transport.handleRequest(req, { authInfo });
+    const res = await session.transport.handleRequest(req, { authInfo });
+    sessions.delete(sessionId);
+    void session.server.close();
+    Object.entries(MCP_CORS_HEADERS).forEach(([k, v]) => {
+      if (!res.headers.has(k)) res.headers.set(k, v);
+    });
+    return res;
   }
 
   return jsonRpcError(405, -32000, 'Method not allowed');

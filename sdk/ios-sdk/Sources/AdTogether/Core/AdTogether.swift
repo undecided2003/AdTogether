@@ -67,9 +67,21 @@ public final class AdTogether {
     }
     
     /// Tracks an impression for a specific ad.
-    public static func trackImpression(adId: String, token: String?) {
+    public static func trackImpression(
+        adId: String,
+        token: String?,
+        nativeAttestation: String? = nil,
+        visiblePercent: Int? = nil,
+        visibleDurationMs: Int? = nil
+    ) {
         guard shared.assertInitialized() else { return }
-        AdNetworkService.trackImpression(adId: adId, token: token)
+        AdNetworkService.trackImpression(
+            adId: adId,
+            token: token,
+            nativeAttestation: nativeAttestation,
+            visiblePercent: visiblePercent,
+            visibleDurationMs: visibleDurationMs
+        )
     }
     
     /// Tracks a click for a specific ad.

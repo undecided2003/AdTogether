@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { adminDb as db } from '@/lib/firebase-admin';
-import crypto from 'crypto';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { consumePublicAdRateLimit } from '@/lib/public-ad-rate-limit';
+import { createImpressionToken } from '@/lib/impression-token';
+import { getTrustedRequestCountry, getTrustedRequestIp } from '@/lib/request-country';
+import { getNativeAttestationAppConfig, type NativeAttestationAppConfig } from '@/lib/native-attestation';
+import { findPublisherByAppId } from '@/lib/publisher-app-id';
+
+export const runtime = 'nodejs';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,18 +23,28 @@ export async function OPTIONS() {
 export async function GET(request: Request) {
   try {
     const reqHeaders = await headers();
-    const ip = reqHeaders.get('x-forwarded-for') || reqHeaders.get('x-real-ip') || 'unknown';
-    if (!checkRateLimit(ip, 60, 60 * 1000)) { // 60 requests per minute
-      return NextResponse.json({ error: 'Too Many Requests' }, { status: 429, headers: corsHeaders });
-    }
-
+    const trustedClientIp = getTrustedRequestIp(reqHeaders);
     const { searchParams } = new URL(request.url);
-    const targetCountry = searchParams.get('country') || 'global';
+    const singletonParameters = [
+      'adUnitId', 'appId', 'apiKey', 'adType', 'exclude', 'bundleId',
+      'platform', 'sourceUrl', 'allowSelfAds',
+    ];
+    if (singletonParameters.some((name) => searchParams.getAll(name).length > 1)) {
+      return NextResponse.json({ error: 'Duplicate query parameters are not allowed' }, { status: 400, headers: corsHeaders });
+    }
+    const trustedCountry = getTrustedRequestCountry(reqHeaders);
+    const targetCountry = trustedCountry;
     const adUnitId = searchParams.get('adUnitId');
-    const appId = searchParams.get('appId') || searchParams.get('apiKey');
+    const explicitAppId = searchParams.get('appId');
+    const legacyApiKey = searchParams.get('apiKey');
+    if (explicitAppId && legacyApiKey && explicitAppId !== legacyApiKey) {
+      return NextResponse.json({ error: 'Conflicting App ID parameters' }, { status: 400, headers: corsHeaders });
+    }
+    const appId = explicitAppId || legacyApiKey;
     const adType = searchParams.get('adType') || 'banner';
     const exclude = searchParams.get('exclude'); // ID of the last shown ad
     const bundleId = searchParams.get('bundleId'); // Optional from mobile SDKs
+    const platform = searchParams.get('platform');
     const explicitSourceUrl = searchParams.get('sourceUrl'); // Explicitly passed by SDK
     const allowSelfAdsParam = searchParams.get('allowSelfAds'); // 'true' or 'false'
 
@@ -47,30 +63,77 @@ export async function GET(request: Request) {
 
     let viewerUid: string | null = null;
     let publisherBlockedAds: string[] = [];
+    let publisherData: any = null;
     
     if (!appId) {
       return NextResponse.json({ error: 'App ID is required' }, { status: 400, headers: corsHeaders });
     }
 
+    if (adType !== 'banner' && adType !== 'interstitial') {
+      return NextResponse.json({ error: 'Invalid ad type' }, { status: 400, headers: corsHeaders });
+    }
+
     const effectiveAppId = appId;
     
-    // Find the viewer (publisher) account based on the App ID
-    // Check appIds array
-    const userSnap = await (async () => {
-      const snap = await db.collection('users').where('appIds', 'array-contains', effectiveAppId).limit(1).get();
-      if (!snap.empty) return snap.docs[0];
-      return null;
-    })();
+    // Resolve current and legacy public App IDs. Ambiguous IDs are rejected.
+    const userSnap = await findPublisherByAppId(db, effectiveAppId);
 
     if (userSnap) {
       viewerUid = userSnap.id;
-      const pData = userSnap.data();
+      publisherData = userSnap.data();
       // Blocked ads are keyed by the specific App ID being used
-      publisherBlockedAds = pData?.blockedAdsByAppId?.[effectiveAppId] || [];
+      publisherBlockedAds = publisherData?.blockedAdsByAppId?.[effectiveAppId] || [];
     }
 
     if (!viewerUid) {
       return NextResponse.json({ error: 'Invalid App ID' }, { status: 401, headers: corsHeaders });
+    }
+
+    if (trustedClientIp) {
+      // Keep the process-local fast path scoped exactly like the durable
+      // bucket. A broad IP-only bucket would let traffic for one App ID
+      // throttle unrelated apps behind a shared NAT.
+      if (!checkRateLimit(`serve:${effectiveAppId}:${trustedClientIp}`, 60, 60 * 1000)) {
+        return NextResponse.json({ error: 'Too Many Requests' }, { status: 429, headers: corsHeaders });
+      }
+      try {
+        if (!(await consumePublicAdRateLimit({
+          scope: 'serve',
+          appId: effectiveAppId,
+          clientIp: trustedClientIp,
+          limit: 60,
+          windowMs: 60 * 1000,
+        }))) {
+          return NextResponse.json({ error: 'Too Many Requests' }, { status: 429, headers: corsHeaders });
+        }
+      } catch (error) {
+        console.error('Public ad serve rate-limit error:', error);
+        return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503, headers: corsHeaders });
+      }
+    } else if (!checkRateLimit(`serve:${effectiveAppId}:${safeSourceId}`, 60, 60 * 1000)) {
+      // This is only a local fallback for an unconfigured or unavailable
+      // trusted ingress. Its caller-controlled source key is intentionally
+      // never used as a fraud-control identity.
+      return NextResponse.json({ error: 'Too Many Requests' }, { status: 429, headers: corsHeaders });
+    }
+
+    let nativeAttestationConfig: NativeAttestationAppConfig | null;
+    try {
+      nativeAttestationConfig = await getNativeAttestationAppConfig(db, effectiveAppId, viewerUid);
+    } catch (error) {
+      console.error('Native attestation configuration is invalid', error);
+      return NextResponse.json({ error: 'Native attestation configuration is invalid' }, { status: 503, headers: corsHeaders });
+    }
+    if (nativeAttestationConfig) {
+      if (bundleId && bundleId !== nativeAttestationConfig.bundleId) {
+        return NextResponse.json({ error: 'Registered app identifier mismatch' }, { status: 403, headers: corsHeaders });
+      }
+      if (nativeAttestationConfig.provider === 'play-integrity' && platform && platform !== 'android') {
+        return NextResponse.json({ error: 'This App ID is configured for Android attestation' }, { status: 403, headers: corsHeaders });
+      }
+      if (nativeAttestationConfig.provider === 'app-attest' && platform && platform !== 'ios') {
+        return NextResponse.json({ error: 'This App ID is configured for Apple App Attest' }, { status: 403, headers: corsHeaders });
+      }
     }
 
     const externalAds: any[] = [];
@@ -105,9 +168,12 @@ export async function GET(request: Request) {
           ? (Array.isArray(data.targetCountries) ? data.targetCountries : [data.targetCountries]) 
           : (data.targetCountry && data.targetCountry !== 'global' ? [data.targetCountry] : []);
           
-        const isGlobalAd = adTargetCountries.length === 0 || adTargetCountries.includes('global');
+        const isGlobalAd = 
+          adTargetCountries.length === 0 || 
+          adTargetCountries.includes('global') ||
+          adTargetCountries.length >= 190;
 
-        if (isGlobalAd || adTargetCountries.includes(targetCountry) || targetCountry === 'global') {
+        if (isGlobalAd || (targetCountry && adTargetCountries.includes(targetCountry))) {
           // Check if it's a "self ad"
           // Criteria: owned by viewer OR destination matches source
           let isSelfAd = false;
@@ -145,11 +211,10 @@ export async function GET(request: Request) {
     }
 
     // 2. Selection Logic
-    // Priority 2: Self ads (fallen back if no external ads available AND allowSelfAds is not false)
-    let candidates = externalAds;
-    if (candidates.length === 0 && allowSelfAdsParam !== 'false') {
-      candidates = selfAds;
-    }
+    // Combine external ads and self-ads in the rotation pool if allowSelfAds is not false
+    let candidates = allowSelfAdsParam === 'false'
+      ? externalAds
+      : [...externalAds, ...selfAds];
 
     if (candidates.length === 0) {
       return NextResponse.json({ error: 'No ads available' }, { status: 404, headers: corsHeaders });
@@ -172,9 +237,23 @@ export async function GET(request: Request) {
       console.error('API_SECRET is not configured');
       return NextResponse.json({ error: 'Internal Server Error' }, { status: 500, headers: corsHeaders });
     }
-    const hmac = crypto.createHmac('sha256', API_SECRET_KEY);
-    hmac.update(randomAd.id);
-    const token = hmac.digest('hex');
+    const token = createImpressionToken({
+      adId: randomAd.id,
+      appId: effectiveAppId,
+      publisherUid: viewerUid,
+      adType: randomAd.adType || 'banner',
+      // A missing Origin or Referer is not proof of native traffic.  Only a
+      // grant that requires a server-verified native proof may skip web
+      // viewability telemetry.
+      requiresWebViewability: nativeAttestationConfig === null,
+      country: trustedCountry,
+      nativeAttestation: nativeAttestationConfig?.provider || null,
+      nativeAppId: nativeAttestationConfig?.bundleId || null,
+      nativeAppIdPrefix: nativeAttestationConfig?.provider === 'app-attest' ? nativeAttestationConfig.appIdPrefix || null : null,
+      nativeAttestationEnvironment: nativeAttestationConfig?.provider === 'app-attest'
+        ? nativeAttestationConfig.environment || 'production'
+        : null,
+    }, API_SECRET_KEY);
 
     // 4. Return the selected ad
     return NextResponse.json(
@@ -186,13 +265,17 @@ export async function GET(request: Request) {
         clickUrl: randomAd.clickUrl,
         token,
         adType: randomAd.adType || 'banner',
+        nativeAttestation: nativeAttestationConfig?.provider || null,
+        ...(nativeAttestationConfig?.provider === 'play-integrity'
+          ? { playIntegrityProjectNumber: nativeAttestationConfig.playIntegrityProjectNumber }
+          : {}),
       },
       { status: 200, headers: corsHeaders }
     );
   } catch (error: any) {
     console.error('Error serving ad:', error);
     return NextResponse.json(
-      { error: 'Internal Server Error', message: error.message, stack: error.stack }, 
+      { error: 'Internal Server Error' },
       { status: 500, headers: corsHeaders }
     );
   }

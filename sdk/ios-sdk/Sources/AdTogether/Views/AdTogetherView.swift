@@ -1,5 +1,8 @@
 import SwiftUI
 import SafariServices
+#if canImport(UIKit)
+import UIKit
+#endif
 
 public struct AdTogetherView: View {
     public let adUnitId: String
@@ -10,6 +13,9 @@ public struct AdTogetherView: View {
     @State private var isLoading = true
     @State private var hasError = false
     @State private var impressionTracked = false
+    @State private var impressionVisibilityGeneration = 0
+    @State private var viewabilityMeasurementGeneration = 0
+    @State private var visiblePercent = 0
     @State private var isHovering = false
     @State private var isVisible = true
     
@@ -19,6 +25,7 @@ public struct AdTogetherView: View {
     
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.openURL) var openURL
+    @Environment(\.scenePhase) private var scenePhase
     
     public init(
         adUnitId: String = "default", 
@@ -146,6 +153,7 @@ public struct AdTogetherView: View {
                     // Close button overlay
                     if showCloseButton {
                         Button(action: {
+                            cancelScheduledImpression()
                             withAnimation {
                                 isVisible = false
                             }
@@ -163,6 +171,18 @@ public struct AdTogetherView: View {
                     }
                 }
                 .frame(maxWidth: .infinity)
+                .background(
+                    GeometryReader { geometry in
+                        Color.clear
+                            .onAppear {
+                                updateViewability(frame: geometry.frame(in: .global))
+                            }
+                            .onChange(of: geometry.frame(in: .global)) { frame in
+                                updateViewability(frame: frame)
+                            }
+                    }
+                    .id(viewabilityMeasurementGeneration)
+                )
                 .background(colorScheme == .dark ? Color(red: 0.15, green: 0.15, blue: 0.16) : Color.white)
                 .cornerRadius(12)
                 .overlay(
@@ -177,13 +197,27 @@ public struct AdTogetherView: View {
                     }
                 }
                 .onAppear {
-                    handleImpression(ad: adModel)
+                    scheduleImpression(ad: adModel)
+                }
+                .onDisappear {
+                    cancelScheduledImpression()
                 }
             }
         }
         .onAppear {
             if isLoading {
                 loadAd()
+            }
+        }
+        .onChange(of: scenePhase) { phase in
+            if phase != .active {
+                visiblePercent = 0
+                cancelScheduledImpression()
+            } else {
+                // Recreate the probe so a foregrounded app cannot reuse a
+                // viewport measurement captured before it became inactive.
+                visiblePercent = 0
+                viewabilityMeasurementGeneration += 1
             }
         }
     }
@@ -214,7 +248,55 @@ public struct AdTogetherView: View {
     private func handleImpression(ad: AdModel) {
         guard !impressionTracked else { return }
         impressionTracked = true
-        AdTogether.trackImpression(adId: ad.id, token: ad.token)
+        AdTogether.trackImpression(
+            adId: ad.id,
+            token: ad.token,
+            nativeAttestation: ad.nativeAttestation,
+            visiblePercent: visiblePercent,
+            visibleDurationMs: 1_000
+        )
+    }
+
+    private func scheduleImpression(ad: AdModel) {
+        guard !impressionTracked, scenePhase == .active, visiblePercent >= 50 else { return }
+        impressionVisibilityGeneration += 1
+        let generation = impressionVisibilityGeneration
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            guard scenePhase == .active,
+                  impressionVisibilityGeneration == generation,
+                  !impressionTracked else { return }
+            handleImpression(ad: ad)
+        }
+    }
+
+    private func cancelScheduledImpression() {
+        impressionVisibilityGeneration += 1
+    }
+
+    private func updateViewability(frame: CGRect) {
+        let totalArea = frame.width * frame.height
+        guard totalArea > 0 else {
+            visiblePercent = 0
+            cancelScheduledImpression()
+            return
+        }
+
+        #if canImport(UIKit)
+        let visibleFrame = frame.intersection(UIScreen.main.bounds)
+        let visibleArea = visibleFrame.width * visibleFrame.height
+        visiblePercent = min(100, max(0, Int((visibleArea / totalArea * 100).rounded())))
+        #else
+        // SwiftUI does not expose the host window bounds on macOS. A nonzero
+        // rendered frame remains only a viewability signal; server-side
+        // enforcement still requires a signed grant and native proof when configured.
+        visiblePercent = 100
+        #endif
+
+        if visiblePercent >= 50, let ad {
+            scheduleImpression(ad: ad)
+        } else {
+            cancelScheduledImpression()
+        }
     }
     
     private func handleAdClick(ad: AdModel) {

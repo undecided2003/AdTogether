@@ -1,7 +1,7 @@
 "use strict";
 
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, useColorScheme, Linking, Pressable } from 'react-native';
+import { AppState, Dimensions, View, Text, Image, TouchableOpacity, StyleSheet, useColorScheme, Linking, Pressable } from 'react-native';
 import { AdTogether } from './AdTogether';
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 export const AdTogetherBanner = ({
@@ -19,6 +19,18 @@ export const AdTogetherBanner = ({
   const [isVisible, setIsVisible] = useState(true);
   const systemColorScheme = useColorScheme();
   const impressionTrackedRef = useRef(false);
+  const containerRef = useRef(null);
+  const appStateRef = useRef(AppState.currentState);
+  const [appState, setAppState] = useState(appStateRef.current);
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      // Keep the timer guard current before React renders the state update
+      // and cleans up the interval.
+      appStateRef.current = nextAppState;
+      setAppState(nextAppState);
+    });
+    return () => subscription.remove();
+  }, []);
   useEffect(() => {
     let isMounted = true;
     AdTogether.fetchAd(adUnitId, 'banner').then(ad => {
@@ -40,13 +52,44 @@ export const AdTogetherBanner = ({
     };
   }, [adUnitId, onAdLoaded, onAdFailedToLoad]);
 
-  // Track impression when ad is rendered
+  // Track an impression only after the banner stays at least half visible for one second.
   useEffect(() => {
-    if (adData && !isLoading && !hasError && !impressionTrackedRef.current) {
-      impressionTrackedRef.current = true;
-      AdTogether.trackImpression(adData.id, adData.token);
+    if (!adData || isLoading || hasError || !isVisible || appState !== 'active' || impressionTrackedRef.current) {
+      return;
     }
-  }, [adData, isLoading, hasError]);
+    let cancelled = false;
+    let visibleSince = null;
+    const checkVisibility = () => {
+      containerRef.current?.measureInWindow((x, y, width, height) => {
+        if (cancelled || appStateRef.current !== 'active' || impressionTrackedRef.current) return;
+        const window = Dimensions.get('window');
+        const totalArea = width * height;
+        const visibleWidth = Math.max(0, Math.min(x + width, window.width) - Math.max(x, 0));
+        const visibleHeight = Math.max(0, Math.min(y + height, window.height) - Math.max(y, 0));
+        const visiblePercent = totalArea > 0 ? Math.round(visibleWidth * visibleHeight / totalArea * 100) : 0;
+        if (visiblePercent < 50) {
+          visibleSince = null;
+          return;
+        }
+        const now = Date.now();
+        visibleSince ??= now;
+        const visibleDurationMs = now - visibleSince;
+        if (visibleDurationMs >= 1000) {
+          impressionTrackedRef.current = true;
+          AdTogether.trackImpression(adData.id, adData.token, {
+            visiblePercent,
+            visibleDurationMs
+          });
+        }
+      });
+    };
+    checkVisibility();
+    const interval = setInterval(checkVisibility, 100);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [adData, appState, hasError, isLoading, isVisible]);
   const handlePress = () => {
     if (!adData) return;
     AdTogether.trackClick(adData.id, adData.token);
@@ -74,57 +117,61 @@ export const AdTogetherBanner = ({
   const borderColor = isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
   const textColor = isDarkMode ? '#F9FAFB' : '#111827';
   const descColor = isDarkMode ? '#9CA3AF' : '#6B7280';
-  return /*#__PURE__*/_jsxs(TouchableOpacity, {
-    activeOpacity: 0.8,
-    onPress: handlePress,
-    style: [styles.container, {
-      backgroundColor: bgColor,
-      borderColor
-    }, style],
-    children: [adData.imageUrl ? /*#__PURE__*/_jsx(View, {
-      style: styles.imageContainer,
-      children: /*#__PURE__*/_jsx(Image, {
-        source: {
-          uri: adData.imageUrl
-        },
-        style: styles.image,
-        resizeMode: "cover"
-      })
-    }) : null, /*#__PURE__*/_jsxs(View, {
-      style: styles.textContainer,
-      children: [/*#__PURE__*/_jsxs(View, {
-        style: styles.headerRow,
-        children: [/*#__PURE__*/_jsx(Text, {
-          style: [styles.title, {
-            color: textColor
+  return /*#__PURE__*/_jsx(View, {
+    ref: containerRef,
+    collapsable: false,
+    children: /*#__PURE__*/_jsxs(TouchableOpacity, {
+      activeOpacity: 0.8,
+      onPress: handlePress,
+      style: [styles.container, {
+        backgroundColor: bgColor,
+        borderColor
+      }, style],
+      children: [adData.imageUrl ? /*#__PURE__*/_jsx(View, {
+        style: styles.imageContainer,
+        children: /*#__PURE__*/_jsx(Image, {
+          source: {
+            uri: adData.imageUrl
+          },
+          style: styles.image,
+          resizeMode: "cover"
+        })
+      }) : null, /*#__PURE__*/_jsxs(View, {
+        style: styles.textContainer,
+        children: [/*#__PURE__*/_jsxs(View, {
+          style: styles.headerRow,
+          children: [/*#__PURE__*/_jsx(Text, {
+            style: [styles.title, {
+              color: textColor
+            }],
+            numberOfLines: 1,
+            children: adData.title
+          }), /*#__PURE__*/_jsx(View, {
+            style: styles.adBadge,
+            children: /*#__PURE__*/_jsx(Text, {
+              style: styles.adBadgeText,
+              children: "AD"
+            })
+          })]
+        }), /*#__PURE__*/_jsx(Text, {
+          style: [styles.description, {
+            color: descColor
           }],
-          numberOfLines: 1,
-          children: adData.title
-        }), /*#__PURE__*/_jsx(View, {
-          style: styles.adBadge,
-          children: /*#__PURE__*/_jsx(Text, {
-            style: styles.adBadgeText,
-            children: "AD"
-          })
+          numberOfLines: 2,
+          children: adData.description
         })]
-      }), /*#__PURE__*/_jsx(Text, {
-        style: [styles.description, {
-          color: descColor
-        }],
-        numberOfLines: 2,
-        children: adData.description
+      }), showCloseButton && /*#__PURE__*/_jsx(Pressable, {
+        onPress: handleClose,
+        style: styles.closeButton,
+        hitSlop: 8,
+        accessibilityLabel: "Close ad",
+        accessibilityRole: "button",
+        children: /*#__PURE__*/_jsx(Text, {
+          style: styles.closeButtonText,
+          children: "\xD7"
+        })
       })]
-    }), showCloseButton && /*#__PURE__*/_jsx(Pressable, {
-      onPress: handleClose,
-      style: styles.closeButton,
-      hitSlop: 8,
-      accessibilityLabel: "Close ad",
-      accessibilityRole: "button",
-      children: /*#__PURE__*/_jsx(Text, {
-        style: styles.closeButtonText,
-        children: "\xD7"
-      })
-    })]
+    })
   });
 };
 const styles = StyleSheet.create({

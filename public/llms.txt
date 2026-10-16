@@ -1,6 +1,6 @@
 # AdTogether — LLM Integration Reference
 
-**Version:** 0.5.4 
+**Version:** 0.5.6 
 
 **"Show an ad, get an ad shown"**
 *The reciprocal ad exchange to increase conversions and grow your app's audience.*
@@ -73,7 +73,7 @@ To prevent context bleeding and hallucination, **please read the specific instru
 
 - **All SDKs now support `showCloseButton` and `onAdClosed` on banner ads.** This is a recent addition — older versions may not have it.
 - **All SDKs auto-detect `bundleId`** except React Native, which requires `expo-application` or `react-native-device-info` to be installed, or manual `bundleId` in init options. The Flutter SDK uses `dart:io` natively (no `package_info_plus` dependency since v0.5.0).
-- **CMS & Website Builders**: AdTogether supports WordPress, Wix, Squarespace, Weebly, and Webflow via a universal HTML snippet. Load the SDK script once (`<script src="https://www.ad-together.org/sdk.js" defer></script>`) and place `<div data-ad-unit="YOUR_AD_UNIT_ID"></div>` wherever you want an ad. The docs page at `https://www.ad-together.org/docs` has per-CMS step-by-step guides.
+- **CMS & Website Builders**: AdTogether supports WordPress, Wix, Squarespace, Weebly, and Webflow via a universal HTML snippet. Load the SDK script once with your App ID (`<script src="https://www.ad-together.org/sdk.js" data-app-id="YOUR_APP_ID" defer></script>`) and place `<div data-ad-unit="YOUR_AD_UNIT_ID"></div>` wherever you want an ad. The docs page at `https://www.ad-together.org/docs` has per-CMS step-by-step guides.
 
 ---
 

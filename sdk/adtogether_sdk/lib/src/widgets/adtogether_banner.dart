@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:visibility_detector/visibility_detector.dart';
@@ -44,16 +46,22 @@ class AdTogetherBanner extends StatefulWidget {
   State<AdTogetherBanner> createState() => _AdTogetherBannerState();
 }
 
-class _AdTogetherBannerState extends State<AdTogetherBanner> {
+class _AdTogetherBannerState extends State<AdTogetherBanner>
+    with WidgetsBindingObserver {
   AdModel? _adData;
   bool _isLoading = true;
   bool _hasError = false;
   bool _impressionTracked = false;
   bool _isVisible = true;
+  bool _isViewable = false;
+  bool _isAppActive = true;
+  int _visiblePercent = 0;
+  Timer? _viewabilityTimer;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _fetchAd();
   }
 
@@ -79,10 +87,60 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
   }
 
   void _onVisibilityChanged(VisibilityInfo info) {
-    if (!_impressionTracked && info.visibleFraction >= 0.5 && _adData != null) {
-      _impressionTracked = true;
-      AdTogether.trackImpression(_adData!.id, token: _adData!.token);
+    if (_impressionTracked || _adData == null) return;
+
+    _visiblePercent = (info.visibleFraction * 100).round().clamp(0, 100) as int;
+    if (!_isAppActive || info.visibleFraction < 0.5) {
+      _cancelPendingImpression();
+      return;
     }
+
+    _scheduleImpression();
+  }
+
+  void _scheduleImpression() {
+    if (!_isAppActive || _isViewable || _impressionTracked || _adData == null) {
+      return;
+    }
+
+    _isViewable = true;
+    _viewabilityTimer = Timer(const Duration(seconds: 1), () {
+      if (!mounted || !_isAppActive || !_isViewable || _impressionTracked || _adData == null) {
+        return;
+      }
+      _impressionTracked = true;
+      AdTogether.trackImpression(
+        _adData!.id,
+        token: _adData!.token,
+        visiblePercent: _visiblePercent,
+        visibleDurationMs: 1000,
+      );
+    });
+  }
+
+  void _cancelPendingImpression() {
+    _isViewable = false;
+    _viewabilityTimer?.cancel();
+    _viewabilityTimer = null;
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _isAppActive = state == AppLifecycleState.resumed;
+    if (!_isAppActive) {
+      _cancelPendingImpression();
+    } else {
+      // Require a fresh measurement after foregrounding instead of trusting
+      // geometry captured before the app was backgrounded.
+      VisibilityDetectorController.instance.notifyNow();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _viewabilityTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _onAdClicked() async {
@@ -169,6 +227,7 @@ class _AdTogetherBannerState extends State<AdTogetherBanner> {
                       right: 4,
                       child: GestureDetector(
                         onTap: () {
+                          _cancelPendingImpression();
                           setState(() {
                             _isVisible = false;
                           });

@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
-import { adminDb as db, FieldValue } from '@/lib/firebase-admin';
-import crypto from 'crypto';
+import { adminDb as db } from '@/lib/firebase-admin';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { consumePublicAdRateLimit } from '@/lib/public-ad-rate-limit';
+import { pruneDailyMap, pruneDailyMapByApp } from '@/lib/prune-daily-map';
+import { verifyImpressionToken } from '@/lib/impression-token';
+import { getTrustedRequestCountry, getTrustedRequestIp } from '@/lib/request-country';
+import { findPublisherByAppId } from '@/lib/publisher-app-id';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,43 +21,46 @@ export async function OPTIONS() {
 export async function POST(request: Request) {
   try {
     const reqHeaders = await headers();
-    const ip = reqHeaders.get('x-forwarded-for') || reqHeaders.get('x-real-ip') || 'unknown';
-    
-    const ipCountry = reqHeaders.get('x-vercel-ip-country') 
-      || reqHeaders.get('x-appengine-country')
-      || reqHeaders.get('x-country-code')
-      || reqHeaders.get('x-client-geo-country')
-      || reqHeaders.get('cf-ipcountry')         // Cloudflare
-      || reqHeaders.get('x-country')
-      || null;
+    const trustedClientIp = getTrustedRequestIp(reqHeaders);
     
     // Extract origin for web tracking
     const originHeader = reqHeaders.get('origin') || reqHeaders.get('referer') || '';
     
-    if (!checkRateLimit(ip, 100, 60 * 1000)) { // 100 requests per minute
-      return NextResponse.json({ error: 'Too Many Requests' }, { status: 429, headers: corsHeaders });
-    }
-
     const body = await request.json();
-    const { adId, token, bundleId, environment, country, apiKey: legacyApiKey, appId: newAppId } = body;
-    const effectiveAppId = newAppId || legacyApiKey;
-    const finalCountry = country || ipCountry;
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400, headers: corsHeaders });
+    }
+    const { adId, token, bundleId, environment, apiKey: legacyApiKey, appId: newAppId } = body;
+    const explicitAppId = typeof newAppId === 'string' ? newAppId : '';
+    const legacyAppId = typeof legacyApiKey === 'string' ? legacyApiKey : '';
+    if (explicitAppId && legacyAppId && explicitAppId !== legacyAppId) {
+      return NextResponse.json({ error: 'Conflicting App ID parameters' }, { status: 400, headers: corsHeaders });
+    }
+    const effectiveAppId = explicitAppId || legacyAppId;
+    const normalizedBundleId = typeof bundleId === 'string' && bundleId.length <= 255 ? bundleId : '';
 
-    // Ignore local test traffic
-    if (environment === 'development' || environment === 'test') {
+    // The request body is controlled by the caller.  It can opt out of
+    // accounting only while the server is running locally or in tests.
+    const serverAllowsTestTraffic =
+      process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
+    if (serverAllowsTestTraffic && (environment === 'development' || environment === 'test')) {
       return NextResponse.json({ success: true, warning: 'ignored_test_traffic' }, { status: 200, headers: corsHeaders });
     }
 
-    if (!adId) {
+    if (typeof adId !== 'string' || !adId || adId.length > 1_500) {
       return NextResponse.json({ error: 'adId is required' }, { status: 400, headers: corsHeaders });
     }
     
-    if (!token) {
+    if (typeof token !== 'string' || !token) {
       return NextResponse.json({ error: 'Auth token is required' }, { status: 401, headers: corsHeaders });
     }
 
+    if (!effectiveAppId) {
+      return NextResponse.json({ error: 'App ID is required' }, { status: 401, headers: corsHeaders });
+    }
+
     // Determine the source tracking ID
-    let rawSource = bundleId;
+    let rawSource = normalizedBundleId;
     if (!rawSource && originHeader) {
       try {
         const urlObj = new URL(originHeader.startsWith('http') ? originHeader : `https://${originHeader}`);
@@ -72,13 +79,44 @@ export async function POST(request: Request) {
       console.error('API_SECRET is not configured');
       return NextResponse.json({ error: 'Internal Server Error' }, { status: 500, headers: corsHeaders });
     }
-    const hmac = crypto.createHmac('sha256', API_SECRET_KEY);
-    hmac.update(adId);
-    const expectedToken = hmac.digest('hex');
-
-    if (token !== expectedToken) {
+    const impressionGrant = verifyImpressionToken(token, API_SECRET_KEY);
+    if (
+      !impressionGrant ||
+      impressionGrant.adId !== adId ||
+      impressionGrant.appId !== effectiveAppId
+    ) {
       return NextResponse.json({ error: 'Invalid auth token' }, { status: 403, headers: corsHeaders });
     }
+
+    if (trustedClientIp) {
+      // Match the durable bucket's scope so a shared client IP cannot make
+      // one publisher's traffic throttle another publisher's application.
+      if (!checkRateLimit(`click:${effectiveAppId}:${trustedClientIp}`, 100, 60 * 1000)) {
+        return NextResponse.json({ error: 'Too Many Requests' }, { status: 429, headers: corsHeaders });
+      }
+      try {
+        if (!(await consumePublicAdRateLimit({
+          scope: 'click',
+          appId: effectiveAppId,
+          clientIp: trustedClientIp,
+          limit: 100,
+          windowMs: 60 * 1000,
+        }))) {
+          return NextResponse.json({ error: 'Too Many Requests' }, { status: 429, headers: corsHeaders });
+        }
+      } catch (error) {
+        console.error('Public ad click rate-limit error:', error);
+        return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503, headers: corsHeaders });
+      }
+    } else if (!checkRateLimit(`click:${effectiveAppId}:${safeSourceId}`, 100, 60 * 1000)) {
+      // This local fallback is a loop guard only. It never treats
+      // caller-reported source metadata as a trusted identity.
+      return NextResponse.json({ error: 'Too Many Requests' }, { status: 429, headers: corsHeaders });
+    }
+    // Click geography is analytics only, but it must still come from the
+    // signed grant rather than a body field or an arbitrary request header.
+    const finalCountry = impressionGrant.country;
+    const clickRequestCountry = getTrustedRequestCountry(reqHeaders);
 
     const adRef = db.collection('ads').doc(adId);
     await db.runTransaction(async (transaction: any) => {
@@ -86,6 +124,11 @@ export async function POST(request: Request) {
       if (!adDoc.exists) return;
       
       const adData = adDoc.data() || {};
+      const ownerRef = typeof adData.ownerUid === 'string' && adData.ownerUid
+        ? db.collection('users').doc(adData.ownerUid)
+        : null;
+      // Firestore transactions require every read before the first write.
+      const ownerSnap = ownerRef ? await transaction.get(ownerRef) : null;
       
       const clicksByOrigin = adData.clicksByOrigin || {};
       clicksByOrigin[safeSourceId] = (clicksByOrigin[safeSourceId] || 0) + 1;
@@ -97,7 +140,10 @@ export async function POST(request: Request) {
       const currentClicks = recentClicksMap[safeSourceId] || [];
       currentClicks.push({
         time: new Date().toISOString(),
-        region: finalCountry || 'Unknown'
+        region: finalCountry || 'Unknown',
+        ...(clickRequestCountry && clickRequestCountry !== finalCountry
+          ? { clickRequestCountry, countryMismatch: true }
+          : {})
       });
       if (currentClicks.length > 40) {
         currentClicks.splice(0, currentClicks.length - 40);
@@ -110,49 +156,54 @@ export async function POST(request: Request) {
         lastClickedByOrigin: lastClickedMap,
         recentClicksByOrigin: recentClicksMap
       });
-    }).catch(console.error);
+
+      // Track daily advertiser-side clicks on the ad owner's user doc.
+      if (ownerRef && ownerSnap?.exists) {
+          const ownerData = ownerSnap.data() || {};
+          const dateKey = new Date().toISOString().split('T')[0];
+          const dailyAdvertiserClicks = ownerData.dailyAdvertiserClicks || {};
+          dailyAdvertiserClicks[dateKey] = (dailyAdvertiserClicks[dateKey] || 0) + 1;
+          pruneDailyMap(dailyAdvertiserClicks);
+          transaction.update(ownerRef, { dailyAdvertiserClicks });
+      }
+    });
 
     // Update publisher's earnings log with click count
     if (effectiveAppId) {
-      let publisherRef: any = null;
-      
-      // 1. Try appId field
-      const pSnapAppId = await db.collection('users').where('appId', '==', effectiveAppId).limit(1).get();
-      if (!pSnapAppId.empty) {
-        publisherRef = pSnapAppId.docs[0].ref;
-      } else {
-        // 2. Try appIds array
-        const pSnapAppIds = await db.collection('users').where('appIds', 'array-contains', effectiveAppId).limit(1).get();
-        if (!pSnapAppIds.empty) {
-          publisherRef = pSnapAppIds.docs[0].ref;
-        } else {
-          // 3. Fallback to legacy apiKey field
-          const pSnapApiKey = await db.collection('users').where('apiKey', '==', effectiveAppId).limit(1).get();
-          if (!pSnapApiKey.empty) {
-            publisherRef = pSnapApiKey.docs[0].ref;
-          } else {
-            // 4. Fallback to legacy apiKeys array
-            const pSnapApiKeys = await db.collection('users').where('apiKeys', 'array-contains', effectiveAppId).limit(1).get();
-            if (!pSnapApiKeys.empty) {
-              publisherRef = pSnapApiKeys.docs[0].ref;
-            }
-          }
-        }
-      }
-
-      if (publisherRef) {
+      const publisher = await findPublisherByAppId(db, effectiveAppId);
+      if (publisher && publisher.id === impressionGrant.publisherUid) {
+        const publisherRef = publisher.ref;
         const pubDoc = await publisherRef.get();
         const pubData = pubDoc.data();
         if (pubData) {
           const earningsLog = pubData.earningsLog || {};
           const logKey = effectiveAppId ? `${effectiveAppId}_${adId}` : adId;
           const actualKey = earningsLog[logKey] ? logKey : (earningsLog[adId] ? adId : logKey);
-          
+          const dateKey = new Date().toISOString().split('T')[0];
+          const appKey = effectiveAppId || 'unknown';
+
+          // Always track daily clicks regardless of whether an earningsLog entry exists yet
+          const dailyClicks = pubData.dailyClicks || {};
+          dailyClicks[dateKey] = (dailyClicks[dateKey] || 0) + 1;
+          pruneDailyMap(dailyClicks);
+          const dailyClicksByApp = pubData.dailyClicksByApp || {};
+          if (!dailyClicksByApp[appKey]) dailyClicksByApp[appKey] = {};
+          dailyClicksByApp[appKey][dateKey] = (dailyClicksByApp[appKey][dateKey] || 0) + 1;
+          pruneDailyMapByApp(dailyClicksByApp);
+
+          // Also update the earnings log entry if it exists
           if (earningsLog[actualKey]) {
-            earningsLog[actualKey].clicks = (earningsLog[actualKey].clicks || 0) + 1;
-            earningsLog[actualKey].appId = effectiveAppId || earningsLog[actualKey].appId || '';
-            earningsLog[actualKey].lastUpdated = new Date().toISOString();
-            await publisherRef.update({ earningsLog });
+            const entry = earningsLog[actualKey];
+            entry.clicks = (entry.clicks || 0) + 1;
+            entry.appId = effectiveAppId || entry.appId || '';
+            entry.lastUpdated = new Date().toISOString();
+            if (actualKey !== logKey) {
+              delete earningsLog[actualKey];
+              earningsLog[logKey] = entry;
+            }
+            await publisherRef.update({ earningsLog, dailyClicks, dailyClicksByApp });
+          } else {
+            await publisherRef.update({ dailyClicks, dailyClicksByApp });
           }
         }
       }

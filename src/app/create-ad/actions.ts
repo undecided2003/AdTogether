@@ -1,6 +1,5 @@
 // Shared server-side helper functions used by API routes.
-
-
+import { fetchPublicUrl } from '@/lib/safe-url-fetch';
 
 const DEEPSEEK_URL = "https://api.deepseek.com/chat/completions";
 
@@ -57,24 +56,13 @@ async function scrapeWebsiteContent(url: string) {
   try {
     console.log(`📡 Fetching URL: ${url}`);
     
-    // Standardize URL formatting to ensure reliable fetching
-    let fetchUrl = url;
-    if (!fetchUrl.startsWith('http://') && !fetchUrl.startsWith('https://')) {
-      fetchUrl = 'https://' + fetchUrl;
-    }
-
-    const response = await fetch(fetchUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      },
-      signal: AbortSignal.timeout(15000),
+    const response = await fetchPublicUrl(url, {
+      allowedContentTypes: ['text/html', 'application/xhtml+xml'],
+      maxBytes: 512 * 1024,
+      timeoutMs: 15_000,
+      maxRedirects: 3,
     });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch website: ${response.status} ${response.statusText}`);
-    }
-
-    const html = await response.text();
+    const html = response.body.toString('utf8');
     console.log('📝 Extracting content...');
 
     const cleanText = extractTextFromHtml(html).substring(0, 10000);
@@ -83,7 +71,7 @@ async function scrapeWebsiteContent(url: string) {
     if (foundImageUrl) {
       // Resolve relative URLs using the site URL
       try {
-        foundImageUrl = new URL(foundImageUrl, fetchUrl).href;
+        foundImageUrl = new URL(foundImageUrl, response.url).href;
       } catch (e) {
         console.warn(`[SCRAPER] Invalid image URL encountered: ${foundImageUrl}`);
         foundImageUrl = null;
@@ -120,27 +108,16 @@ export async function generateAdContent(clickUrl: string) {
 
     if (imageUrl) {
       try {
-        const imgRes = await fetch(imageUrl, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          },
-          signal: AbortSignal.timeout(10000)
+        const imageResponse = await fetchPublicUrl(imageUrl, {
+          allowedContentTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'],
+          maxBytes: 800 * 1024,
+          timeoutMs: 10_000,
+          maxRedirects: 3,
         });
-        if (imgRes.ok) {
-          imageMimeType = imgRes.headers.get('content-type') || 'image/jpeg';
-          const arrayBuffer = await imgRes.arrayBuffer();
-          const buffer = Buffer.from(arrayBuffer);
-
-          if (buffer.length > 800 * 1024) {
-            console.warn(`[GEN_AD] Image too large (${buffer.length} bytes), skipping`);
-          } else {
-            base64Image = buffer.toString('base64');
-          }
-        } else {
-          console.warn(`[GEN_AD] Image fetch failed with status: ${imgRes.status}`);
-        }
+        imageMimeType = imageResponse.contentType;
+        base64Image = imageResponse.body.toString('base64');
       } catch (e: any) {
-        console.warn(`[GEN_AD] Image fetch error: ${e.message}`);
+        console.warn('[GEN_AD] Image fetch failed safely:', e.message);
       }
     }
 
@@ -227,7 +204,7 @@ export async function generateAdContent(clickUrl: string) {
     console.error("[GEN_AD] FATAL ERROR:", error);
     return {
       success: false,
-      error: `Server Error: ${error.message || "Unknown error occurred"}`
+      error: 'Unable to generate ad content. Check that the destination is a public HTML page and try again.'
     };
   }
 }
@@ -301,6 +278,6 @@ export async function screenAdContent(title: string, description: string, clickU
     };
   } catch (error: any) {
     console.error("Ad Screening Error:", error.message);
-    return { success: false, error: error.message || "Failed to screen ad content" };
+    return { success: false, error: 'Unable to screen the ad content. Please try again.' };
   }
 }

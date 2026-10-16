@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { auth, db, storage } from "@/lib/firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { useRouter, useParams } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
@@ -91,6 +91,7 @@ export default function EditAdPage() {
   };
 
   const handleGenerate = async () => {
+    if (!user) return;
     if (!clickUrl) {
       setError("Please enter a Destination URL first so we know what to scrape.");
       return;
@@ -106,7 +107,10 @@ export default function EditAdPage() {
     try {
       const response = await fetch('/api/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await user.getIdToken()}`,
+        },
         body: JSON.stringify({ clickUrl }),
       });
       const res = await response.json();
@@ -166,16 +170,28 @@ export default function EditAdPage() {
         imageUrl = await getDownloadURL(uploadTask.ref);
       }
 
-      // 2. Update Data in Firestore
-      const adRef = doc(db, "ads", id);
-      await updateDoc(adRef, {
-        title,
-        description,
-        imageUrl,
-        clickUrl,
-        targetCountries,
-        adType,
+      // 2. Server-side screening and campaign update
+      const campaignResponse = await fetch('/api/campaigns', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await user.getIdToken()}`,
+        },
+        body: JSON.stringify({
+          action: 'content',
+          adId: id,
+          title,
+          description,
+          imageUrl,
+          clickUrl,
+          targetCountries,
+          adType,
+        }),
       });
+      const campaignResult = await campaignResponse.json();
+      if (!campaignResponse.ok || !campaignResult.success) {
+        throw new Error(campaignResult.error || 'Failed to update campaign.');
+      }
 
       setSuccess(true);
       setTimeout(() => {
@@ -209,10 +225,10 @@ export default function EditAdPage() {
         Back to Dashboard
       </Link>
 
-      <div className="bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-3xl p-8 md:p-12 relative overflow-hidden shadow-2xl">
+      <div className="bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-3xl p-5 sm:p-8 md:p-12 relative overflow-hidden shadow-2xl">
         <button 
           onClick={() => router.push("/dashboard")}
-          className="absolute top-6 right-6 p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all z-20"
+          className="absolute top-4 right-4 md:top-6 md:right-6 p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all z-20"
           title="Cancel"
           type="button"
         >

@@ -6,13 +6,14 @@ on:
       version:
         description: 'Release version number'
         required: true
-        default: '0.5.4'
+        default: '0.5.6'
       tag_name:
         description: 'Git tag name to create (defaults to v<version>)'
         required: false
         default: ''
 
 permissions:
+  actions: write
   contents: write
 
 jobs:
@@ -31,26 +32,102 @@ jobs:
 
       - name: Resolve tag name
         id: resolve-tag
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_TAG_NAME: ${{ inputs.tag_name }}
         run: |
-          if [ -n "${{ inputs.tag_name }}" ]; then
-            echo "tag_name=${{ inputs.tag_name }}" >> $GITHUB_OUTPUT
-          else
-            echo "tag_name=v${{ inputs.version }}" >> $GITHUB_OUTPUT
+          set -euo pipefail
+
+          if [[ ! "$INPUT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Version must use semver format, for example 0.5.6."
+            exit 1
           fi
 
-      - name: Check whether tag already exists
+          if [ -n "$INPUT_TAG_NAME" ]; then
+            TAG_NAME="$INPUT_TAG_NAME"
+          else
+            TAG_NAME="v$INPUT_VERSION"
+          fi
+
+          if [[ ! "$TAG_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]] || [ "${TAG_NAME#v}" != "$INPUT_VERSION" ]; then
+            echo "::error::Tag must be v<version> and match the requested version."
+            exit 1
+          fi
+
+          echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Verify release source and SDK version parity
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_TAG_NAME: ${{ steps.resolve-tag.outputs.tag_name }}
         run: |
-          TAG_NAME="${{ steps.resolve-tag.outputs.tag_name }}"
+          set -euo pipefail
+
+          if [ "${GITHUB_REF_TYPE:-}" != "branch" ] || [ "${GITHUB_REF_NAME:-}" != "main" ]; then
+            echo "::error::Create release tags only from the main branch."
+            exit 1
+          fi
+
+          if [[ ! "$RELEASE_TAG_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Tag must use v<semver> format, for example v0.5.6."
+            exit 1
+          fi
+
+          TAG_VERSION="${RELEASE_TAG_NAME#v}"
+          if [ "$TAG_VERSION" != "$RELEASE_VERSION" ]; then
+            echo "::error::The requested version '$RELEASE_VERSION' does not match tag '$RELEASE_TAG_NAME'."
+            exit 1
+          fi
+
+          WEB_VERSION="$(node -p "require('./sdk/web-sdk/package.json').version")"
+          REACT_NATIVE_VERSION="$(node -p "require('./sdk/react-native-sdk/package.json').version")"
+          FLUTTER_VERSION="$(sed -n 's/^version: *//p' sdk/adtogether_sdk/pubspec.yaml | head -1 | tr -d '[:space:]')"
+          ANDROID_VERSION="$(sed -n 's/^version = "\(.*\)"/\1/p' sdk/android-sdk/build.gradle.kts | head -1)"
+          IOS_VERSION="$(sed -n 's/.*spec\.version *= *"\([^"]*\)".*/\1/p' sdk/ios-sdk/AdTogether.podspec | head -1)"
+
+          for ENTRY in \
+            "@adtogether/web-sdk:$WEB_VERSION" \
+            "@adtogether/react-native-sdk:$REACT_NATIVE_VERSION" \
+            "adtogether_sdk:$FLUTTER_VERSION" \
+            "adtogether-sdk:$ANDROID_VERSION" \
+            "AdTogether:$IOS_VERSION"; do
+            NAME="${ENTRY%%:*}"
+            PACKAGE_VERSION="${ENTRY#*:}"
+            if [ -z "$PACKAGE_VERSION" ] || [ "$PACKAGE_VERSION" != "$RELEASE_VERSION" ]; then
+              echo "::error::$NAME declares '$PACKAGE_VERSION', but this release requests '$RELEASE_VERSION'."
+              exit 1
+            fi
+          done
+
+      - name: Check whether tag already exists
+        env:
+          TAG_NAME: ${{ steps.resolve-tag.outputs.tag_name }}
+        run: |
+          set -euo pipefail
           if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
             echo "Tag '$TAG_NAME' already exists."
             exit 1
           fi
 
       - name: Create and push release tag
+        env:
+          TAG_NAME: ${{ steps.resolve-tag.outputs.tag_name }}
         run: |
-          TAG_NAME="${{ steps.resolve-tag.outputs.tag_name }}"
+          set -euo pipefail
           git tag "$TAG_NAME"
           git push origin "refs/tags/$TAG_NAME"
+
+      # A tag push authenticated with GITHUB_TOKEN does not trigger a separate
+      # `on.push.tags` workflow. Dispatch the publisher explicitly against the
+      # immutable release tag so every registry build uses the validated source.
+      - name: Start SDK publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ steps.resolve-tag.outputs.tag_name }}
+        run: |
+          set -euo pipefail
+          gh workflow run publish.yml --ref "$TAG_NAME"
+          echo "Started Publish SDKs for $TAG_NAME"
 
       - name: Output release tag
         run: echo "Created tag ${{ steps.resolve-tag.outputs.tag_name }}"

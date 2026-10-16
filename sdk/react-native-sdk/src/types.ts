@@ -10,6 +10,11 @@ export interface AdModel {
   adType?: AdType;
 }
 
+export interface ViewabilityMetrics {
+  visiblePercent: number;
+  visibleDurationMs: number;
+}
+
 export interface AdTogetherOptions {
   /** The unique identifier for your application. */
   appId?: string;

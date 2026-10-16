@@ -1,0 +1,198 @@
+{
+  "projectId": "adtogether-15453",
+  "generatedAt": "2026-10-16T06:36:58.050Z",
+  "threshold": 25,
+  "note": "selectedAdIds includes campaigns not marked manuallyPaused. Remove any IDs you do not want resumed before applying. Older records without the marker are treated as unmarked.",
+  "selectedAdIds": [
+    "fewShh7l6AfrDvd8cXac",
+    "MvO2M7DEy7hfvqK8py69",
+    "WrFa5mT80l2AAvkPMfC0",
+    "jABRqupLwokyEq8YRG6z",
+    "8bnl6j02QiKoQvBEy2b6",
+    "8bxo1IHYNessdJMtaXHI",
+    "F3Gnr3pg2ioTJaZG4DXc",
+    "NTwjb9bOGZbUS6gTfwUA",
+    "SSjLpgoUZyK9n4UoKuYP",
+    "Ypj1VliRdpAc4oIefMas",
+    "parEifs0EDhWa2gwug3l",
+    "uPYdc9qc5fkrxKDfWXPF",
+    "vyi9za5XLHqk12ACUyqs",
+    "z9lVSeImpIhya1kzP7Nh"
+  ],
+  "candidateUserCount": 3,
+  "candidateCampaignCount": 14,
+  "candidates": [
+    {
+      "uid": "a3tyvCPyCAaFeSVYUJ76UE4rJgr2",
+      "credits": 100,
+      "campaigns": [
+        {
+          "adId": "fewShh7l6AfrDvd8cXac",
+          "title": "Swara: Global Radio Streams",
+          "adType": "banner",
+          "autoPausedReason": null,
+          "manuallyPaused": false,
+          "updateTime": {
+            "seconds": 1779828174,
+            "nanoseconds": 956517000
+          }
+        }
+      ]
+    },
+    {
+      "uid": "jXpRSYo2QdTwfhSpH2PlLUpwgbZ2",
+      "credits": 433,
+      "campaigns": [
+        {
+          "adId": "MvO2M7DEy7hfvqK8py69",
+          "title": "SOUND COMPASS: Sound crew tools",
+          "adType": "banner",
+          "autoPausedReason": null,
+          "manuallyPaused": false,
+          "updateTime": {
+            "seconds": 1788982138,
+            "nanoseconds": 772122000
+          }
+        },
+        {
+          "adId": "WrFa5mT80l2AAvkPMfC0",
+          "title": "NightSlate: Resolve updates",
+          "adType": "banner",
+          "autoPausedReason": null,
+          "manuallyPaused": false,
+          "updateTime": {
+            "seconds": 1790659044,
+            "nanoseconds": 562683000
+          }
+        },
+        {
+          "adId": "jABRqupLwokyEq8YRG6z",
+          "title": "PikoBop Free & Pro: Desktop pets",
+          "adType": "banner",
+          "autoPausedReason": null,
+          "manuallyPaused": false,
+          "updateTime": {
+            "seconds": 1790659053,
+            "nanoseconds": 960018000
+          }
+        }
+      ]
+    },
+    {
+      "uid": "xczEZnqHutbbwKjD0g6Ug43f6443",
+      "credits": 2461,
+      "campaigns": [
+        {
+          "adId": "8bnl6j02QiKoQvBEy2b6",
+          "title": "Voice Enabled Asistant Chatbot",
+          "adType": "banner",
+          "autoPausedReason": null,
+          "manuallyPaused": false,
+          "updateTime": {
+            "seconds": 1792128965,
+            "nanoseconds": 369843000
+          }
+        },
+        {
+          "adId": "8bxo1IHYNessdJMtaXHI",
+          "title": "AI Music Scanner App",
+          "adType": "banner",
+          "autoPausedReason": null,
+          "manuallyPaused": false,
+          "updateTime": {
+            "seconds": 1792128964,
+            "nanoseconds": 578683000
+          }
+        },
+        {
+          "adId": "F3Gnr3pg2ioTJaZG4DXc",
+          "title": "Explore with AI Tour Guide",
+          "adType": "banner",
+          "autoPausedReason": null,
+          "manuallyPaused": false,
+          "updateTime": {
+            "seconds": 1792128967,
+            "nanoseconds": 280604000
+          }
+        },
+        {
+          "adId": "NTwjb9bOGZbUS6gTfwUA",
+          "title": "AI Adventure Books",
+          "adType": "banner",
+          "autoPausedReason": null,
+          "manuallyPaused": false,
+          "updateTime": {
+            "seconds": 1792132579,
+            "nanoseconds": 844666000
+          }
+        },
+        {
+          "adId": "SSjLpgoUZyK9n4UoKuYP",
+          "title": "Your Pocket Naturalist",
+          "adType": "banner",
+          "autoPausedReason": null,
+          "manuallyPaused": false,
+          "updateTime": {
+            "seconds": 1792129139,
+            "nanoseconds": 835006000
+          }
+        },
+        {
+          "adId": "Ypj1VliRdpAc4oIefMas",
+          "title": "Unlock Your Potential",
+          "adType": "banner",
+          "autoPausedReason": null,
+          "manuallyPaused": false,
+          "updateTime": {
+            "seconds": 1792131799,
+            "nanoseconds": 747208000
+          }
+        },
+        {
+          "adId": "parEifs0EDhWa2gwug3l",
+          "title": "Home Cooks & Foodies Unite",
+          "adType": "banner",
+          "autoPausedReason": null,
+          "manuallyPaused": false,
+          "updateTime": {
+            "seconds": 1792130894,
+            "nanoseconds": 875857000
+          }
+        },
+        {
+          "adId": "uPYdc9qc5fkrxKDfWXPF",
+          "title": "AI Receipts: Scan & Organize",
+          "adType": "banner",
+          "autoPausedReason": null,
+          "manuallyPaused": false,
+          "updateTime": {
+            "seconds": 1792128962,
+            "nanoseconds": 339449000
+          }
+        },
+        {
+          "adId": "vyi9za5XLHqk12ACUyqs",
+          "title": "Coworking Time",
+          "adType": "banner",
+          "autoPausedReason": null,
+          "manuallyPaused": false,
+          "updateTime": {
+            "seconds": 1792128963,
+            "nanoseconds": 101637000
+          }
+        },
+        {
+          "adId": "z9lVSeImpIhya1kzP7Nh",
+          "title": "Techniques: AI Coach",
+          "adType": "banner",
+          "autoPausedReason": null,
+          "manuallyPaused": false,
+          "updateTime": {
+            "seconds": 1792129486,
+            "nanoseconds": 750886000
+          }
+        }
+      ]
+    }
+  ]
+}

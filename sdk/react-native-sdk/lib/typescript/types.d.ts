@@ -8,8 +8,14 @@ export interface AdModel {
     token?: string;
     adType?: AdType;
 }
+export interface ViewabilityMetrics {
+    visiblePercent: number;
+    visibleDurationMs: number;
+}
 export interface AdTogetherOptions {
+    /** The unique identifier for your application. */
     appId?: string;
+    /** @deprecated Use appId instead */
     apiKey?: string;
     baseUrl?: string;
     bundleId?: string;

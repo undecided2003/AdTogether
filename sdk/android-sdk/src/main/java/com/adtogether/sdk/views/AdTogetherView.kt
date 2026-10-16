@@ -2,6 +2,7 @@ package com.adtogether.sdk.views
 
 import android.content.Intent
 import android.net.Uri
+import android.view.ViewTreeObserver
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,8 +24,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -35,7 +38,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -46,6 +52,9 @@ import com.adtogether.sdk.AdTogether
 import com.adtogether.sdk.models.AdModel
 import com.adtogether.sdk.models.AdSize
 import kotlinx.coroutines.launch
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.roundToInt
 
 @Composable
 fun AdTogetherView(
@@ -70,6 +79,21 @@ fun AdTogetherView(
     var hasError by remember { mutableStateOf(false) }
     var impressionTracked by remember { mutableStateOf(false) }
     var isVisible by remember { mutableStateOf(true) }
+    var visiblePercent by remember { mutableIntStateOf(0) }
+    val rootView = LocalView.current
+    var hasWindowFocus by remember(rootView) { mutableStateOf(rootView.hasWindowFocus()) }
+
+    DisposableEffect(rootView) {
+        val listener = ViewTreeObserver.OnWindowFocusChangeListener { hasFocus ->
+            hasWindowFocus = hasFocus
+        }
+        rootView.viewTreeObserver.addOnWindowFocusChangeListener(listener)
+        onDispose {
+            if (rootView.viewTreeObserver.isAlive) {
+                rootView.viewTreeObserver.removeOnWindowFocusChangeListener(listener)
+            }
+        }
+    }
     
     if (!isVisible) return
 
@@ -99,11 +123,15 @@ fun AdTogetherView(
 
     val ad = adData!!
 
-    // Track Impression when ad hits the composition
-    LaunchedEffect(ad.id) {
-        if (!impressionTracked) {
-            impressionTracked = true
-            AdTogether.trackImpression(ad.id, ad.token)
+    // Track an impression only after the banner has remained at least half visible for one second.
+    val isViewable = visiblePercent >= 50 && hasWindowFocus
+    LaunchedEffect(ad.id, isViewable) {
+        if (!impressionTracked && isViewable) {
+            kotlinx.coroutines.delay(1_000)
+            if (!impressionTracked && visiblePercent >= 50 && hasWindowFocus) {
+                impressionTracked = true
+                AdTogether.trackImpression(ad.id, ad.token, visiblePercent, 1_000)
+            }
         }
     }
 
@@ -113,6 +141,17 @@ fun AdTogetherView(
 
     Surface(
         modifier = modifier
+            .onGloballyPositioned { coordinates ->
+                val bounds = coordinates.boundsInWindow()
+                val totalArea = bounds.width * bounds.height
+                val visibleWidth = max(0f, min(bounds.right, rootView.width.toFloat()) - max(bounds.left, 0f))
+                val visibleHeight = max(0f, min(bounds.bottom, rootView.height.toFloat()) - max(bounds.top, 0f))
+                visiblePercent = if (totalArea > 0f) {
+                    ((visibleWidth * visibleHeight / totalArea) * 100).roundToInt().coerceIn(0, 100)
+                } else {
+                    0
+                }
+            }
             .shadow(4.dp, RoundedCornerShape(12.dp))
             .clip(RoundedCornerShape(12.dp))
             .clickable {

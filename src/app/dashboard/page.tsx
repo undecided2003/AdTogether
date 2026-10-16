@@ -1,15 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { auth, db } from "@/lib/firebase";
-import { doc, getDoc, collection, query, where, getDocs, updateDoc, deleteDoc, arrayUnion, arrayRemove, setDoc } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, updateDoc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import { onAuthStateChanged, User } from "firebase/auth";
+import { onAuthStateChanged, User, sendEmailVerification } from "firebase/auth";
 import { Coins, Plus, Activity, LogOut, Globe, Image as ImageIcon, MousePointerClick, MapPin, Check, Key, Copy, Eye, EyeOff, X, ChevronDown, ChevronUp, Monitor, Pencil, Smartphone, Shield, ShieldAlert, ArrowDownUp, TrendingUp, TrendingDown, Terminal, Bot } from "lucide-react";
 import Link from "next/link";
 import { CodeBlock } from "@/components/CodeBlock";
 import McpServerConfig from "@/components/McpServerConfig";
+import PlatformGuideModal, { Platform } from "@/components/PlatformGuideModal";
 import { COUNTRIES } from "@/lib/countries";
+import { CREDIT_AUTO_RESUME_THRESHOLD, MANUAL_PAUSE_FIELD } from "@/lib/credit-policy";
 
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -19,6 +22,17 @@ export default function DashboardPage() {
   const [totalClicks, setTotalClicks] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showDocs, setShowDocs] = useState(false);
+  const [isPlatformModalOpen, setIsPlatformModalOpen] = useState(false);
+  const [selectedPlatformModal, setSelectedPlatformModal] = useState<Platform>('wordpress');
+  const [selectedCmsTab, setSelectedCmsTab] = useState<Platform>('wordpress');
+  const [timeRange, setTimeRange] = useState<'7d' | '30d' | 'all'>('7d');
+  const [showEarned, setShowEarned] = useState(true);
+  const [showSpent, setShowSpent] = useState(true);
+  const [showAdViews, setShowAdViews] = useState(true);
+  const [showAdClicks, setShowAdClicks] = useState(true);
+  const [showCampaignViews, setShowCampaignViews] = useState(false);
+  const [showCampaignClicks, setShowCampaignClicks] = useState(false);
+  const [chartAppFilter, setChartAppFilter] = useState<string>('all');
   
   // Profile settings state
   const [editingCountry, setEditingCountry] = useState(false);
@@ -69,6 +83,10 @@ export default function DashboardPage() {
     return isNaN(parsed.getTime()) ? null : parsed;
   };
 
+  const [emailUnverified, setEmailUnverified] = useState(false);
+  const [resendingEmail, setResendingEmail] = useState(false);
+  const [resendStatus, setResendStatus] = useState<string | null>(null);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (!currentUser) {
@@ -78,9 +96,35 @@ export default function DashboardPage() {
       setUser(currentUser);
       
       try {
+        await currentUser.reload();
+        if (!currentUser.emailVerified) {
+          setEmailUnverified(true);
+          setLoading(false);
+          return;
+        }
+        setEmailUnverified(false);
+        await currentUser.getIdToken(true);
+
         // Fetch User Data for Credits
         const userRef = doc(db, "users", currentUser.uid);
-        const userSnap = await getDoc(userRef);
+        let userSnap = await getDoc(userRef);
+        if (!userSnap.exists()) {
+          try {
+            await setDoc(userRef, {
+              uid: currentUser.uid,
+              email: currentUser.email,
+              credits: 75,
+              country: "Unknown",
+              appIds: [],
+              appIdLabels: {},
+              creditNotificationStage: 'none',
+              createdAt: new Date().toISOString(),
+            });
+            userSnap = await getDoc(userRef);
+          } catch (createErr) {
+            console.error("Error provisioning user document:", createErr);
+          }
+        }
         if (userSnap.exists()) {
           setUserData(userSnap.data());
           setNewCountry(userSnap.data().country || "Unknown");
@@ -134,43 +178,74 @@ export default function DashboardPage() {
   };
 
   const handleToggleAdStatus = async (adId: string, currentStatus: boolean) => {
+    if (!user) return;
     try {
-      const adRef = doc(db, "ads", adId);
-      await updateDoc(adRef, { active: !currentStatus });
-      setAds(ads.map(ad => ad.id === adId ? { ...ad, active: !currentStatus } : ad));
+      const nextActive = !currentStatus;
+      const response = await fetch('/api/campaigns', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${await user.getIdToken()}`,
+        },
+        body: JSON.stringify({ action: 'status', adId, active: nextActive }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.error || 'Failed to update campaign');
+      setAds((currentAds) => currentAds.map(ad => ad.id === adId
+        ? { ...ad, active: nextActive, autoPausedReason: null, [MANUAL_PAUSE_FIELD]: !nextActive }
+        : ad));
     } catch (e) {
       console.error("Failed to toggle ad status", e);
+      alert(e instanceof Error ? e.message : 'Failed to update campaign');
     }
   };
 
   const handleDeleteAd = async (adId: string) => {
     if (!window.confirm("Are you sure you want to delete this campaign? This action cannot be undone.")) return;
+    if (!user) return;
     try {
-      const adRef = doc(db, "ads", adId);
-      await deleteDoc(adRef);
-      setAds(ads.filter(ad => ad.id !== adId));
+      const response = await fetch('/api/campaigns', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${await user.getIdToken()}`,
+        },
+        body: JSON.stringify({ adId }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.error || 'Failed to delete campaign');
+      setAds((currentAds) => currentAds.filter(ad => ad.id !== adId));
     } catch (e) {
       console.error("Failed to delete ad", e);
+      alert(e instanceof Error ? e.message : 'Failed to delete campaign');
     }
   };
 
   const handleToggleBlockSource = async (adId: string, source: string, isBlocked: boolean) => {
+    if (!user) return;
     try {
-      const adRef = doc(db, "ads", adId);
-      if (isBlocked) {
-        await updateDoc(adRef, {
-          blockedOrigins: arrayRemove(source)
-        });
-        setAds(ads.map(ad => ad.id === adId ? { ...ad, blockedOrigins: (ad.blockedOrigins || []).filter((o: string) => o !== source) } : ad));
-      } else {
-        await updateDoc(adRef, {
-          blockedOrigins: arrayUnion(source)
-        });
-        setAds(ads.map(ad => ad.id === adId ? { ...ad, blockedOrigins: [...(ad.blockedOrigins || []), source] } : ad));
-      }
+      const nextBlocked = !isBlocked;
+      const response = await fetch('/api/campaigns', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${await user.getIdToken()}`,
+        },
+        body: JSON.stringify({ action: 'block-origin', adId, source, blocked: nextBlocked }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.error || 'Failed to update blocklist');
+      setAds((currentAds) => currentAds.map(ad => ad.id === adId
+        ? {
+            ...ad,
+            blockedOrigins: nextBlocked
+              ? Array.from(new Set([...(ad.blockedOrigins || []), source]))
+              : (ad.blockedOrigins || []).filter((origin: string) => origin !== source),
+          }
+        : ad));
     } catch (e) {
       console.error("Failed to toggle block status", e);
-      alert("Failed to update blocklist");
+      alert(e instanceof Error ? e.message : 'Failed to update blocklist');
     }
   };
 
@@ -186,12 +261,22 @@ export default function DashboardPage() {
     
     setGenerating(true);
     try {
-      const newId = `at_${crypto.randomUUID().replace(/-/g, '')}`;
+      const response = await fetch('/api/apps', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${await user.getIdToken()}`,
+        },
+        body: JSON.stringify({ label }),
+      });
+      const result = await response.json();
+      if (!response.ok || typeof result.appId !== 'string') {
+        throw new Error(result.error || 'Failed to generate App ID');
+      }
+      const newId = result.appId;
       const updatedIds = [...currentIds, newId];
       const currentLabels = userData?.appIdLabels || {};
-      const updatedLabels = { ...currentLabels, [newId]: label };
-      const userRef = doc(db, "users", user.uid);
-      await updateDoc(userRef, { appIds: updatedIds, appIdLabels: updatedLabels });
+      const updatedLabels = { ...currentLabels, [newId]: result.label || label };
       setUserData({ ...userData, appIds: updatedIds, appIdLabels: updatedLabels });
       setShowAppId(prev => ({ ...prev, [newId]: true }));
       setNewAppIdLabel("");
@@ -212,8 +297,16 @@ export default function DashboardPage() {
     const currentLabels = { ...(userData?.appIdLabels || {}) };
     delete currentLabels[idToDelete];
     try {
-      const userRef = doc(db, "users", user.uid);
-      await updateDoc(userRef, { appIds: updatedIds, appIdLabels: currentLabels });
+      const response = await fetch('/api/apps', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${await user.getIdToken()}`,
+        },
+        body: JSON.stringify({ appId: idToDelete }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Failed to delete App ID');
       setUserData({ ...userData, appIds: updatedIds, appIdLabels: currentLabels });
     } catch (e) {
       console.error("Failed to delete App ID", e);
@@ -226,9 +319,17 @@ export default function DashboardPage() {
     if (!label) return;
     try {
       const currentLabels = { ...(userData?.appIdLabels || {}) };
-      currentLabels[id] = label;
-      const userRef = doc(db, "users", user.uid);
-      await updateDoc(userRef, { appIdLabels: currentLabels });
+      const response = await fetch('/api/apps', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${await user.getIdToken()}`,
+        },
+        body: JSON.stringify({ appId: id, label }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Failed to update App ID label');
+      currentLabels[id] = result.label || label;
       setUserData({ ...userData, appIdLabels: currentLabels });
       setEditingLabel(null);
     } catch (e) {
@@ -269,9 +370,13 @@ export default function DashboardPage() {
   const ctr = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) : "0.00";
 
   const totalAdShown = userData?.earningsLog ? Object.values(userData.earningsLog as Record<string, any>).reduce((sum: number, e: any) => sum + (e.impressions || 0), 0) : 0;
-  const totalCreditsEarned = userData?.earningsLog ? Object.values(userData.earningsLog as Record<string, any>).reduce((sum: number, e: any) => sum + (e.creditsEarned || 0), 0) : 0;
+  const totalCreditsEarned = userData?.dailyEarnings
+    ? Object.values(userData.dailyEarnings as Record<string, number>).reduce((sum: number, v: number) => sum + (v || 0), 0)
+    : 0;
   const totalApps = (userData?.appIds || (userData?.appId ? [userData.appId] : [])).length;
-  const totalSpent = Math.max(0, 75 + totalCreditsEarned - (userData?.credits || 0));
+  const totalSpent = userData?.dailySpend
+    ? Object.values(userData.dailySpend as Record<string, number>).reduce((sum: number, v: number) => sum + (v || 0), 0)
+    : 0;
 
   const getPast30DaysSum = (dailyLog: Record<string, number> | undefined) => {
     if (!dailyLog) return 0;
@@ -286,7 +391,7 @@ export default function DashboardPage() {
       const diffTime = now.getTime() - entryDate.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       
-      if (diffDays >= 0 && diffDays <= 30) {
+      if (diffDays >= 0 && diffDays < 30) {
         sum += amount;
       }
     }
@@ -295,6 +400,53 @@ export default function DashboardPage() {
 
   const past30DaysEarned = getPast30DaysSum(userData?.dailyEarnings);
   const past30DaysSpent = getPast30DaysSum(userData?.dailySpend);
+
+  const chartData = useMemo(() => {
+    if (!userData) return [];
+    
+    // Use per-app data when a specific app is selected, otherwise aggregate
+    const isFiltered = chartAppFilter !== 'all';
+    const dailyEarnings = isFiltered
+      ? (userData.dailyEarningsByApp?.[chartAppFilter] || {})
+      : (userData.dailyEarnings || {});
+    const dailySpend = userData.dailySpend || {}; // Spend is per-campaign, always aggregate
+    const dailyImpressions = isFiltered
+      ? (userData.dailyImpressionsByApp?.[chartAppFilter] || {})
+      : (userData.dailyImpressions || {});
+    const dailyClicks = isFiltered
+      ? (userData.dailyClicksByApp?.[chartAppFilter] || {})
+      : (userData.dailyClicks || {});
+    // Advertiser-side: views/clicks of YOUR campaigns on other sites (always aggregate)
+    const dailyAdvertiserImpressions = userData.dailyAdvertiserImpressions || {};
+    const dailyAdvertiserClicks = userData.dailyAdvertiserClicks || {};
+    
+    // Get all unique dates
+    const allDates = new Set([...Object.keys(dailyEarnings), ...Object.keys(dailySpend), ...Object.keys(dailyImpressions), ...Object.keys(dailyClicks), ...Object.keys(dailyAdvertiserImpressions), ...Object.keys(dailyAdvertiserClicks)]);
+    
+    // Sort dates chronologically
+    const sortedDates = Array.from(allDates).sort();
+    
+    if (sortedDates.length === 0) return [];
+
+    let filteredDates = sortedDates;
+    if (timeRange !== 'all') {
+      const days = timeRange === '7d' ? 7 : 30;
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+      filteredDates = sortedDates.filter(d => new Date(d) >= cutoffDate);
+    }
+    
+    return filteredDates.map(date => ({
+      date: new Date(date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      rawDate: date,
+      earned: dailyEarnings[date] || 0,
+      spent: dailySpend[date] || 0,
+      adViews: dailyImpressions[date] || 0,
+      adClicks: dailyClicks[date] || 0,
+      campaignViews: dailyAdvertiserImpressions[date] || 0,
+      campaignClicks: dailyAdvertiserClicks[date] || 0
+    }));
+  }, [userData, timeRange, chartAppFilter]);
 
   if (loading) {
     return (
@@ -307,13 +459,48 @@ export default function DashboardPage() {
   return (
     <div className="flex-grow w-full max-w-6xl mx-auto animate-in fade-in duration-500">
       
+      {emailUnverified && (
+        <div className="mb-8 p-6 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-semibold text-amber-600 dark:text-amber-400">Email Verification Required</h3>
+            <p className="text-sm text-zinc-600 dark:text-zinc-300 mt-1">
+              Please verify your email address ({user?.email}) to activate your account and receive your initial 75 credits.
+            </p>
+          </div>
+          <button
+            onClick={async () => {
+              if (user) {
+                setResendingEmail(true);
+                try {
+                  await sendEmailVerification(user);
+                  setResendStatus("Verification email sent! Check your inbox.");
+                } catch {
+                  setResendStatus("Failed to send verification email. Try again shortly.");
+                } finally {
+                  setResendingEmail(false);
+                }
+              }
+            }}
+            disabled={resendingEmail}
+            className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-medium text-sm rounded-xl transition-colors disabled:opacity-50 shrink-0"
+          >
+            {resendingEmail ? "Sending..." : "Resend Verification Email"}
+          </button>
+        </div>
+      )}
+      {resendStatus && (
+        <div className="mb-6 p-4 bg-zinc-100 dark:bg-zinc-800 text-sm text-zinc-800 dark:text-zinc-200 rounded-xl">
+          {resendStatus}
+        </div>
+      )}
+
       {/* Header bar */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10 pb-6 border-b border-zinc-200 dark:border-white/10">
         <div>
           <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">Dashboard</h1>
           <p className="text-zinc-500 dark:text-zinc-400 mt-1">Manage your campaigns and sharing credits.</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3">
           <Link
             href="/create-ad"
             className="flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-black px-5 py-2.5 rounded-xl font-medium transition-colors shadow-sm dark:shadow-[0_0_15px_rgba(245,158,11,0.3)]"
@@ -346,7 +533,7 @@ export default function DashboardPage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
         {/* Credit Card */}
-        <div className="bg-gradient-to-br from-amber-50 to-white dark:from-amber-900/40 dark:to-black border border-amber-200 dark:border-amber-500/20 rounded-2xl p-6 relative overflow-hidden shadow-sm">
+        <div className="bg-gradient-to-br from-amber-50 to-white dark:from-amber-900/40 dark:to-black border border-amber-200 dark:border-amber-500/20 rounded-2xl p-4 sm:p-6 relative overflow-hidden shadow-sm">
           <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-[40px] rounded-full" />
           <div className="flex items-center gap-4 mb-4">
             <div className="p-3 bg-amber-100 dark:bg-amber-500/20 rounded-xl border border-amber-200 dark:border-amber-500/30 text-amber-600 dark:text-amber-400">
@@ -358,10 +545,13 @@ export default function DashboardPage() {
           <p className="text-xs text-green-700 dark:text-green-400/80 bg-green-100 dark:bg-green-400/10 inline-block px-2 py-1 rounded border border-green-200 dark:border-green-400/20 truncate max-w-full">
             Earn more by showing ads
           </p>
+          <p className="mt-2 text-xs leading-4 text-zinc-600 dark:text-zinc-400">
+            Credit-paused campaigns resume automatically at {CREDIT_AUTO_RESUME_THRESHOLD} credits. Manual pauses stay paused.
+          </p>
         </div>
 
         {/* Active Ads */}
-        <div className="bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
+        <div className="bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-4 sm:p-6 shadow-sm">
           <div className="flex items-center gap-4 mb-4">
             <div className="p-3 bg-zinc-50 dark:bg-white/5 rounded-xl border border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-white">
               <Globe className="w-5 h-5" />
@@ -373,7 +563,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Global Impressions */}
-        <div className="bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
+        <div className="bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-4 sm:p-6 shadow-sm">
           <div className="flex items-center gap-4 mb-4">
             <div className="p-3 bg-zinc-50 dark:bg-white/5 rounded-xl border border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-white">
               <Activity className="w-5 h-5" />
@@ -385,7 +575,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Total Clicks */}
-        <div className="bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
+        <div className="bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-4 sm:p-6 shadow-sm">
           <div className="flex items-center gap-4 mb-4">
             <div className="p-3 bg-zinc-50 dark:bg-white/5 rounded-xl border border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-white">
               <MousePointerClick className="w-5 h-5" />
@@ -397,7 +587,7 @@ export default function DashboardPage() {
         </div>
 
         {/* CTR */}
-        <div className="bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
+        <div className="bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-4 sm:p-6 shadow-sm">
           <div className="flex items-center gap-4 mb-4">
             <div className="p-3 bg-zinc-50 dark:bg-white/5 rounded-xl border border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-white">
               <Activity className="w-5 h-5" />
@@ -412,7 +602,7 @@ export default function DashboardPage() {
       {/* Publisher Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         {/* Total Ads Shown (Publisher) */}
-        <div className="bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
+        <div className="bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-4 sm:p-6 shadow-sm">
           <div className="flex items-center gap-4 mb-4">
             <div className="p-3 bg-zinc-50 dark:bg-white/5 rounded-xl border border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-white">
               <Monitor className="w-5 h-5" />
@@ -424,7 +614,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Total Credits Earned */}
-        <div className="bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
+        <div className="bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-4 sm:p-6 shadow-sm">
           <div className="flex items-center gap-4 mb-4">
             <div className="p-3 bg-green-50 dark:bg-green-500/10 rounded-xl border border-green-200 dark:border-green-500/20 text-green-600 dark:text-green-400">
               <TrendingUp className="w-5 h-5" />
@@ -437,7 +627,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Total Credits Spent */}
-        <div className="bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
+        <div className="bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-4 sm:p-6 shadow-sm">
           <div className="flex items-center gap-4 mb-4">
             <div className="p-3 bg-amber-50 dark:bg-amber-500/10 rounded-xl border border-amber-200 dark:border-amber-500/20 text-amber-600 dark:text-amber-400">
               <TrendingDown className="w-5 h-5" />
@@ -450,7 +640,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Total Apps */}
-        <div className="bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
+        <div className="bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-4 sm:p-6 shadow-sm">
           <div className="flex items-center gap-4 mb-4">
             <div className="p-3 bg-zinc-50 dark:bg-white/5 rounded-xl border border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-white">
               <Smartphone className="w-5 h-5" />
@@ -462,8 +652,246 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Performance Overview Chart */}
+      <div className="mb-12 bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-4 sm:p-6 shadow-sm">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-zinc-100 dark:bg-white/5 rounded-xl border border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-white">
+              <Activity className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Performance Overview</h3>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                {chartAppFilter === 'all'
+                  ? 'All apps combined'
+                  : `Filtered: ${userData?.appIdLabels?.[chartAppFilter] || chartAppFilter.slice(0, 16) + '…'}`}
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-2">
+            {/* App filter dropdown */}
+            {(userData?.appIds || []).length > 0 && (
+              <select
+                value={chartAppFilter}
+                onChange={e => setChartAppFilter(e.target.value)}
+                className="text-xs font-medium px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+              >
+                <option value="all">All Apps</option>
+                {(userData?.appIds || []).map((id: string) => (
+                  <option key={id} value={id}>
+                    {userData?.appIdLabels?.[id] || id.slice(0, 20) + '…'}
+                  </option>
+                ))}
+              </select>
+            )}
+            {/* Time range buttons */}
+            <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800/50 p-1 rounded-lg">
+              <button
+                onClick={() => setTimeRange('7d')}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${timeRange === '7d' ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
+              >
+                7 Days
+              </button>
+              <button
+                onClick={() => setTimeRange('30d')}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${timeRange === '30d' ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
+              >
+                30 Days
+              </button>
+              <button
+                onClick={() => setTimeRange('all')}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${timeRange === 'all' ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
+              >
+                All Time
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Series Toggle Switches */}
+        <div className="flex flex-wrap items-center gap-4 mb-6">
+          <button
+            onClick={() => setShowEarned(!showEarned)}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${showEarned ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400' : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700 text-zinc-400 dark:text-zinc-500'}`}
+          >
+            <span className={`w-2.5 h-2.5 rounded-full ${showEarned ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-600'}`} />
+            Credits Earned
+          </button>
+          <button
+            onClick={() => setShowSpent(!showSpent)}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${showSpent ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-400' : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700 text-zinc-400 dark:text-zinc-500'}`}
+          >
+            <span className={`w-2.5 h-2.5 rounded-full ${showSpent ? 'bg-amber-500' : 'bg-zinc-300 dark:bg-zinc-600'}`} />
+            Credits Spent
+          </button>
+          <button
+            onClick={() => setShowAdViews(!showAdViews)}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${showAdViews ? 'bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30 text-blue-700 dark:text-blue-400' : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700 text-zinc-400 dark:text-zinc-500'}`}
+          >
+            <span className={`w-2.5 h-2.5 rounded-full ${showAdViews ? 'bg-blue-500' : 'bg-zinc-300 dark:bg-zinc-600'}`} />
+            Ad Views
+          </button>
+          <button
+            onClick={() => setShowAdClicks(!showAdClicks)}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${showAdClicks ? 'bg-violet-50 dark:bg-violet-500/10 border-violet-200 dark:border-violet-500/30 text-violet-700 dark:text-violet-400' : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700 text-zinc-400 dark:text-zinc-500'}`}
+          >
+            <span className={`w-2.5 h-2.5 rounded-full ${showAdClicks ? 'bg-violet-500' : 'bg-zinc-300 dark:bg-zinc-600'}`} />
+            Ad Clicks
+          </button>
+          <button
+            onClick={() => setShowCampaignViews(!showCampaignViews)}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${showCampaignViews ? 'bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-400' : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700 text-zinc-400 dark:text-zinc-500'}`}
+          >
+            <span className={`w-2.5 h-2.5 rounded-full ${showCampaignViews ? 'bg-rose-500' : 'bg-zinc-300 dark:bg-zinc-600'}`} />
+            Campaign Views
+          </button>
+          <button
+            onClick={() => setShowCampaignClicks(!showCampaignClicks)}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${showCampaignClicks ? 'bg-pink-50 dark:bg-pink-500/10 border-pink-200 dark:border-pink-500/30 text-pink-700 dark:text-pink-400' : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700 text-zinc-400 dark:text-zinc-500'}`}
+          >
+            <span className={`w-2.5 h-2.5 rounded-full ${showCampaignClicks ? 'bg-pink-500' : 'bg-zinc-300 dark:bg-zinc-600'}`} />
+            Campaign Clicks
+          </button>
+        </div>
+
+        <div className="h-[300px] w-full">
+          {chartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorEarned" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorSpent" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorAdViews" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorAdClicks" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorCampaignViews" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorCampaignClicks" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ec4899" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#ec4899" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-zinc-200 dark:text-white/10" />
+                <XAxis 
+                  dataKey="date" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 12, fill: 'currentColor' }} 
+                  dy={10}
+                  className="text-zinc-500 dark:text-zinc-400"
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 12, fill: 'currentColor' }} 
+                  dx={-10}
+                  className="text-zinc-500 dark:text-zinc-400"
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'rgba(24, 24, 27, 0.9)', 
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '12px',
+                    color: '#fff',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                  }}
+                  itemStyle={{ fontSize: '14px', fontWeight: 500 }}
+                />
+                {showEarned && (
+                  <Area 
+                    type="monotone" 
+                    dataKey="earned" 
+                    name="Credits Earned" 
+                    stroke="#10b981" 
+                    strokeWidth={2}
+                    fillOpacity={1} 
+                    fill="url(#colorEarned)" 
+                  />
+                )}
+                {showSpent && (
+                  <Area 
+                    type="monotone" 
+                    dataKey="spent" 
+                    name="Credits Spent" 
+                    stroke="#f59e0b" 
+                    strokeWidth={2}
+                    fillOpacity={1} 
+                    fill="url(#colorSpent)" 
+                  />
+                )}
+                {showAdViews && (
+                  <Area 
+                    type="monotone" 
+                    dataKey="adViews" 
+                    name="Ad Views" 
+                    stroke="#3b82f6" 
+                    strokeWidth={2}
+                    fillOpacity={1} 
+                    fill="url(#colorAdViews)" 
+                  />
+                )}
+                {showAdClicks && (
+                  <Area 
+                    type="monotone" 
+                    dataKey="adClicks" 
+                    name="Ad Clicks" 
+                    stroke="#8b5cf6" 
+                    strokeWidth={2}
+                    fillOpacity={1} 
+                    fill="url(#colorAdClicks)" 
+                  />
+                )}
+                {showCampaignViews && (
+                  <Area 
+                    type="monotone" 
+                    dataKey="campaignViews" 
+                    name="Campaign Views" 
+                    stroke="#f43f5e" 
+                    strokeWidth={2}
+                    strokeDasharray="6 3"
+                    fillOpacity={1} 
+                    fill="url(#colorCampaignViews)" 
+                  />
+                )}
+                {showCampaignClicks && (
+                  <Area 
+                    type="monotone" 
+                    dataKey="campaignClicks" 
+                    name="Campaign Clicks" 
+                    stroke="#ec4899" 
+                    strokeWidth={2}
+                    strokeDasharray="6 3"
+                    fillOpacity={1} 
+                    fill="url(#colorCampaignClicks)" 
+                  />
+                )}
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center text-zinc-500 dark:text-zinc-400">
+              <Activity className="w-8 h-8 mb-2 opacity-50" />
+              <p>No activity data available for this time range.</p>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Credit System Explanation */}
-      <div className="mb-12 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-500/20 rounded-2xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 overflow-hidden relative shadow-sm">
+      <div className="mb-12 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-500/20 rounded-2xl p-4 sm:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 overflow-hidden relative shadow-sm">
         <div className="absolute -right-20 -top-20 w-64 h-64 bg-amber-500/10 blur-[80px] rounded-full pointer-events-none" />
         <div className="flex-grow z-10">
           <h3 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2 mb-2">
@@ -492,7 +920,7 @@ export default function DashboardPage() {
         <div className="mb-12 bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl shadow-sm overflow-hidden">
           <button
             onClick={() => setShowEarnings(!showEarnings)}
-            className="w-full flex items-center justify-between p-6 hover:bg-zinc-50 dark:hover:bg-white/[0.02] transition-colors"
+            className="w-full flex items-center justify-between p-4 sm:p-6 hover:bg-zinc-50 dark:hover:bg-white/[0.02] transition-colors"
           >
             <div className="flex items-center gap-4">
               <div className="p-3 bg-green-100 dark:bg-green-500/10 rounded-xl border border-green-200 dark:border-green-500/20 text-green-600 dark:text-green-400">
@@ -821,21 +1249,229 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-          <McpServerConfig initialAppId={userData?.appIds?.[0] || userData?.appId} />
+          <McpServerConfig />
         </div>
 
+      {/* CMS & Website Builder Quick Access Banner */}
+      <div className="mb-12 bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-5">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-zinc-100 dark:bg-white/5 rounded-xl border border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-white">
+              <Globe className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">CMS &amp; Website Builders</h3>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                Add ads to WordPress, Wix, Weebly, Squarespace, or Webflow — no coding or build tools required.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              setSelectedPlatformModal('wordpress');
+              setIsPlatformModalOpen(true);
+            }}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-black px-5 py-2.5 rounded-xl font-medium transition-colors shadow-sm whitespace-nowrap"
+          >
+            <Globe className="w-4 h-4" />
+            Interactive Guide
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { id: 'wordpress' as Platform, name: 'WordPress', cls: 'bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20' },
+            { id: 'wix' as Platform, name: 'Wix', cls: 'bg-zinc-100 dark:bg-white/5 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-white/10' },
+            { id: 'weebly' as Platform, name: 'Weebly', cls: 'bg-indigo-100 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20' },
+            { id: 'squarespace' as Platform, name: 'Squarespace', cls: 'bg-zinc-800 text-white border border-zinc-700' },
+            { id: 'webflow' as Platform, name: 'Webflow', cls: 'bg-sky-100 dark:bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-500/20' },
+          ].map(p => (
+            <button
+              key={p.id}
+              onClick={() => {
+                setSelectedPlatformModal(p.id);
+                setIsPlatformModalOpen(true);
+              }}
+              className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-opacity hover:opacity-70 ${p.cls}`}
+            >
+              {p.name}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {showDocs && (
-        <div className="mb-12 bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-8 shadow-sm">
-          <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-4">Integration Instructions</h2>
-          <p className="text-zinc-500 dark:text-zinc-400 mb-6">Choose your platform to integrate the AdTogether SDK and start earning credits instantly.</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-zinc-50 dark:bg-black/50 p-6 rounded-xl border border-zinc-200 dark:border-white/5 flex flex-col">
-              <h3 className="text-lg font-semibold text-amber-600 dark:text-amber-400 mb-3 flex-none">React / Next.js</h3>
-              <CodeBlock 
-                language="tsx"
-                title="React / Next.js"
-                code={`"use client";
+        <div className="mb-12 bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-2xl p-8 shadow-sm space-y-10">
+          <div>
+            <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Integration Instructions</h2>
+            <p className="text-zinc-500 dark:text-zinc-400">Choose your platform or CMS to integrate AdTogether and start earning credits instantly.</p>
+          </div>
+
+          {/* Dedicated CMS & Website Builders Instruction Section */}
+          <div className="bg-gradient-to-br from-amber-500/5 via-zinc-50 to-zinc-100/50 dark:from-amber-500/10 dark:via-zinc-900/40 dark:to-black border border-amber-500/20 dark:border-amber-500/30 rounded-2xl p-6 sm:p-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-xl">
+                  <Globe className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                    CMS &amp; Website Builders
+                    <span className="text-xs bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 font-semibold px-2.5 py-0.5 rounded-full border border-amber-300 dark:border-amber-500/30">
+                      No Code Required
+                    </span>
+                  </h3>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                    Embed ads into your site builder using simple copy-and-paste HTML blocks.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setSelectedPlatformModal(selectedCmsTab);
+                  setIsPlatformModalOpen(true);
+                }}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black text-sm font-semibold rounded-xl transition-colors shadow-sm self-start sm:self-auto"
+              >
+                <Globe className="w-4 h-4" />
+                Open Interactive Wizard
+              </button>
+            </div>
+
+            {/* CMS Platform Tabs */}
+            <div className="flex flex-wrap gap-2 mb-6 border-b border-zinc-200 dark:border-white/10 pb-4">
+              {[
+                { id: 'wordpress' as Platform, name: 'WordPress' },
+                { id: 'wix' as Platform, name: 'Wix' },
+                { id: 'weebly' as Platform, name: 'Weebly' },
+                { id: 'squarespace' as Platform, name: 'Squarespace' },
+                { id: 'webflow' as Platform, name: 'Webflow' },
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setSelectedCmsTab(tab.id)}
+                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                    selectedCmsTab === tab.id
+                      ? 'bg-zinc-900 text-white dark:bg-amber-500 dark:text-black shadow-sm'
+                      : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700'
+                  }`}
+                >
+                  {tab.name}
+                </button>
+              ))}
+            </div>
+
+            {/* Active CMS Instructions Content */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Left Column: Instructions & Steps */}
+              <div className="lg:col-span-6 space-y-4">
+                {selectedCmsTab === 'wordpress' && (
+                  <div className="space-y-3 text-sm text-zinc-600 dark:text-zinc-300">
+                    <h4 className="font-semibold text-base text-zinc-900 dark:text-white">WordPress Integration</h4>
+                    <ol className="list-decimal list-inside space-y-2 leading-relaxed">
+                      <li>Open any page or post in the <strong>Gutenberg Block Editor</strong>.</li>
+                      <li>Click <strong>+ (Add Block)</strong> and select the <strong>Custom HTML</strong> block.</li>
+                      <li>Paste the snippet from the right panel into the block.</li>
+                      <li>Click <strong>Preview in New Tab</strong> to verify the ad loads.</li>
+                    </ol>
+                    <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 rounded-xl text-xs text-blue-900 dark:text-blue-300">
+                      <strong>Site-Wide Header:</strong> Install the free <strong>WPCode</strong> plugin to insert the script tag once into Header &amp; Footer settings.
+                    </div>
+                  </div>
+                )}
+
+                {selectedCmsTab === 'wix' && (
+                  <div className="space-y-3 text-sm text-zinc-600 dark:text-zinc-300">
+                    <h4 className="font-semibold text-base text-zinc-900 dark:text-white">Wix Integration</h4>
+                    <ol className="list-decimal list-inside space-y-2 leading-relaxed">
+                      <li>In the Wix Editor, click <strong>+ (Add Elements)</strong> → <strong>Embed Code</strong> → <strong>Embed HTML</strong>.</li>
+                      <li>In the settings panel, select <strong>Code</strong> mode.</li>
+                      <li>Paste the snippet and click <strong>Update</strong>.</li>
+                      <li>Resize the container box to fit your desired banner dimensions (e.g. 320×50 or 728×90).</li>
+                    </ol>
+                    <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl text-xs text-amber-900 dark:text-amber-300">
+                      <strong>Wix Sandbox Note:</strong> On-page embeds render in a sandboxed iframe. For full-screen interstitials, inject script via <em>Settings → Custom Code</em> (Wix Premium).
+                    </div>
+                  </div>
+                )}
+
+                {selectedCmsTab === 'weebly' && (
+                  <div className="space-y-3 text-sm text-zinc-600 dark:text-zinc-300">
+                    <h4 className="font-semibold text-base text-zinc-900 dark:text-white">Weebly Integration</h4>
+                    <ol className="list-decimal list-inside space-y-2 leading-relaxed">
+                      <li>In your Weebly page editor, locate the <strong>Embed Code (&lt;/&gt;)</strong> element from the left toolbar.</li>
+                      <li>Drag and drop the element onto your page.</li>
+                      <li>Click inside the box and select <strong>Edit Custom HTML</strong>.</li>
+                      <li>Paste the snippet and click outside the box to save.</li>
+                      <li>Click <strong>Publish</strong> — Weebly executes ads on live published sites.</li>
+                    </ol>
+                    <div className="mt-3 p-3 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900/50 rounded-xl text-xs text-indigo-900 dark:text-indigo-300">
+                      <strong>Site-Wide SDK:</strong> Paste the &lt;script&gt; tag under <em>Settings → SEO → Header Code</em> to load the SDK across all pages.
+                    </div>
+                  </div>
+                )}
+
+                {selectedCmsTab === 'squarespace' && (
+                  <div className="space-y-3 text-sm text-zinc-600 dark:text-zinc-300">
+                    <h4 className="font-semibold text-base text-zinc-900 dark:text-white">Squarespace Integration</h4>
+                    <ol className="list-decimal list-inside space-y-2 leading-relaxed">
+                      <li>Edit your Squarespace page and click <strong>+ Add Block</strong> → choose <strong>Code</strong>.</li>
+                      <li>Set the mode dropdown to <strong>HTML</strong>.</li>
+                      <li>Ensure <strong>Display Source</strong> is <strong>unchecked / disabled</strong>.</li>
+                      <li>Paste the snippet and click <strong>Save</strong>.</li>
+                    </ol>
+                    <div className="mt-3 p-3 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-800 dark:text-zinc-300">
+                      <strong>Editor Preview Disabled:</strong> Squarespace suppresses custom scripts while logged in as admin. Preview in an <em>Incognito Window</em> or on your live site.
+                    </div>
+                  </div>
+                )}
+
+                {selectedCmsTab === 'webflow' && (
+                  <div className="space-y-3 text-sm text-zinc-600 dark:text-zinc-300">
+                    <h4 className="font-semibold text-base text-zinc-900 dark:text-white">Webflow Integration</h4>
+                    <ol className="list-decimal list-inside space-y-2 leading-relaxed">
+                      <li>Open the Add panel (<strong>+</strong>) and drag an <strong>Embed</strong> component onto your canvas.</li>
+                      <li>In the HTML Embed Code Editor, paste the snippet from the right panel.</li>
+                      <li>Click <strong>Save &amp; Close</strong>.</li>
+                      <li>Publish your project to your <code>*.webflow.io</code> staging domain to test.</li>
+                    </ol>
+                    <div className="mt-3 p-3 bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900/50 rounded-xl text-xs text-sky-900 dark:text-sky-300">
+                      <strong>Site-Wide Head Code:</strong> Paste the &lt;script&gt; tag once in <em>Project Settings → Custom Code → Head Code</em>.
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Right Column: Code Snippet */}
+              <div className="lg:col-span-6 flex flex-col justify-center">
+                <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
+                  Copy Snippet for {selectedCmsTab.toUpperCase()}
+                </div>
+                <CodeBlock
+                  language="html"
+                  title={`${selectedCmsTab.charAt(0).toUpperCase() + selectedCmsTab.slice(1)} Embed`}
+                  code={`<!-- Load AdTogether SDK (add once in <head> or on page) -->
+<script src="https://www.ad-together.org/sdk.js" data-app-id="${userData?.appIds?.[0] || userData?.appId || 'YOUR_APP_ID'}" defer></script>
+
+<!-- Ad Banner Container -->
+<div 
+  data-ad-unit="home_banner" 
+  style="width: 100%; min-height: 50px;"
+></div>`}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Native SDKs & Frameworks */}
+          <div>
+            <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-4">Native SDKs &amp; Mobile Frameworks</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="bg-zinc-50 dark:bg-black/50 p-6 rounded-xl border border-zinc-200 dark:border-white/5 flex flex-col">
+                <h4 className="text-base font-semibold text-amber-600 dark:text-amber-400 mb-3 flex-none">React / Next.js</h4>
+                <CodeBlock 
+                  language="tsx"
+                  title="React / Next.js"
+                  code={`"use client";
 import { useState } from 'react';
 import { AdTogether } from '@adtogether/web-sdk';
 import { AdTogetherBanner, AdTogetherInterstitial } from '@adtogether/web-sdk/react';
@@ -863,14 +1499,14 @@ const [showAd, setShowAd] = useState(false);
   onAdLoaded={() => console.log('Ad loaded!')}
   onAdFailedToLoad={(e) => console.error(e)}
 />`} 
-              />
-            </div>
-            <div className="bg-zinc-50 dark:bg-black/50 p-6 rounded-xl border border-zinc-200 dark:border-white/5 flex flex-col">
-              <h3 className="text-lg font-semibold text-amber-600 dark:text-amber-400 mb-3 flex-none">Flutter</h3>
-              <CodeBlock
-                language="dart"
-                title="Flutter"
-                code={`import 'package:adtogether_sdk/adtogether_sdk.dart';
+                />
+              </div>
+              <div className="bg-zinc-50 dark:bg-black/50 p-6 rounded-xl border border-zinc-200 dark:border-white/5 flex flex-col">
+                <h4 className="text-base font-semibold text-amber-600 dark:text-amber-400 mb-3 flex-none">Flutter</h4>
+                <CodeBlock
+                  language="dart"
+                  title="Flutter"
+                  code={`import 'package:adtogether_sdk/adtogether_sdk.dart';
 
 // Initialize
 await AdTogether.initialize(appId: '${userData?.appIds?.[0] || userData?.appId || 'YOUR_APP_ID'}');
@@ -894,14 +1530,14 @@ AdTogetherInterstitial.show(
   onAdFailedToLoad: (error) => print('Error: \$error'),
   onAdClosed: () => print('User closed'),
 );`}
-              />
-            </div>
-            <div className="bg-zinc-50 dark:bg-black/50 p-6 rounded-xl border border-zinc-200 dark:border-white/5 flex flex-col">
-              <h3 className="text-lg font-semibold text-amber-600 dark:text-amber-400 mb-3 flex-none">React Native</h3>
-              <CodeBlock
-                language="tsx"
-                title="React Native"
-                code={`import { AdTogether, AdTogetherBanner, AdTogetherInterstitial } from '@adtogether/react-native-sdk';
+                />
+              </div>
+              <div className="bg-zinc-50 dark:bg-black/50 p-6 rounded-xl border border-zinc-200 dark:border-white/5 flex flex-col">
+                <h4 className="text-base font-semibold text-amber-600 dark:text-amber-400 mb-3 flex-none">React Native</h4>
+                <CodeBlock
+                  language="tsx"
+                  title="React Native"
+                  code={`import { AdTogether, AdTogetherBanner, AdTogetherInterstitial } from '@adtogether/react-native-sdk';
 
 // Initialize
 AdTogether.initialize({ appId: '${userData?.appIds?.[0] || userData?.appId || 'YOUR_APP_ID'}' });
@@ -925,14 +1561,14 @@ const [showAd, setShowAd] = useState(false);
   onAdLoaded={() => console.log('Ad loaded!')}
   onAdFailedToLoad={(e) => console.error(e)}
 />`}
-              />
-            </div>
-            <div className="bg-zinc-50 dark:bg-black/50 p-6 rounded-xl border border-zinc-200 dark:border-white/5 flex flex-col">
-              <h3 className="text-lg font-semibold text-amber-600 dark:text-amber-400 mb-3 flex-none">iOS (SwiftUI)</h3>
-              <CodeBlock
-                language="swift"
-                title="iOS (SwiftUI)"
-                code={`import AdTogether
+                />
+              </div>
+              <div className="bg-zinc-50 dark:bg-black/50 p-6 rounded-xl border border-zinc-200 dark:border-white/5 flex flex-col">
+                <h4 className="text-base font-semibold text-amber-600 dark:text-amber-400 mb-3 flex-none">iOS (SwiftUI)</h4>
+                <CodeBlock
+                  language="swift"
+                  title="iOS (SwiftUI)"
+                  code={`import AdTogether
 
 // Initialize
 AdTogether.initialize(appId: "${userData?.appIds?.[0] || userData?.appId || 'YOUR_APP_ID'}")
@@ -959,14 +1595,14 @@ Button("Show Interstitial") {
         onAdFailedToLoad: { error in print("Error: \(error)") }
     ) { showAd = false }
 }`}
-              />
-            </div>
-            <div className="bg-zinc-50 dark:bg-black/50 p-6 rounded-xl border border-zinc-200 dark:border-white/5 flex flex-col">
-              <h3 className="text-lg font-semibold text-amber-600 dark:text-amber-400 mb-3 flex-none">Android (Compose)</h3>
-              <CodeBlock
-                language="kotlin"
-                title="Android (Compose)"
-                code={`import com.adtogether.sdk.AdTogether
+                />
+              </div>
+              <div className="bg-zinc-50 dark:bg-black/50 p-6 rounded-xl border border-zinc-200 dark:border-white/5 flex flex-col md:col-span-2">
+                <h4 className="text-base font-semibold text-amber-600 dark:text-amber-400 mb-3 flex-none">Android (Compose)</h4>
+                <CodeBlock
+                  language="kotlin"
+                  title="Android (Compose)"
+                  code={`import com.adtogether.sdk.AdTogether
 import com.adtogether.sdk.views.AdTogetherView
 import com.adtogether.sdk.views.AdTogetherInterstitial
 
@@ -991,41 +1627,66 @@ if (showAd) {
         onDismiss = { showAd = false }
     )
 }`}
-              />
+                />
+              </div>
             </div>
-            <div className="bg-zinc-50 dark:bg-black/50 p-6 rounded-xl border border-zinc-200 dark:border-white/5 flex flex-col">
-              <h3 className="text-lg font-semibold text-amber-600 dark:text-amber-400 mb-3 flex-none">HTML / Script Tag</h3>
-              <CodeBlock
-                language="html"
-                title="CDN / Script Tag"
-                code={`<!-- Add to <head> -->
-<script src="https://www.ad-together.org/sdk.js" defer></script>
+          </div>
+
+          {/* HTML CDN & REST API Section */}
+          <div>
+            <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-4">Vanilla HTML &amp; REST API</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="bg-zinc-50 dark:bg-black/50 p-6 rounded-xl border border-zinc-200 dark:border-white/5 flex flex-col">
+                <div className="flex justify-between items-start mb-3 flex-none">
+                  <h4 className="text-base font-semibold text-amber-600 dark:text-amber-400">CDN / Script Tag</h4>
+                  <button
+                    onClick={() => {
+                      setSelectedPlatformModal('wordpress');
+                      setIsPlatformModalOpen(true);
+                    }}
+                    className="text-xs font-semibold px-3 py-1.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
+                  >
+                    Website Builder Guides
+                  </button>
+                </div>
+                <CodeBlock
+                  language="html"
+                  title="CDN / Script Tag"
+                  code={`<!-- Add to <head> -->
+<script src="https://www.ad-together.org/sdk.js" data-app-id="${userData?.appIds?.[0] || userData?.appId || 'YOUR_APP_ID'}" defer></script>
 
 <!-- Place where you want the ad -->
 <div 
   data-ad-unit="home_banner" 
   style="width: 100%; max-width: 320px; min-height: 50px;"
 ></div>`}
-              />
-            </div>
-            <div className="bg-zinc-50 dark:bg-black/50 p-6 rounded-xl border border-zinc-200 dark:border-white/5 flex flex-col md:col-span-2">
-              <h3 className="text-lg font-semibold text-amber-600 dark:text-amber-400 mb-3 flex-none">REST API (Custom Integration)</h3>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <CodeBlock
-                  language="bash"
-                  title="1. Fetch Ad (GET)"
-                  code={`curl -X GET "https://www.ad-together.org/api/ads/serve?country=global&adUnitId=YOUR_AD_UNIT_ID&adType=banner&appId=${userData?.appIds?.[0] || userData?.appId || 'YOUR_APP_ID'}&bundleId=com.example.myapp"`}
                 />
-                <CodeBlock
-                  language="bash"
-                  title="2. Track Impression (POST)"
-                  code={`curl -X POST "https://www.ad-together.org/api/ads/impression" \\
+              </div>
+              <div className="bg-zinc-50 dark:bg-black/50 p-6 rounded-xl border border-zinc-200 dark:border-white/5 flex flex-col">
+                <h4 className="text-base font-semibold text-amber-600 dark:text-amber-400 mb-3 flex-none">REST API (Custom Integration)</h4>
+                <div className="space-y-4">
+                  <CodeBlock
+                    language="bash"
+                    title="1. Fetch Ad (GET)"
+                    code={`curl -X GET "https://www.ad-together.org/api/ads/serve?adUnitId=YOUR_AD_UNIT_ID&adType=banner&appId=${userData?.appIds?.[0] || userData?.appId || 'YOUR_APP_ID'}&bundleId=com.example.myapp"`}
+                  />
+                  <CodeBlock
+                    language="bash"
+                    title="2. Track Qualified View (POST)"
+                    code={`# Send only after an observer measures at least 50% visibility continuously for 1 second.
+# Replace both placeholders with the numeric values measured for this view; do not hard-code them.
+curl -X POST "https://www.ad-together.org/api/ads/impression" \\
   -H "Content-Type: application/json" \\
-  -d '{"adId": "AD_ID", "token": "HMAC_TOKEN", "appId": "${userData?.appIds?.[0] || userData?.appId || 'YOUR_APP_ID'}", "bundleId": "com.example.myapp", "platform": "android"}'`}
-                />
+  -d '{"adId": "AD_ID", "token": "TOKEN_FROM_SERVE_RESPONSE", "appId": "${userData?.appIds?.[0] || userData?.appId || 'YOUR_APP_ID'}", "bundleId": "com.example.myapp", "platform": "web", "visiblePercent": MEASURED_VISIBLE_PERCENT, "visibleDurationMs": MEASURED_CONTINUOUS_VISIBLE_MS}'`}
+                  />
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    Save the signed token from the matching serve response. Custom web and non-attested native integrations must send measured viewability only after the ad has been at least 50% visible continuously for one second. Use an SDK for native App Attest or Play Integrity enforcement.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
+
         </div>
       )}
 
@@ -1257,11 +1918,17 @@ if (showAd) {
                           if (!val) return null;
                           let dateToParse = val;
                           let region = null;
+                          let pagePath = null;
+                          let visiblePercent = null;
+                          let visibleDurationMs = null;
                           
                           // Handle new object format
                           if (val && typeof val === 'object' && val.time) {
                             dateToParse = val.time;
                             region = val.region;
+                            pagePath = typeof val.pagePath === 'string' ? val.pagePath : null;
+                            visiblePercent = typeof val.visiblePercent === 'number' ? val.visiblePercent : null;
+                            visibleDurationMs = typeof val.visibleDurationMs === 'number' ? val.visibleDurationMs : null;
                           }
                           
                           let timeStr = null;
@@ -1272,7 +1939,7 @@ if (showAd) {
                             timeStr = isNaN(d.getTime()) ? null : d.toLocaleString();
                           }
                           
-                          return timeStr ? { timeStr, region } : null;
+                          return timeStr ? { timeStr, region, pagePath, visiblePercent, visibleDurationMs } : null;
                         };
                         
                         const sourceVal = source.replace(/\./g, '_');
@@ -1368,12 +2035,25 @@ if (showAd) {
                                 <div className="col-span-2 grid grid-cols-2 gap-4 mt-1 border-t border-zinc-100 dark:border-white/5 pt-3">
                                   <div>
                                     <div className="text-[10px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2 font-semibold">Recent Views</div>
+                                    <div className="text-[9px] text-zinc-500 dark:text-zinc-500 mb-1">New web views include page and viewability details; older views do not.</div>
                                     <div className="max-h-32 overflow-y-auto space-y-1 pr-2 custom-scrollbar">
                                       {recentViews.length > 0 ? recentViews.map((v, i) => (
-                                        <div key={i} className="flex justify-between items-center text-[11px] text-zinc-700 dark:text-zinc-300 bg-black/5 dark:bg-white/5 px-2 py-1 rounded truncate">
-                                          <span>{v?.timeStr}</span>
-                                          {v?.region && v?.region !== 'Unknown' && (
-                                            <span className="ml-2 bg-black/10 dark:bg-white/10 px-1.5 py-0.5 rounded font-bold tracking-wider">{v?.region}</span>
+                                        <div key={i} className="text-[11px] text-zinc-700 dark:text-zinc-300 bg-black/5 dark:bg-white/5 px-2 py-1 rounded">
+                                          <div className="flex justify-between items-center gap-2">
+                                            <span>{v?.timeStr}</span>
+                                            {v?.region && v?.region !== 'Unknown' && (
+                                              <span className="shrink-0 bg-black/10 dark:bg-white/10 px-1.5 py-0.5 rounded font-bold tracking-wider">{v?.region}</span>
+                                            )}
+                                          </div>
+                                          {v?.pagePath && (
+                                            <div className="mt-1 font-mono text-[10px] text-zinc-500 dark:text-zinc-400 break-all" title={v.pagePath}>
+                                              {v.pagePath}
+                                            </div>
+                                          )}
+                                          {v?.visiblePercent != null && v?.visibleDurationMs != null && (
+                                            <div className="mt-1 text-[10px] text-zinc-500 dark:text-zinc-400">
+                                              Visible {v.visiblePercent}% for {(v.visibleDurationMs / 1000).toFixed(1)}s
+                                            </div>
                                           )}
                                         </div>
                                       )) : (
@@ -1666,6 +2346,18 @@ if (showAd) {
           </div>
         </div>
       )}
+
+      <PlatformGuideModal
+        isOpen={isPlatformModalOpen}
+        onClose={() => setIsPlatformModalOpen(false)}
+        appId={userData?.appIds?.[0] || userData?.appId}
+        initialPlatform={selectedPlatformModal}
+        adUnits={[
+          { id: 'home_banner', name: 'Homepage Banner' },
+          { id: 'sidebar', name: 'Sidebar Ad' },
+          { id: 'interstitial', name: 'Interstitial Popup' }
+        ]}
+      />
 
     </div>
   );

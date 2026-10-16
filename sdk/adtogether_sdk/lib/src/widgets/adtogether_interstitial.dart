@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -62,17 +64,20 @@ class _InterstitialDialog extends StatefulWidget {
 }
 
 class _InterstitialDialogState extends State<_InterstitialDialog>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   AdModel? _adData;
   bool _isLoading = true;
   bool _hasError = false;
   bool _impressionTracked = false;
   bool _canClose = false;
   int _countdown = 0;
+  Timer? _viewabilityTimer;
+  bool _isAppActive = true;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _countdown = widget.closeDelay.inSeconds;
     _fetchAd();
   }
@@ -90,7 +95,7 @@ class _InterstitialDialogState extends State<_InterstitialDialog>
         });
         widget.onAdLoaded?.call();
         _startCloseTimer();
-        _trackImpression();
+        _scheduleImpression();
       }
     } catch (e) {
       if (mounted) {
@@ -120,11 +125,38 @@ class _InterstitialDialogState extends State<_InterstitialDialog>
     });
   }
 
-  void _trackImpression() {
-    if (_adData != null && !_impressionTracked) {
+  void _scheduleImpression() {
+    if (!_isAppActive || _adData == null || _impressionTracked) return;
+    _viewabilityTimer?.cancel();
+    _viewabilityTimer = Timer(const Duration(seconds: 1), () {
+      if (!mounted || !_isAppActive || _adData == null || _impressionTracked) {
+        return;
+      }
       _impressionTracked = true;
-      AdTogether.trackImpression(_adData!.id, token: _adData!.token);
+      AdTogether.trackImpression(
+        _adData!.id,
+        token: _adData!.token,
+        visiblePercent: 100,
+        visibleDurationMs: 1000,
+      );
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _isAppActive = state == AppLifecycleState.resumed;
+    if (!_isAppActive) {
+      _viewabilityTimer?.cancel();
+    } else {
+      _scheduleImpression();
     }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _viewabilityTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _onAdClicked() async {

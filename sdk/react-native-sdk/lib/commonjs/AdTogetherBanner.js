@@ -24,6 +24,18 @@ const AdTogetherBanner = ({
   const [isVisible, setIsVisible] = (0, _react.useState)(true);
   const systemColorScheme = (0, _reactNative.useColorScheme)();
   const impressionTrackedRef = (0, _react.useRef)(false);
+  const containerRef = (0, _react.useRef)(null);
+  const appStateRef = (0, _react.useRef)(_reactNative.AppState.currentState);
+  const [appState, setAppState] = (0, _react.useState)(appStateRef.current);
+  (0, _react.useEffect)(() => {
+    const subscription = _reactNative.AppState.addEventListener('change', nextAppState => {
+      // Keep the timer guard current before React renders the state update
+      // and cleans up the interval.
+      appStateRef.current = nextAppState;
+      setAppState(nextAppState);
+    });
+    return () => subscription.remove();
+  }, []);
   (0, _react.useEffect)(() => {
     let isMounted = true;
     _AdTogether.AdTogether.fetchAd(adUnitId, 'banner').then(ad => {
@@ -45,13 +57,44 @@ const AdTogetherBanner = ({
     };
   }, [adUnitId, onAdLoaded, onAdFailedToLoad]);
 
-  // Track impression when ad is rendered
+  // Track an impression only after the banner stays at least half visible for one second.
   (0, _react.useEffect)(() => {
-    if (adData && !isLoading && !hasError && !impressionTrackedRef.current) {
-      impressionTrackedRef.current = true;
-      _AdTogether.AdTogether.trackImpression(adData.id, adData.token);
+    if (!adData || isLoading || hasError || !isVisible || appState !== 'active' || impressionTrackedRef.current) {
+      return;
     }
-  }, [adData, isLoading, hasError]);
+    let cancelled = false;
+    let visibleSince = null;
+    const checkVisibility = () => {
+      containerRef.current?.measureInWindow((x, y, width, height) => {
+        if (cancelled || appStateRef.current !== 'active' || impressionTrackedRef.current) return;
+        const window = _reactNative.Dimensions.get('window');
+        const totalArea = width * height;
+        const visibleWidth = Math.max(0, Math.min(x + width, window.width) - Math.max(x, 0));
+        const visibleHeight = Math.max(0, Math.min(y + height, window.height) - Math.max(y, 0));
+        const visiblePercent = totalArea > 0 ? Math.round(visibleWidth * visibleHeight / totalArea * 100) : 0;
+        if (visiblePercent < 50) {
+          visibleSince = null;
+          return;
+        }
+        const now = Date.now();
+        visibleSince ??= now;
+        const visibleDurationMs = now - visibleSince;
+        if (visibleDurationMs >= 1000) {
+          impressionTrackedRef.current = true;
+          _AdTogether.AdTogether.trackImpression(adData.id, adData.token, {
+            visiblePercent,
+            visibleDurationMs
+          });
+        }
+      });
+    };
+    checkVisibility();
+    const interval = setInterval(checkVisibility, 100);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [adData, appState, hasError, isLoading, isVisible]);
   const handlePress = () => {
     if (!adData) return;
     _AdTogether.AdTogether.trackClick(adData.id, adData.token);
@@ -79,57 +122,61 @@ const AdTogetherBanner = ({
   const borderColor = isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
   const textColor = isDarkMode ? '#F9FAFB' : '#111827';
   const descColor = isDarkMode ? '#9CA3AF' : '#6B7280';
-  return /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.TouchableOpacity, {
-    activeOpacity: 0.8,
-    onPress: handlePress,
-    style: [styles.container, {
-      backgroundColor: bgColor,
-      borderColor
-    }, style],
-    children: [adData.imageUrl ? /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
-      style: styles.imageContainer,
-      children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Image, {
-        source: {
-          uri: adData.imageUrl
-        },
-        style: styles.image,
-        resizeMode: "cover"
-      })
-    }) : null, /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
-      style: styles.textContainer,
-      children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
-        style: styles.headerRow,
-        children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
-          style: [styles.title, {
-            color: textColor
+  return /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
+    ref: containerRef,
+    collapsable: false,
+    children: /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.TouchableOpacity, {
+      activeOpacity: 0.8,
+      onPress: handlePress,
+      style: [styles.container, {
+        backgroundColor: bgColor,
+        borderColor
+      }, style],
+      children: [adData.imageUrl ? /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
+        style: styles.imageContainer,
+        children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Image, {
+          source: {
+            uri: adData.imageUrl
+          },
+          style: styles.image,
+          resizeMode: "cover"
+        })
+      }) : null, /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+        style: styles.textContainer,
+        children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+          style: styles.headerRow,
+          children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+            style: [styles.title, {
+              color: textColor
+            }],
+            numberOfLines: 1,
+            children: adData.title
+          }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
+            style: styles.adBadge,
+            children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+              style: styles.adBadgeText,
+              children: "AD"
+            })
+          })]
+        }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+          style: [styles.description, {
+            color: descColor
           }],
-          numberOfLines: 1,
-          children: adData.title
-        }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
-          style: styles.adBadge,
-          children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
-            style: styles.adBadgeText,
-            children: "AD"
-          })
+          numberOfLines: 2,
+          children: adData.description
         })]
-      }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
-        style: [styles.description, {
-          color: descColor
-        }],
-        numberOfLines: 2,
-        children: adData.description
+      }), showCloseButton && /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Pressable, {
+        onPress: handleClose,
+        style: styles.closeButton,
+        hitSlop: 8,
+        accessibilityLabel: "Close ad",
+        accessibilityRole: "button",
+        children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+          style: styles.closeButtonText,
+          children: "\xD7"
+        })
       })]
-    }), showCloseButton && /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Pressable, {
-      onPress: handleClose,
-      style: styles.closeButton,
-      hitSlop: 8,
-      accessibilityLabel: "Close ad",
-      accessibilityRole: "button",
-      children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
-        style: styles.closeButtonText,
-        children: "\xD7"
-      })
-    })]
+    })
   });
 };
 exports.AdTogetherBanner = AdTogetherBanner;

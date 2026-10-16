@@ -8,4 +8,10 @@ public struct AdModel: Codable, Identifiable {
     public let imageUrl: String?
     public let token: String?
     public let adType: String?
+    public let nativeAttestation: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, description, clickUrl, imageUrl, token, adType
+        case nativeAttestation
+    }
 }

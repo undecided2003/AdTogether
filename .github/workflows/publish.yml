@@ -11,13 +11,57 @@ concurrency:
   group: publish-sdks-${{ github.ref }}
   cancel-in-progress: false
 
-# Needed by the iOS job to push the bare semver tag (SwiftPM cannot resolve `v0.5.4`).
+# Needed by the iOS job to push the bare semver tag (SwiftPM cannot resolve `v0.5.6`).
 permissions:
   contents: write
 
 jobs:
+  # Keep every registry artifact tied to the same immutable source tag. Without
+  # this gate, dispatching the workflow from a branch (or tagging an older
+  # commit) could publish the current package files under an unrelated tag.
+  validate-release:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.versions.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify release tag and SDK version parity
+        id: versions
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${GITHUB_REF_TYPE:-}" != "tag" ] || [[ ! "${GITHUB_REF_NAME:-}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Run this publishing workflow from a v<semver> tag (for example v0.5.6)."
+            exit 1
+          fi
+
+          VERSION="${GITHUB_REF_NAME#v}"
+          WEB_VERSION="$(node -p "require('./sdk/web-sdk/package.json').version")"
+          REACT_NATIVE_VERSION="$(node -p "require('./sdk/react-native-sdk/package.json').version")"
+          FLUTTER_VERSION="$(sed -n 's/^version: *//p' sdk/adtogether_sdk/pubspec.yaml | head -1 | tr -d '[:space:]')"
+          ANDROID_VERSION="$(sed -n 's/^version = "\(.*\)"/\1/p' sdk/android-sdk/build.gradle.kts | head -1)"
+          IOS_VERSION="$(sed -n 's/.*spec\.version *= *"\([^"]*\)".*/\1/p' sdk/ios-sdk/AdTogether.podspec | head -1)"
+
+          for ENTRY in \
+            "@adtogether/web-sdk:$WEB_VERSION" \
+            "@adtogether/react-native-sdk:$REACT_NATIVE_VERSION" \
+            "adtogether_sdk:$FLUTTER_VERSION" \
+            "adtogether-sdk:$ANDROID_VERSION" \
+            "AdTogether:$IOS_VERSION"; do
+            NAME="${ENTRY%%:*}"
+            PACKAGE_VERSION="${ENTRY#*:}"
+            if [ -z "$PACKAGE_VERSION" ] || [ "$PACKAGE_VERSION" != "$VERSION" ]; then
+              echo "::error::$NAME declares '$PACKAGE_VERSION', but the release tag is '$GITHUB_REF_NAME'."
+              exit 1
+            fi
+          done
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
   # --- Web SDK (npm) ---
   publish-web:
+    needs: validate-release
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -50,6 +94,7 @@ jobs:
 
   # --- React Native SDK (npm) ---
   publish-react-native:
+    needs: validate-release
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -82,6 +127,7 @@ jobs:
 
   # --- Android SDK (Maven Central) ---
   publish-android:
+    needs: validate-release
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -143,11 +189,13 @@ jobs:
           done
 
       - name: Wait for keyserver propagation
+        if: steps.release-state.outputs.already_published != 'true'
         run: |
           echo "Waiting 120 seconds for keyserver propagation..."
           sleep 120
 
       - name: Verify key is retrievable from keyservers
+        if: steps.release-state.outputs.already_published != 'true'
         run: |
           KEY_ID="${{ secrets.SIGNING_KEY_ID }}"
           KEY_FOUND=false
@@ -168,6 +216,7 @@ jobs:
           fi
 
       - name: Build, sign, and stage artifacts locally
+        if: steps.release-state.outputs.already_published != 'true'
         run: |
           gradle publishAllPublicationsToStagingLocalRepository --no-configuration-cache \
             --no-daemon --stacktrace
@@ -178,12 +227,16 @@ jobs:
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
 
       - name: Verify .asc signatures against artifacts
+        if: steps.release-state.outputs.already_published != 'true'
         run: |
+          set -euo pipefail
           echo "=== Verifying all .asc signatures in staging repo ==="
           STAGING_DIR="sdk/android-sdk/build/stagingLocalRepository"
           FAIL=false
-          
-          find "$STAGING_DIR" -name "*.asc" | while read ASC_FILE; do
+          SIGNATURE_COUNT=0
+
+          while IFS= read -r -d '' ASC_FILE; do
+            SIGNATURE_COUNT=$((SIGNATURE_COUNT + 1))
             ARTIFACT_FILE="${ASC_FILE%.asc}"
             if [ -f "$ARTIFACT_FILE" ]; then
               echo "→ Verifying: $(basename "$ARTIFACT_FILE")"
@@ -191,13 +244,19 @@ jobs:
                 echo "  ✅ Signature valid"
               else
                 echo "  ❌ SIGNATURE INVALID: $ASC_FILE"
-                echo "FAIL=true" >> $GITHUB_ENV
+                FAIL=true
               fi
             else
-              echo "  ⚠️ No matching artifact for $ASC_FILE"
+              echo "  ❌ No matching artifact for $ASC_FILE"
+              FAIL=true
             fi
-          done
-          
+          done < <(find "$STAGING_DIR" -type f -name "*.asc" -print0)
+
+          if [ "$SIGNATURE_COUNT" -eq 0 ]; then
+            echo "❌ FATAL: No staged signatures were found!"
+            exit 1
+          fi
+
           if [ "${FAIL}" = "true" ]; then
             echo "❌ FATAL: One or more signatures failed verification!"
             exit 1
@@ -208,6 +267,7 @@ jobs:
           find "$STAGING_DIR" -type f | sort
 
       - name: Publish to Maven Central
+        if: steps.release-state.outputs.already_published != 'true'
         run: |
           gradle publishAllPublicationsToMavenCentralRepository --no-configuration-cache \
             --no-daemon --stacktrace --info
@@ -242,6 +302,7 @@ jobs:
 
   # --- Flutter SDK (pub.dev) ---
   publish-flutter:
+    needs: validate-release
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # Primary auth: the PUB_DEV_CREDENTIALS secret (pub.dev OAuth2 credentials JSON),
@@ -315,6 +376,7 @@ jobs:
 
   # --- iOS SDK (SPM / CocoaPods) ---
   build-ios:
+    needs: validate-release
     runs-on: macos-latest
     timeout-minutes: 30
     steps:
@@ -327,28 +389,35 @@ jobs:
         run: swift build
         working-directory: sdk/ios-sdk
 
-      # Swift Package Manager only resolves *bare* semantic version tags, so `v0.5.4`
-      # (pushed by release.yml) is invisible to it — a `0.5.4` tag is required for the
-      # `.package(url: ".../AdTogether.git", from: "0.5.4")` instructions we publish.
+      # Swift Package Manager only resolves *bare* semantic version tags, so `v0.5.6`
+      # (pushed by release.yml) is invisible to it — a bare semver tag is required for the
+      # `.package(url: ".../AdTogether.git", from: "0.5.6")` instructions we publish.
       - name: Tag this repository with the bare semver version for SwiftPM
         run: |
           set -euo pipefail
           VERSION="$(sed -n 's/.*spec\.version *= *"\([^"]*\)".*/\1/p' sdk/ios-sdk/AdTogether.podspec | head -1)"
+          RELEASE_COMMIT="$(git rev-parse HEAD)"
           echo "Resolved iOS SDK version: $VERSION"
 
           if git ls-remote --tags origin "refs/tags/$VERSION" | grep -q "refs/tags/$VERSION"; then
-            echo "::notice::Tag $VERSION already exists in this repository — leaving it untouched."
+            git fetch --depth=1 origin "refs/tags/$VERSION"
+            EXISTING_COMMIT="$(git rev-list -n 1 FETCH_HEAD)"
+            if [ "$EXISTING_COMMIT" != "$RELEASE_COMMIT" ]; then
+              echo "::error::SwiftPM tag $VERSION already points to $EXISTING_COMMIT, not this release commit $RELEASE_COMMIT."
+              exit 1
+            fi
+            echo "::notice::Tag $VERSION already points to this release commit — nothing to do."
             exit 0
           fi
 
-          git push origin "${GITHUB_SHA}:refs/tags/$VERSION"
-          echo "✅ Tagged ${GITHUB_SHA:0:7} as $VERSION for Swift Package Manager"
+          git push origin "$RELEASE_COMMIT:refs/tags/$VERSION"
+          echo "✅ Tagged ${RELEASE_COMMIT:0:7} as $VERSION for Swift Package Manager"
 
-      # Swift Package Manager and the podspec both resolve this SDK from the standalone
-      # adtogether-ios-sdk repository by version tag, so the sources must be mirrored and
-      # tagged there — a build alone never reaches consumers.
+      # The root repository's bare tag serves Swift Package Manager. CocoaPods resolves
+      # the standalone adtogether-ios-sdk source repository, so mirror and tag it here
+      # before publishing the podspec.
       # Requires a `SDK_SYNC_TOKEN` secret (fine-grained PAT with contents:write on
-      # undecided2003/adtogether-ios-sdk). Without it the step skips with a warning.
+      # undecided2003/adtogether-ios-sdk). Without it the release fails.
       - name: Mirror sources and tag the release in adtogether-ios-sdk
         env:
           SDK_SYNC_TOKEN: ${{ secrets.SDK_SYNC_TOKEN }}
@@ -358,8 +427,8 @@ jobs:
           echo "Resolved iOS SDK version: $VERSION"
 
           if [ -z "${SDK_SYNC_TOKEN:-}" ]; then
-            echo "::warning::SDK_SYNC_TOKEN is not configured — skipping the push to adtogether-ios-sdk. SPM/CocoaPods consumers will not see $VERSION until this runs with a token that can write to that repository."
-            exit 0
+            echo "::error::SDK_SYNC_TOKEN is required to publish the iOS source mirror used by CocoaPods."
+            exit 1
           fi
 
           git config user.name "github-actions[bot]"
@@ -373,9 +442,36 @@ jobs:
           echo "✅ Pushed sdk/ios-sdk to adtogether-ios-sdk main"
 
           if git ls-remote --tags ios-sdk "refs/tags/$VERSION" | grep -q "refs/tags/$VERSION"; then
-            echo "::notice::Tag $VERSION already exists in adtogether-ios-sdk — leaving it untouched."
+            git fetch --depth=1 ios-sdk "refs/tags/$VERSION"
+            EXISTING_SPLIT="$(git rev-list -n 1 FETCH_HEAD)"
+            if [ "$EXISTING_SPLIT" != "$SPLIT" ]; then
+              echo "::error::iOS mirror tag $VERSION already points to $EXISTING_SPLIT, not this release subtree $SPLIT."
+              exit 1
+            fi
+            echo "::notice::Tag $VERSION already points to this release subtree — nothing to do."
           else
             git push ios-sdk "$SPLIT:refs/tags/$VERSION"
             echo "✅ Tagged adtogether-ios-sdk with $VERSION"
           fi
+
+      # A tagged source repository is not a CocoaPods release. Trunk validates
+      # the podspec and publishes it to the public Specs service for `pod
+      # 'AdTogether'` consumers. The token is a verified Trunk session token.
+      - name: Publish iOS SDK to CocoaPods Trunk
+        env:
+          COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
+        run: |
+          set -euo pipefail
+          VERSION="$(sed -n 's/.*spec\.version *= *"\([^"]*\)".*/\1/p' sdk/ios-sdk/AdTogether.podspec | head -1)"
+          if [ -z "${COCOAPODS_TRUNK_TOKEN:-}" ]; then
+            echo "::error::COCOAPODS_TRUNK_TOKEN is required to publish AdTogether $VERSION to CocoaPods."
+            exit 1
+          fi
+
+          if pod trunk info AdTogether 2>/dev/null | awk -v version="$VERSION" '$1 == "-" && $2 == version { found = 1 } END { exit !found }'; then
+            echo "::notice::AdTogether $VERSION is already published to CocoaPods — nothing to do."
+            exit 0
+          fi
+
+          pod trunk push sdk/ios-sdk/AdTogether.podspec
 

@@ -1,3 +1,14 @@
+## Unreleased
+
+## 0.5.6
+* **Security**: Build ad-serve URLs with Android's query builder, discard a response whose ad type differs from the requested type, and stop reporting client-derived country values.
+* **Viewability**: Built-in banner and interstitial composables report an impression only after one continuous visible second.
+
+## 0.5.5
+* **Security**: Added optional Google Play Integrity verification bound to each signed impression grant.
+* **Reliability**: Warm and reuse the Standard Integrity token provider for each Cloud project, with one safe provider refresh when Google reports it is invalid.
+* **Memory**: Expire native-attestation grant state after 15 minutes and cap the in-memory grant cache at 256 entries.
+
 ## 0.5.4
 * **Fix**: Ad images now render with `ContentScale.Fit` instead of `ContentScale.Crop`, so banner and interstitial creatives are no longer cropped and keep the aspect ratio they were designed with.
 * **Fix**: Ad images are letterboxed on a theme-aware background (`MaterialTheme.colorScheme.surfaceVariant`) instead of transparent space, so ads blend with the host app's light/dark theme.

@@ -58,12 +58,12 @@ AdTogether provides an official Model Context Protocol (MCP) server that gives y
       "mcp-remote@latest",
       "https://www.ad-together.org/api/mcp",
       "--header",
-      "Authorization: Bearer YOUR_APP_ID_HERE"
+      "Authorization: Bearer YOUR_FRESH_FIREBASE_ID_TOKEN"
     ]
   }
 }
 ```
-This ensures you have the exact API signatures and security invariants required to integrate AdTogether successfully without hallucinations.
+Use a fresh Firebase ID token from the signed-in account owner; App IDs cannot authenticate MCP requests. This ensures you have the exact API signatures and security invariants required to integrate AdTogether successfully without hallucinations.
 
 ---
 
@@ -74,12 +74,12 @@ This ensures you have the exact API signatures and security invariants required 
 1. Open your project in Xcode.
 2. Go to **File > Add Packages**.
 3. Enter the repository URL: `https://github.com/undecided2003/AdTogether.git`
-4. Select the `ios-sdk` target and complete the addition.
+4. Select the `AdTogether` library and complete the addition.
 
 ### CocoaPods
 
 ```ruby
-pod 'AdTogether', '~> 0.5.4'
+pod 'AdTogether', '~> 0.5.6'
 ```
 
 ### Initialize
@@ -152,6 +152,12 @@ struct ContentView: View {
 1. **Earn credits** — Every time your app displays an ad from the AdTogether network and the impression is verified, you earn ad credits.
 2. **Spend credits** — Your ad credits are automatically spent to show *your* campaigns inside other apps on the network, helping you increase conversions.
 3. **Fair weighting** — Different ad formats and geographies have different credit weights, ensuring a level playing field for apps of all sizes.
+
+### Apple App Attest
+
+The SDK automatically supplies Apple App Attest assertions when the server returns `nativeAttestation: "app-attest"`. This path runs only on **iOS devices**. It does not run on macOS or Mac Catalyst; configure those targets with a separate App ID that does not enforce App Attest.
+
+Enable the App Attest capability in Xcode and complete the per-App-ID server setup in the [native attestation guide](../../docs/NATIVE_APP_ATTESTATION.md). The SDK stores its attested key identifier in the Keychain. If the server reports an unrecognized key, the SDK discards that identifier so the next eligible impression registers a replacement key; out-of-order assertion counter arrivals retain the key so subsequent assertions can succeed. Temporary registration failures retain the generated key and retry its attestation instead of creating a new key for every impression.
 
 Create and manage your campaigns from the [AdTogether Dashboard](https://www.ad-together.org/dashboard).
 

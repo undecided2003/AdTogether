@@ -89,24 +89,15 @@ class AdTogether {
   /// The base API URL used for all ad-serving requests.
   static String get baseUrl => _baseUrl;
 
-  /// Detect the user's country code from the device locale.
-  /// Returns an ISO 3166-1 alpha-2 code like "US", "DE", "JP", or null.
-  /// Uses PlatformDispatcher which requires no permissions.
-  static String? get _countryCode {
-    try {
-      final locale = PlatformDispatcher.instance.locale;
-      final country = locale.countryCode;
-      if (country != null && country.length == 2) {
-        return country.toUpperCase();
-      }
-    } catch (_) {}
-    return null;
-  }
-
   static String? _lastAdId;
 
   /// Internal method to track an impression
-  static Future<void> trackImpression(String adId, {String? token}) async {
+  static Future<void> trackImpression(
+    String adId, {
+    String? token,
+    int? visiblePercent,
+    int? visibleDurationMs,
+  }) async {
     try {
       await AdHttpClient.instance.post(
         Uri.parse('$_baseUrl/api/ads/impression'),
@@ -120,7 +111,8 @@ class AdTogether {
           if (_appVersion != null) 'appVersion': _appVersion,
           'platform': _platformName,
           'environment': kReleaseMode ? 'production' : 'development',
-          if (_countryCode != null) 'country': _countryCode,
+          if (visiblePercent != null) 'visiblePercent': visiblePercent,
+          if (visibleDurationMs != null) 'visibleDurationMs': visibleDurationMs,
         }),
       );
     } catch (e) {
@@ -143,7 +135,6 @@ class AdTogether {
           if (_appVersion != null) 'appVersion': _appVersion,
           'platform': _platformName,
           'environment': kReleaseMode ? 'production' : 'development',
-          if (_countryCode != null) 'country': _countryCode,
         }),
       );
     } catch (e) {
@@ -158,24 +149,34 @@ class AdTogether {
     // Ensure SDK is initialized
     final currentAppId = appId;
 
-    String url =
-        '$_baseUrl/api/ads/serve?country=global&adUnitId=$adUnitId&appId=$currentAppId';
+    final queryParameters = <String, String>{
+      'adUnitId': adUnitId,
+      'appId': currentAppId,
+      'allowSelfAds': _allowSelfAds.toString(),
+      'platform': _platformName,
+    };
     if (adType != null) {
-      url += '&adType=$adType';
+      queryParameters['adType'] = adType;
     }
     if (_lastAdId != null) {
-      url += '&exclude=$_lastAdId';
+      queryParameters['exclude'] = _lastAdId!;
     }
     if (_bundleId != null) {
-      url += '&bundleId=$_bundleId';
+      queryParameters['bundleId'] = _bundleId!;
     }
-    url += '&allowSelfAds=$_allowSelfAds';
 
-    final response = await AdHttpClient.instance.get(Uri.parse(url));
+    final response = await AdHttpClient.instance.get(
+      _buildServeUri(queryParameters),
+    );
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = jsonDecode(response.body);
       final ad = AdModel.fromJson(data);
+      if (adType != null && ad.adType != adType) {
+        throw Exception(
+          'AdTogether Error: Received an ad with a different type than requested.',
+        );
+      }
       _lastAdId = ad.id;
       return ad;
     } else if (response.statusCode == 401 || response.statusCode == 403) {
@@ -186,5 +187,17 @@ class AdTogether {
         'AdTogether Error: Failed to fetch ad. Status code: ${response.statusCode}',
       );
     }
+  }
+
+  static Uri _buildServeUri(Map<String, String> queryParameters) {
+    final baseUri = Uri.parse(_baseUrl);
+    final basePath = baseUri.path.endsWith('/')
+        ? baseUri.path.substring(0, baseUri.path.length - 1)
+        : baseUri.path;
+    return baseUri.replace(
+      path: '$basePath/api/ads/serve',
+      queryParameters: queryParameters,
+      fragment: '',
+    );
   }
 }

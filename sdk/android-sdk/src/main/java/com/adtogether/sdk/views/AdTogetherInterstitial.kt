@@ -3,6 +3,7 @@ package com.adtogether.sdk.views
 import android.content.Intent
 import android.net.Uri
 import android.content.res.Configuration
+import android.view.ViewTreeObserver
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.heightIn
@@ -33,6 +34,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -47,6 +49,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -89,7 +92,21 @@ fun AdTogetherInterstitial(
     }
 
     val context = LocalContext.current
+    val rootView = LocalView.current
     val coroutineScope = rememberCoroutineScope()
+    var hasWindowFocus by remember(rootView) { mutableStateOf(rootView.hasWindowFocus()) }
+
+    DisposableEffect(rootView) {
+        val listener = ViewTreeObserver.OnWindowFocusChangeListener { hasFocus ->
+            hasWindowFocus = hasFocus
+        }
+        rootView.viewTreeObserver.addOnWindowFocusChangeListener(listener)
+        onDispose {
+            if (rootView.viewTreeObserver.isAlive) {
+                rootView.viewTreeObserver.removeOnWindowFocusChangeListener(listener)
+            }
+        }
+    }
 
     var adData by remember { mutableStateOf<AdModel?>(null) }
     var isLoading by remember { mutableStateOf(true) }
@@ -126,11 +143,13 @@ fun AdTogetherInterstitial(
         }
     }
 
-    // Track impression
-    LaunchedEffect(adData) {
+    // A dialog is full-screen; wait until it has remained on screen for one second.
+    LaunchedEffect(adData, hasWindowFocus) {
         if (adData != null && !impressionTracked) {
+            delay(1_000)
+            if (!hasWindowFocus || impressionTracked || adData == null) return@LaunchedEffect
             impressionTracked = true
-            AdTogether.trackImpression(adData!!.id, adData!!.token)
+            AdTogether.trackImpression(adData!!.id, adData!!.token, 100, 1_000)
         }
     }
 

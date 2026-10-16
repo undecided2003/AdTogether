@@ -1,22 +1,82 @@
 rules_version = '2';
 
 service cloud.firestore {
-
   match /databases/{database}/documents {
-
-    match /{collectionName}/{document=**}{
-
-      allow read: if collectionName != "config"
-
-      allow write: if true 
-
+    function signedIn() {
+      return request.auth != null;
     }
+
+    function emailVerified() {
+      return signedIn() && request.auth.token.email_verified == true;
+    }
+
+    function ownsUser(userId) {
+      return emailVerified() && request.auth.uid == userId;
+    }
+
+    match /users/{userId} {
+      allow get: if ownsUser(userId);
+      allow list, delete: if false;
+      allow create: if ownsUser(userId) &&
+        request.resource.data.keys().hasOnly([
+          'uid', 'email', 'credits', 'country', 'appIds', 'appIdLabels',
+          'creditNotificationStage', 'createdAt'
+        ]) &&
+        request.resource.data.uid == userId &&
+        request.resource.data.email == request.auth.token.email &&
+        request.resource.data.credits == 75 &&
+        request.resource.data.country == 'Unknown' &&
+        request.resource.data.appIds is list &&
+        request.resource.data.appIds.size() == 0 &&
+        request.resource.data.appIdLabels is map &&
+        request.resource.data.appIdLabels.keys().size() == 0 &&
+        request.resource.data.creditNotificationStage == 'none' &&
+        request.resource.data.createdAt is string;
+      allow update: if ownsUser(userId) &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['country', 'blockedAdsByAppId']);
+    }
+
+    match /ads/{adId} {
+      allow get: if signedIn() && resource.data.ownerUid == request.auth.uid;
+      allow list: if signedIn() && resource.data.ownerUid == request.auth.uid;
+      // Campaign mutations are screened and authorized by /api/campaigns.
+      // Admin SDK writes used by that route and impression accounting bypass
+      // Firestore Rules, while browser SDK writes must never bypass screening.
+      allow create, update, delete: if false;
+    }
+
+    // These are server-owned credit, replay, and attestation records.
     match /config/{document=**} {
-
-      allow read: if request.auth != null;
-
+      allow read, write: if false;
+    }
+    match /impressionGrants/{document=**} {
+      allow read, write: if false;
+    }
+    match /appAttestChallenges/{document=**} {
+      allow read, write: if false;
+    }
+    match /appAttestKeys/{document=**} {
+      allow read, write: if false;
+    }
+    match /nativeAttestationApps/{document=**} {
+      allow read, write: if false;
+    }
+    match /attestationRateLimits/{document=**} {
+      allow read, write: if false;
+    }
+    match /apiRateLimits/{document=**} {
+      allow read, write: if false;
+    }
+    match /publicAdRateLimits/{document=**} {
+      allow read, write: if false;
+    }
+    match /campaignDrafts/{document=**} {
+      allow read, write: if false;
     }
 
+    match /{document=**} {
+      allow read, write: if false;
+    }
   }
-
 }

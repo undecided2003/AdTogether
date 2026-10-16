@@ -57,12 +57,12 @@ AdTogether provides an official Model Context Protocol (MCP) server that gives y
       "mcp-remote@latest",
       "https://www.ad-together.org/api/mcp",
       "--header",
-      "Authorization: Bearer YOUR_APP_ID_HERE"
+      "Authorization: Bearer YOUR_FRESH_FIREBASE_ID_TOKEN"
     ]
   }
 }
 ```
-This ensures you have the exact API signatures and security invariants required to integrate AdTogether successfully without hallucinations.
+Use a fresh Firebase ID token from the signed-in account owner; App IDs cannot authenticate MCP requests. This ensures you have the exact API signatures and security invariants required to integrate AdTogether successfully without hallucinations.
 
 ---
 
@@ -74,7 +74,7 @@ Add the dependency to your app-level `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.relaxsoftwareapps.adtogether:adtogether-sdk:0.5.4")
+    implementation("com.relaxsoftwareapps.adtogether:adtogether-sdk:0.5.6")
 }
 ```
 
@@ -147,6 +147,8 @@ fun MainScreen() {
 1. **Earn credits** — Every time your app displays an ad from the AdTogether network and the impression is verified, you earn ad credits.
 2. **Spend credits** — Your ad credits are automatically spent to show *your* campaigns inside other apps on the network, helping you increase conversions.
 3. **Fair weighting** — Different ad formats and geographies have different credit weights, ensuring a level playing field for apps of all sizes.
+
+For optional Play Integrity enforcement, SDK integration and per-App-ID server setup are described in the [native attestation guide](../../docs/NATIVE_APP_ATTESTATION.md). Enforced apps must be distributed through Google Play and pass the configured integrity verdicts. Once the server enables it for an App ID, this SDK automatically warms and reuses the Standard Integrity provider; host apps do not need to request tokens themselves.
 
 Create and manage your campaigns from the [AdTogether Dashboard](https://www.ad-together.org/dashboard).
 

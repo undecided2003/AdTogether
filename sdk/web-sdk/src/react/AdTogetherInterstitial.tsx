@@ -120,8 +120,46 @@ export const AdTogetherInterstitial: React.FC<AdTogetherInterstitialProps> = ({
   // Impression tracking
   useEffect(() => {
     if (!adData || !isOpen || impressionTrackedRef.current) return;
-    impressionTrackedRef.current = true;
-    AdTogether.trackImpression(adData.id, adData.token);
+
+    let visibleTimer: ReturnType<typeof setTimeout> | null = null;
+    let visibleSince: number | null = null;
+
+    const clearVisibleTimer = () => {
+      if (visibleTimer) clearTimeout(visibleTimer);
+      visibleTimer = null;
+      visibleSince = null;
+    };
+
+    const startVisibleTimer = () => {
+      if (visibleTimer || impressionTrackedRef.current || document.visibilityState !== 'visible') return;
+
+      visibleSince = Date.now();
+      visibleTimer = setTimeout(() => {
+        const visibleDurationMs = visibleSince === null ? 0 : Date.now() - visibleSince;
+        visibleTimer = null;
+        visibleSince = null;
+
+        if (impressionTrackedRef.current || document.visibilityState !== 'visible' || visibleDurationMs < 1000) return;
+
+        impressionTrackedRef.current = true;
+        AdTogether.trackImpression(adData.id, adData.token, {
+          visiblePercent: 100,
+          visibleDurationMs,
+        });
+      }, 1000);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') startVisibleTimer();
+      else clearVisibleTimer();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    startVisibleTimer();
+    return () => {
+      clearVisibleTimer();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [adData, isOpen]);
 
   const handleAdClick = useCallback(() => {

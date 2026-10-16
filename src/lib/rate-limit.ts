@@ -1,23 +1,45 @@
-const rateLimitMap = new Map<string, { count: number; lastReset: number }>();
+const MAX_ENTRIES = 10_000;
+let cleanupCounter = 0;
 
-export function checkRateLimit(ip: string, limit: number, windowMs: number): boolean {
+interface RateLimitEntry {
+  count: number;
+  expiresAt: number;
+}
+
+const rateLimitMap = new Map<string, RateLimitEntry>();
+
+function normalizedKey(value: string): string {
+  const normalized = typeof value === 'string' ? value.trim().slice(0, 200) : '';
+  return normalized || 'unknown';
+}
+
+function pruneExpired(now: number) {
+  for (const [key, entry] of rateLimitMap) {
+    if (entry.expiresAt <= now) rateLimitMap.delete(key);
+  }
+  while (rateLimitMap.size >= MAX_ENTRIES) {
+    const oldestKey = rateLimitMap.keys().next().value;
+    if (!oldestKey) break;
+    rateLimitMap.delete(oldestKey);
+  }
+}
+
+/**
+ * A bounded local limiter used for inexpensive public API endpoints. Security
+ * sensitive attestation endpoints additionally use a shared Firestore limiter.
+ */
+export function checkRateLimit(key: string, limit: number, windowMs: number): boolean {
   const now = Date.now();
-  const entry = rateLimitMap.get(ip);
+  if (++cleanupCounter % 128 === 0 || rateLimitMap.size >= MAX_ENTRIES) pruneExpired(now);
 
-  if (!entry) {
-    rateLimitMap.set(ip, { count: 1, lastReset: now });
+  const mapKey = [limit, windowMs, normalizedKey(key)].join(':');
+  const entry = rateLimitMap.get(mapKey);
+  if (!entry || entry.expiresAt <= now) {
+    rateLimitMap.set(mapKey, { count: 1, expiresAt: now + windowMs });
     return true;
   }
 
-  if (now - entry.lastReset > windowMs) {
-    rateLimitMap.set(ip, { count: 1, lastReset: now });
-    return true;
-  }
-
-  if (entry.count < limit) {
-    entry.count++;
-    return true;
-  }
-
-  return false;
+  if (entry.count >= limit) return false;
+  entry.count += 1;
+  return true;
 }

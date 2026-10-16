@@ -1,7 +1,15 @@
+## 0.5.6
+* **Security**: Build ad-serve URLs with URLComponents, discard a response whose ad type differs from the requested type, and stop reporting client-derived country values.
+* **Viewability**: Built-in banner and interstitial views report an impression only after one continuous visible second while the app is active.
+
+## 0.5.5
+* **Security**: Added optional Apple App Attest key registration and per-impression assertions bound to signed grants on iOS.
+* **Reliability**: Store App Attest state in the Keychain, retry generated keys after transient registration failures, and replace a cached key after the server rejects its assertion.
+
 ## 0.5.4
 * **Fix**: Ad images now use `.aspectRatio(contentMode: .fit)` instead of `.fill`, so banner and interstitial creatives are no longer cropped and keep their original aspect ratio.
 * **Fix**: Ad images are letterboxed on a theme-aware background colour (light and dark mode) instead of transparent space, so ads blend with the host app's appearance.
-* **Distribution**: The iOS SDK is now mirrored and tagged in [adtogether-ios-sdk](https://github.com/undecided2003/adtogether-ios-sdk), so Swift Package Manager and CocoaPods integrations resolve this release by version tag.
+* **Distribution**: CocoaPods sources are mirrored and tagged in [adtogether-ios-sdk](https://github.com/undecided2003/adtogether-ios-sdk); the root repository's matching bare semver tag serves Swift Package Manager.
 
 ## 0.5.0
 * **Sync**: Version parity (0.5.0) across all AdTogether SDKs.

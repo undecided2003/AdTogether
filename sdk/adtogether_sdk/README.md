@@ -56,12 +56,12 @@ AdTogether provides an official Model Context Protocol (MCP) server that gives y
       "mcp-remote@latest",
       "https://www.ad-together.org/api/mcp",
       "--header",
-      "Authorization: Bearer YOUR_APP_ID_HERE"
+      "Authorization: Bearer YOUR_FRESH_FIREBASE_ID_TOKEN"
     ]
   }
 }
 ```
-This ensures you have the exact API signatures and security invariants required to integrate AdTogether successfully without hallucinations.
+Use a fresh Firebase ID token from the signed-in account owner; App IDs cannot authenticate MCP requests. This ensures you have the exact API signatures and security invariants required to integrate AdTogether successfully without hallucinations.
 
 ---
 
@@ -73,7 +73,7 @@ Add the dependency to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  adtogether_sdk: ^0.5.4
+  adtogether_sdk: ^0.5.6
 ```
 
 Then run:
@@ -113,11 +113,15 @@ AdTogether.initialize(
 );
 ```
 
+## Native attestation
+
+Flutter does not yet provide a Play Integrity or Apple App Attest bridge. Do not enable native-attestation enforcement for an App ID used by this SDK. Use a separate App ID after native proof support is added.
+
 ## Usage
 
 ### Banner Ads
 
-Use the `AdTogetherBanner` widget anywhere in your widget tree. It fetches an ad, renders it, and automatically tracks impressions when 50% or more of the widget is visible.
+Use the `AdTogetherBanner` widget anywhere in your widget tree. It fetches an ad, renders it, and automatically tracks an impression after at least 50% of the widget remains visible continuously for one second while the app is active.
 
 ```dart
 import 'package:adtogether_sdk/adtogether_sdk.dart';
@@ -220,7 +224,7 @@ print(ad.title);       // Ad headline
 print(ad.description); // Ad body text
 print(ad.imageUrl);    // Creative image URL (nullable)
 print(ad.clickUrl);    // Destination URL (nullable)
-print(ad.token);       // HMAC token for verified impression tracking (nullable)
+print(ad.token);       // Signed, short-lived grant for tracking (nullable)
 print(ad.adType);      // 'banner' or 'interstitial' (nullable)
 ```
 
@@ -229,14 +233,20 @@ print(ad.adType);      // 'banner' or 'interstitial' (nullable)
 If you build a custom ad UI instead of using the built-in widgets, you **must** track impressions and clicks manually:
 
 ```dart
-// When the ad becomes visible to the user
-await AdTogether.trackImpression(ad.id, token: ad.token);
+// After this exact creative has been at least 50% visible continuously for one second.
+// Supply the measurements observed for this render; do not hard-code them.
+await AdTogether.trackImpression(
+  ad.id,
+  token: ad.token,
+  visiblePercent: measuredVisiblePercent,
+  visibleDurationMs: measuredContinuousVisibleMs,
+);
 
 // When the user taps the ad
 await AdTogether.trackClick(ad.id, token: ad.token);
 ```
 
-> **Note:** The built-in `AdTogetherBanner` and `AdTogetherInterstitial` widgets handle impression and click tracking automatically — you only need manual tracking for fully custom ad UIs.
+> **Note:** The built-in `AdTogetherBanner` and `AdTogetherInterstitial` widgets handle impression and click tracking automatically. A custom Flutter UI must wait for at least 50% continuous visibility for one second and send its real measurements. Flutter does not support native-attestation enforcement yet.
 
 ## How Credits Work
 

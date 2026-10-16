@@ -81,10 +81,10 @@ export default function Navbar() {
 
   return (
     <nav className="sticky w-full z-50 top-0 left-0 border-b border-zinc-200 dark:border-white/10 bg-white/50 dark:bg-black/50 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between p-4 px-6 md:px-12">
+      <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between p-4 px-4 md:px-8">
         <Link href="/" className="flex items-center">
           <Image
-            src="/adtogether_logo.png"
+            src="/adtogether_logo.webp"
             alt="AdTogether"
             width={140}
             height={36}

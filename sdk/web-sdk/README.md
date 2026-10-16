@@ -22,7 +22,7 @@
 This SDK allows web developers (React and Vanilla JS) to easily integrate AdTogether ads into their applications. By displaying ads from other community members, you earn **Ad Credits** that allow your own app's ads to be shown across the AdTogether network.
 
 <p align="center">
-  <img src="https://www.ad-together.org/dashboard.png" width="800" alt="Developer Dashboard">
+  <img src="https://www.ad-together.org/dashboard.webp" width="800" alt="Developer Dashboard">
 </p>
 
 ### 🖼️ Visualizing the Experience
@@ -37,6 +37,7 @@ This SDK allows web developers (React and Vanilla JS) to easily integrate AdToge
 - 🖼️ **Banner Ads** — Native React `AdTogetherBanner` component with automatic impression tracking and dark mode support.
 - 📺 **Interstitial Ads** — Full-screen `AdTogetherInterstitial` component with a configurable close-button countdown.
 - 🌑 **Dark Mode Support** — All ad components automatically adapt to system preference, or can be set to `'dark'` / `'light'` explicitly.
+- 👁️ **Viewable Impressions** — Web ads count after at least 50% is visible for one continuous second while the page is in the foreground.
 - ⚖️ **Fair Exchange** — Automated impression and click tracking ensures fair distribution of ad credits.
 - 🔌 **Easy Integration** — A single `initialize()` call and one component is all you need to start earning credits and increase conversions.
 - 🧩 **Vanilla JS Support** — Core logic decoupled for use without React or any framework.
@@ -59,12 +60,12 @@ AdTogether provides an official Model Context Protocol (MCP) server that gives y
       "mcp-remote@latest",
       "https://www.ad-together.org/api/mcp",
       "--header",
-      "Authorization: Bearer YOUR_APP_ID_HERE"
+      "Authorization: Bearer YOUR_FRESH_FIREBASE_ID_TOKEN"
     ]
   }
 }
 ```
-This ensures you have the exact API signatures and security invariants required to integrate AdTogether successfully without hallucinations.
+Use a fresh Firebase ID token from the signed-in account owner; App IDs cannot authenticate MCP requests. This ensures you have the exact API signatures and security invariants required to integrate AdTogether successfully without hallucinations.
 
 ---
 
@@ -93,7 +94,7 @@ AdTogether.initialize({
 
 ### Banner Ads
 
-Use the `AdTogetherBanner` component anywhere in your React tree. It fetches an ad, renders it, and automatically tracks impressions when 50% or more of the component is visible.
+Use the `AdTogetherBanner` component anywhere in your React tree. It fetches an ad, renders it, and tracks an impression after at least 50% of the component remains visible for one continuous second while the page is in the foreground.
 
 ```jsx
 import { AdTogetherBanner } from '@adtogether/web-sdk/react';

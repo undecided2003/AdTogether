@@ -29,6 +29,17 @@ const AdTogetherInterstitial = ({
   } = (0, _reactNative.useWindowDimensions)();
   const isLandscape = width > height;
   const impressionTrackedRef = (0, _react.useRef)(false);
+  const appStateRef = (0, _react.useRef)(_reactNative.AppState.currentState);
+  const [appState, setAppState] = (0, _react.useState)(appStateRef.current);
+  (0, _react.useEffect)(() => {
+    const subscription = _reactNative.AppState.addEventListener('change', nextAppState => {
+      // Keep the timer guard current before React renders the state update
+      // and cleans up the timeout.
+      appStateRef.current = nextAppState;
+      setAppState(nextAppState);
+    });
+    return () => subscription.remove();
+  }, []);
   (0, _react.useEffect)(() => {
     if (!isOpen) return;
     let isMounted = true;
@@ -56,22 +67,28 @@ const AdTogetherInterstitial = ({
     };
   }, [adUnitId, isOpen, closeDelay, onAdLoaded, onAdFailedToLoad, onClose]);
 
-  // Track impression and start timer
+  // The modal is full-screen; require one continuous second while the app is active.
   (0, _react.useEffect)(() => {
-    if (isOpen && adData && !isLoading && !hasError && !impressionTrackedRef.current) {
-      impressionTrackedRef.current = true;
-      _AdTogether.AdTogether.trackImpression(adData.id, adData.token);
-      const timer = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(timer);
+    if (!isOpen || !adData || isLoading || hasError || appState !== 'active' || impressionTrackedRef.current) {
+      return;
     }
+    const timer = setTimeout(() => {
+      if (!impressionTrackedRef.current && appStateRef.current === 'active') {
+        impressionTrackedRef.current = true;
+        _AdTogether.AdTogether.trackImpression(adData.id, adData.token, {
+          visiblePercent: 100,
+          visibleDurationMs: 1000
+        });
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [isOpen, adData, isLoading, hasError, appState]);
+  (0, _react.useEffect)(() => {
+    if (!isOpen || !adData || isLoading || hasError) return;
+    const timer = setInterval(() => {
+      setTimeLeft(prev => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
   }, [isOpen, adData, isLoading, hasError]);
   const handlePress = () => {
     if (!adData) return;

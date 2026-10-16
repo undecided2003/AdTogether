@@ -1,6 +1,6 @@
 import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
-import type { LegacyWebSseTransport } from '@/lib/mcp/legacy-sse-transport';
+import type { LegacyWebSseTransport } from './legacy-sse-transport';
 
 type StreamableSession = {
   transport: WebStandardStreamableHTTPServerTransport;

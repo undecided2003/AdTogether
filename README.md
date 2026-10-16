@@ -103,10 +103,10 @@ Detailed instructions are provided in each SDK's local `README.md`.
 
 - **Web integration:** `npm install @adtogether/web-sdk`
 - **React Native integration:** `npm install @adtogether/react-native-sdk`
-- **Android integration:** Implement `com.relaxsoftwareapps.adtogether:adtogether-sdk:0.5.4` inside your `build.gradle.kts`.
-- **iOS integration:** Add the Swift Package through Xcode directly from this repository link.
-- **Flutter integration:** Run `flutter pub add adtogether_sdk:^0.5.4`.
-- **CMS / HTML:** Paste `<script src="https://www.ad-together.org/sdk.js" defer></script>` and `<div data-ad-unit="YOUR_AD_UNIT_ID"></div>`.
+- **Android integration:** Implement `com.relaxsoftwareapps.adtogether:adtogether-sdk:0.5.6` inside your `build.gradle.kts`.
+- **iOS integration:** Add the Swift Package from `https://github.com/undecided2003/AdTogether.git`, or use `pod 'AdTogether', '~> 0.5.6'`.
+- **Flutter integration:** Run `flutter pub add adtogether_sdk:^0.5.6`.
+- **CMS / HTML:** Paste `<script src="https://www.ad-together.org/sdk.js" data-app-id="YOUR_APP_ID" defer></script>` and `<div data-ad-unit="YOUR_AD_UNIT_ID"></div>`.
 
 ---
 
@@ -117,26 +117,20 @@ This repository heavily utilizes **GitHub Actions** for automated multi-platform
 Whenever a new version tag (e.g., `v1.0.0`) is pushed to the `main` branch, the deployment pipeline activates:
 1. **Web**: Builds and publishes the TypeScript SDK to the **npm registry**.
 2. **Android**: Assembles the AAR, generates JavaDocs, signs with GPG, and deploys to **Maven Central (Sonatype)**.
-3. **iOS**: Validates the `Package.swift` configuration for Swift Package Manager integrations.
+3. **iOS**: Builds the Swift package, mirrors and tags the CocoaPods source repository, then publishes the podspec to CocoaPods Trunk.
 4. **Flutter**: Validates the codebase using `dart analyze` and builds the package structure for **pub.dev**.
+
+After every registry job verifies the same release version, deploy the backend with `ADTOGETHER_PUBLISHED_SDK_VERSION` set to that version. The MCP server keeps source-version SDK guidance gated until this setting is updated, so it never directs an integrator to an unpublished SDK.
 
 ---
 
 ## 🤖 AI Assistant Integration (MCP)
 
-AdTogether provides a **Model Context Protocol (MCP)** server so AI assistants can interact with your campaigns and account data, scoped by App ID.
+AdTogether provides a **Model Context Protocol (MCP)** server for owner-scoped campaign and account tools. It accepts only a Firebase ID token for the signed-in account owner. An App ID is public application configuration and cannot authenticate an MCP request.
 
-| Client | Transport | Endpoint |
-|--------|-----------|----------|
-| **Cursor** | Streamable HTTP | `https://www.ad-together.org/api/mcp?appId=YOUR_APP_ID` |
-| **Antigravity** | SSE | `https://www.ad-together.org/api/mcp/sse?appId=YOUR_APP_ID` |
-| **Claude Desktop** (stdio) | via `mcp-remote` | Bearer token to `/api/mcp` |
+Use the Streamable HTTP endpoint: `https://www.ad-together.org/api/mcp`. Legacy SSE is disabled because its endpoint forwarding cannot safely carry an owner credential.
 
-**Cursor:** In MCP settings, add a **URL** server (not SSE) and paste the Streamable HTTP URL above.
-
-**Antigravity:** Use `"type": "sse"` with the SSE URL above.
-
-**Claude Desktop / stdio clients:**
+Configure a client that can send the authorization header on every request. For stdio clients:
 
 ```json
 {
@@ -148,14 +142,14 @@ AdTogether provides a **Model Context Protocol (MCP)** server so AI assistants c
         "mcp-remote@latest",
         "https://www.ad-together.org/api/mcp",
         "--header",
-        "Authorization: Bearer YOUR_APP_ID_HERE"
+        "Authorization: Bearer YOUR_FRESH_FIREBASE_ID_TOKEN"
       ]
     }
   }
 }
 ```
 
-The dashboard MCP panel includes copy-ready URLs and JSON for Cursor and Antigravity.
+Open the dashboard while signed in as the owner and use its **Copy fresh authorization header** control to obtain a fresh Firebase ID token. Treat it like a password, refresh it when the client expires it, and never place it in a URL or replace it with an App ID.
 
 ---
 

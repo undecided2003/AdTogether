@@ -1,6 +1,6 @@
 # AdTogether REST API — LLM Integration Reference
 
-**Version:** 0.4.5
+**Version:** 0.5.6
 
 > **Integration Guide:** For custom environments without a dedicated SDK, you can directly interface with the AdTogether Ad Serving API.
 
@@ -9,7 +9,7 @@
 ### Fetch Ad
 
 ```bash
-curl -X GET "https://www.ad-together.org/api/ads/serve?country=global&adType=banner&appId=YOUR_APP_ID&bundleId=com.example.myapp&allowSelfAds=true&adUnitId=home_banner"
+curl -X GET "https://www.ad-together.org/api/ads/serve?adType=banner&appId=YOUR_APP_ID&bundleId=com.example.myapp&allowSelfAds=true&adUnitId=home_banner"
 ```
 
 **Query parameters:**
@@ -17,11 +17,11 @@ curl -X GET "https://www.ad-together.org/api/ads/serve?country=global&adType=ban
 |-------|----------|-------------|
 | `adUnitId` | no | Optional label for the ad placement (e.g. `home_banner`). Used for analytics grouping only. |
 | `appId` | **yes** | Your registered app ID |
-| `country` | no | Country code or `"global"` (default) |
+| Country | server-derived | Targeting and pricing use the trusted country header at the server's ingress. Client-supplied country values are ignored. |
 | `bundleId` | no | Your app's bundle/package identifier |
 | `allowSelfAds` | no | Show own ads as fallback (default: `true`) |
 | `exclude` | no | Ad ID to exclude (for rotation) |
-| `adType` | no | Filter by `"banner"` or `"interstitial"` |
+| `adType` | no | Filter by `"banner"` (default) or `"interstitial"`. Must match the rendered ad format for payout compliance. |
 
 Returns a JSON object:
 ```json
@@ -31,26 +31,35 @@ Returns a JSON object:
   "description": "App description text",
   "imageUrl": "https://...",
   "clickUrl": "https://...",
-  "token": "HMAC_SIGNATURE"
+  "token": "SIGNED_IMPRESSION_GRANT"
 }
 ```
 
 ### Track Impression
 
 ```bash
+# Send only after your observer measured at least 50% visibility continuously for 1 second.
+# Set these numbers from the observer for this particular render. The values below
+# only demonstrate valid JSON number syntax; do not hard-code them in production.
+VISIBLE_PERCENT=75
+VISIBLE_DURATION_MS=1200
+
 curl -X POST "https://www.ad-together.org/api/ads/impression" \
   -H "Content-Type: application/json" \
-  -d '{
+  -d @- <<JSON
+{
     "adId": "ad_abc123",
-    "token": "HMAC_TOKEN_FROM_SERVE_RESPONSE",
+    "token": "SIGNED_GRANT_FROM_SERVE_RESPONSE",
     "appId": "YOUR_APP_ID",
     "bundleId": "com.example.myapp",
-    "platform": "android",
-    "environment": "production",
-    "appName": "My App",
-    "appVersion": "1.2.3"
-  }'
+    "platform": "web",
+    "visiblePercent": $VISIBLE_PERCENT,
+    "visibleDurationMs": $VISIBLE_DURATION_MS
+}
+JSON
 ```
+
+Build the request with the numeric values recorded by your runtime observer for that specific render.
 
 ### Track Click
 
@@ -59,7 +68,7 @@ curl -X POST "https://www.ad-together.org/api/ads/click" \
   -H "Content-Type: application/json" \
   -d '{
     "adId": "ad_abc123",
-    "token": "HMAC_TOKEN_FROM_SERVE_RESPONSE",
+    "token": "SIGNED_GRANT_FROM_SERVE_RESPONSE",
     "appId": "YOUR_APP_ID",
     "bundleId": "com.example.myapp",
     "platform": "web",
@@ -72,12 +81,18 @@ curl -X POST "https://www.ad-together.org/api/ads/click" \
 | Field | Required | Description |
 |-------|----------|-------------|
 | `adId` | **yes** | The ad ID from the serve response |
-| `token` | **yes** | HMAC signature from the serve response (requests without valid token are rejected) |
+| `token` | **yes** | Signed, short-lived grant from the same serve response. It can be used for one credited impression. |
 | `appId` | **yes** | Your registered app ID |
 | `bundleId` | no | Your app's bundle/package identifier |
 | `platform` | no | Platform identifier (e.g. `"android"`, `"ios"`, `"web"`, `"macos"`) |
-| `environment` | no | `"development"` or `"production"` |
+| `visiblePercent` | required for web and non-attested native traffic | Actual percentage visible when the qualifying view completes; must be at least `50`. |
+| `visibleDurationMs` | required for web and non-attested native traffic | Actual continuous visible duration; must be at least `1000`. |
+| `playIntegrityToken` | required when the App ID enforces Play Integrity | Token bound to the signed grant. |
+| `appAttestKeyId`, `appAttestAssertion` | required when the App ID enforces Apple App Attest | Assertion bound to the signed grant. |
+| `environment` | no | Analytics metadata only. It cannot disable accounting on a production server. |
 | `appName` | no | Human-readable app name |
 | `appVersion` | no | App version string (e.g. `"1.2.3"`) |
 
-> **Note:** While only `adId`, `token`, and `appId` are strictly required, providing `bundleId`, `platform`, and `environment` enables richer analytics in your dashboard.
+> **Viewability:** Save the signed `token` returned by the same serve response and use it for that ad's tracking calls. For web and native App IDs without enforced attestation, wait until the creative is at least 50% visible continuously for one second before posting the impression. Populate the visibility fields from that real observation. The server also checks the grant age and treats telemetry as a fraud-screening signal, not proof that a person viewed the ad.
+
+> **Native enforcement:** A configured Android or iOS App ID must send its matching provider proof; visibility telemetry does not substitute for Play Integrity or App Attest. Use the native SDKs or follow `docs/NATIVE_APP_ATTESTATION.md`.

@@ -1,4 +1,4 @@
-import { AdModel, AdType, AdTogetherOptions } from './types';
+import { AdModel, AdType, AdTogetherOptions, ViewabilityMetrics } from './types';
 
 export class AdTogether {
   private static instance: AdTogether;
@@ -63,26 +63,14 @@ export class AdTogether {
 
     try {
       const sdk = AdTogether.shared;
-      let url = `${sdk.baseUrl}/api/ads/serve?country=global&adUnitId=${adUnitId}&appId=${sdk.appId}`;
-      if (adType) {
-        url += `&adType=${adType}`;
-      }
-      if (sdk.lastAdId) {
-        url += `&exclude=${sdk.lastAdId}`;
-      }
-      if (sdk.bundleId) {
-        url += `&bundleId=${sdk.bundleId}`;
-      }
-      
-      // Pass allowSelfAds and source URL for smart serving
-      url += `&allowSelfAds=${sdk.allowSelfAds}`;
-      if (typeof window !== 'undefined') {
-        url += `&sourceUrl=${encodeURIComponent(window.location.href)}`;
-      }
+      const url = AdTogether.buildServeUrl(sdk, adUnitId, adType);
 
       const response = await fetch(url);
       if (response.ok) {
-        const ad = await response.json();
+        const ad = await response.json() as AdModel;
+        if (adType && ad.adType !== adType) {
+          throw new Error('Received an ad with a different type than requested: ' + (ad.adType ?? 'missing'));
+        }
         sdk.lastAdId = ad.id;
         return ad;
       } else if (response.status === 401 || response.status === 403) {
@@ -96,46 +84,44 @@ export class AdTogether {
     }
   }
 
-  static trackImpression(adId: string, token?: string) {
-    this.trackEvent('/api/ads/impression', adId, token);
+  private static buildServeUrl(sdk: AdTogether, adUnitId: string, adType?: AdType): string {
+    const fallbackBaseUrl = typeof window !== 'undefined'
+      ? window.location.origin
+      : 'https://www.ad-together.org';
+    const url = new URL(sdk.baseUrl || fallbackBaseUrl, fallbackBaseUrl);
+    url.pathname = url.pathname.replace(/\/+$/, '') + '/api/ads/serve';
+    url.search = '';
+    url.hash = '';
+
+    url.searchParams.set('adUnitId', adUnitId);
+    url.searchParams.set('appId', sdk.appId ?? '');
+    url.searchParams.set('allowSelfAds', String(sdk.allowSelfAds));
+    url.searchParams.set('platform', 'web');
+    if (adType) {
+      url.searchParams.set('adType', adType);
+    }
+    if (sdk.lastAdId) {
+      url.searchParams.set('exclude', sdk.lastAdId);
+    }
+    if (sdk.bundleId) {
+      url.searchParams.set('bundleId', sdk.bundleId);
+    }
+    if (typeof window !== 'undefined') {
+      url.searchParams.set('sourceUrl', window.location.href);
+    }
+
+    return url.toString();
+  }
+
+  static trackImpression(adId: string, token?: string, viewability?: ViewabilityMetrics) {
+    this.trackEvent('/api/ads/impression', adId, token, viewability);
   }
 
   static trackClick(adId: string, token?: string) {
     this.trackEvent('/api/ads/click', adId, token);
   }
 
-  /**
-   * Detect the user's country code from the browser locale.
-   * Uses Intl API (most reliable) with navigator.language as fallback.
-   * Returns an ISO 3166-1 alpha-2 code like "US", "DE", "JP", or null.
-   */
-  private static detectCountry(): string | null {
-    try {
-      // Intl API gives the most reliable region
-      if (typeof Intl !== 'undefined' && Intl.DateTimeFormat) {
-        const resolved = Intl.DateTimeFormat().resolvedOptions();
-        // timeZone is like "America/New_York" — we can map it, but locale is simpler
-        if (resolved.locale) {
-          const parts = resolved.locale.split('-');
-          if (parts.length >= 2) {
-            const region = parts[parts.length - 1].toUpperCase();
-            if (region.length === 2) return region;
-          }
-        }
-      }
-      // Fallback: navigator.language (e.g. "en-US" -> "US")
-      if (typeof navigator !== 'undefined' && navigator.language) {
-        const parts = navigator.language.split('-');
-        if (parts.length >= 2) {
-          const region = parts[parts.length - 1].toUpperCase();
-          if (region.length === 2) return region;
-        }
-      }
-    } catch (_) {}
-    return null;
-  }
-
-  private static trackEvent(endpoint: string, adId: string, token?: string) {
+  private static trackEvent(endpoint: string, adId: string, token?: string, viewability?: ViewabilityMetrics) {
     if (!AdTogether.shared.assertInitialized()) return;
     
     fetch(`${AdTogether.shared.baseUrl}${endpoint}`, {
@@ -148,10 +134,13 @@ export class AdTogether {
         token, 
         appId: AdTogether.shared.appId,
         ...(AdTogether.shared.bundleId ? { bundleId: AdTogether.shared.bundleId } : {}),
+        ...(endpoint === '/api/ads/impression' && typeof window !== 'undefined'
+          ? { pagePath: window.location.pathname }
+          : {}),
+        ...(endpoint === '/api/ads/impression' && viewability ? viewability : {}),
         // Send platform and environment to match Flutter SDK
         platform: 'web',
         environment: typeof process !== 'undefined' && process.env?.NODE_ENV === 'development' ? 'development' : 'production',
-        country: AdTogether.detectCountry(),
       }),
     }).catch(console.error);
   }

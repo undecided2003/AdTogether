@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, useColorScheme, Linking, Pressable } from 'react-native';
+import { AppState, Dimensions, View, Text, Image, TouchableOpacity, StyleSheet, useColorScheme, Linking, Pressable } from 'react-native';
 import { AdTogether } from './AdTogether';
 import { AdModel } from './types';
 
@@ -32,6 +32,19 @@ export const AdTogetherBanner: React.FC<AdTogetherBannerProps> = ({
   const systemColorScheme = useColorScheme();
   
   const impressionTrackedRef = useRef(false);
+  const containerRef = useRef<View>(null);
+  const appStateRef = useRef(AppState.currentState);
+  const [appState, setAppState] = useState(appStateRef.current);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      // Keep the timer guard current before React renders the state update
+      // and cleans up the interval.
+      appStateRef.current = nextAppState;
+      setAppState(nextAppState);
+    });
+    return () => subscription.remove();
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -58,13 +71,46 @@ export const AdTogetherBanner: React.FC<AdTogetherBannerProps> = ({
     };
   }, [adUnitId, onAdLoaded, onAdFailedToLoad]);
 
-  // Track impression when ad is rendered
+  // Track an impression only after the banner stays at least half visible for one second.
   useEffect(() => {
-    if (adData && !isLoading && !hasError && !impressionTrackedRef.current) {
-      impressionTrackedRef.current = true;
-      AdTogether.trackImpression(adData.id, adData.token);
+    if (!adData || isLoading || hasError || !isVisible || appState !== 'active' || impressionTrackedRef.current) {
+      return;
     }
-  }, [adData, isLoading, hasError]);
+
+    let cancelled = false;
+    let visibleSince: number | null = null;
+    const checkVisibility = () => {
+      containerRef.current?.measureInWindow((x, y, width, height) => {
+        if (cancelled || appStateRef.current !== 'active' || impressionTrackedRef.current) return;
+        const window = Dimensions.get('window');
+        const totalArea = width * height;
+        const visibleWidth = Math.max(0, Math.min(x + width, window.width) - Math.max(x, 0));
+        const visibleHeight = Math.max(0, Math.min(y + height, window.height) - Math.max(y, 0));
+        const visiblePercent = totalArea > 0
+          ? Math.round((visibleWidth * visibleHeight / totalArea) * 100)
+          : 0;
+
+        if (visiblePercent < 50) {
+          visibleSince = null;
+          return;
+        }
+        const now = Date.now();
+        visibleSince ??= now;
+        const visibleDurationMs = now - visibleSince;
+        if (visibleDurationMs >= 1000) {
+          impressionTrackedRef.current = true;
+          AdTogether.trackImpression(adData.id, adData.token, { visiblePercent, visibleDurationMs });
+        }
+      });
+    };
+
+    checkVisibility();
+    const interval = setInterval(checkVisibility, 100);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [adData, appState, hasError, isLoading, isVisible]);
 
   const handlePress = () => {
     if (!adData) return;
@@ -99,15 +145,16 @@ export const AdTogetherBanner: React.FC<AdTogetherBannerProps> = ({
   const descColor = isDarkMode ? '#9CA3AF' : '#6B7280';
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.8}
-      onPress={handlePress}
-      style={[
-        styles.container,
-        { backgroundColor: bgColor, borderColor },
-        style,
-      ]}
-    >
+    <View ref={containerRef} collapsable={false}>
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={handlePress}
+        style={[
+          styles.container,
+          { backgroundColor: bgColor, borderColor },
+          style,
+        ]}
+      >
       {adData.imageUrl ? (
         <View style={styles.imageContainer}>
           <Image
@@ -141,7 +188,8 @@ export const AdTogetherBanner: React.FC<AdTogetherBannerProps> = ({
           <Text style={styles.closeButtonText}>×</Text>
         </Pressable>
       )}
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </View>
   );
 };
 

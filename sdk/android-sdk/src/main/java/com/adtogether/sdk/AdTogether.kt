@@ -92,9 +92,14 @@ object AdTogether {
     /**
      * Tracks an impression for a specific ad.
      */
-    suspend fun trackImpression(adId: String, token: String?) {
+    suspend fun trackImpression(
+        adId: String,
+        token: String?,
+        visiblePercent: Int? = null,
+        visibleDurationMs: Long? = null
+    ) {
         if (!assertInitialized()) return
-        AdNetworkService.trackImpression(adId, token)
+        AdNetworkService.trackImpression(adId, token, visiblePercent, visibleDurationMs)
     }
 
     /**
