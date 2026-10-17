@@ -384,6 +384,13 @@ jobs:
         with:
           # `git subtree split` needs the full history of sdk/ios-sdk.
           fetch-depth: 0
+          # The mirror push below authenticates with the SDK_SYNC_TOKEN PAT
+          # embedded in the remote URL. With persist-credentials, actions/checkout
+          # persists GITHUB_TOKEN as an http.extraheader (global config include)
+          # that overrides URL credentials on every github.com request, so the push
+          # to adtogether-ios-sdk authenticates as github-actions[bot] and gets 403.
+          # Disable persistence; each push below supplies its own token instead.
+          persist-credentials: false
 
       - name: Build iOS SDK
         run: swift build
@@ -393,6 +400,9 @@ jobs:
       # (pushed by release.yml) is invisible to it — a bare semver tag is required for the
       # `.package(url: ".../AdTogether.git", from: "0.5.6")` instructions we publish.
       - name: Tag this repository with the bare semver version for SwiftPM
+        env:
+          # persist-credentials is false, so supply the push token explicitly.
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           VERSION="$(sed -n 's/.*spec\.version *= *"\([^"]*\)".*/\1/p' sdk/ios-sdk/AdTogether.podspec | head -1)"
@@ -410,7 +420,7 @@ jobs:
             exit 0
           fi
 
-          git push origin "$RELEASE_COMMIT:refs/tags/$VERSION"
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$RELEASE_COMMIT:refs/tags/$VERSION"
           echo "✅ Tagged ${RELEASE_COMMIT:0:7} as $VERSION for Swift Package Manager"
 
       # The root repository's bare tag serves Swift Package Manager. CocoaPods resolves
@@ -433,13 +443,6 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # actions/checkout persists the workflow's GITHUB_TOKEN as an
-          # http.extraheader in the local git config. It is sent on every
-          # github.com request and overrides the PAT embedded in the ios-sdk
-          # remote URL, so pushes get "Permission denied to
-          # github-actions[bot]" even with a valid SDK_SYNC_TOKEN. Drop it —
-          # the PAT in the remote URL is the credential this step needs.
-          git config --local --unset-all http.https://github.com/.extraheader || true
           git remote add ios-sdk "https://x-access-token:${SDK_SYNC_TOKEN}@github.com/undecided2003/adtogether-ios-sdk.git"
 
           SPLIT="$(git subtree split --prefix=sdk/ios-sdk)"
@@ -471,8 +474,11 @@ jobs:
           set -euo pipefail
           VERSION="$(sed -n 's/.*spec\.version *= *"\([^"]*\)".*/\1/p' sdk/ios-sdk/AdTogether.podspec | head -1)"
           if [ -z "${COCOAPODS_TRUNK_TOKEN:-}" ]; then
-            echo "::error::COCOAPODS_TRUNK_TOKEN is required to publish AdTogether $VERSION to CocoaPods."
-            exit 1
+            # Match the SDK_SYNC_TOKEN convention: a missing optional secret skips
+            # instead of blocking the release. SwiftPM consumers are already served
+            # by the bare tag pushed above.
+            echo "::warning::COCOAPODS_TRUNK_TOKEN is not configured — skipping the CocoaPods push. Run 'pod trunk register' and add the secret to publish AdTogether $VERSION."
+            exit 0
           fi
 
           if pod trunk info AdTogether 2>/dev/null | awk -v version="$VERSION" '$1 == "-" && $2 == version { found = 1 } END { exit !found }'; then
