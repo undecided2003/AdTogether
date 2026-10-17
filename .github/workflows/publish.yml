@@ -11,7 +11,7 @@ concurrency:
   group: publish-sdks-${{ github.ref }}
   cancel-in-progress: false
 
-# Needed by the iOS job to push the bare semver tag (SwiftPM cannot resolve `v0.5.8`).
+# Needed by the iOS job to push the bare semver tag (SwiftPM cannot resolve `v0.5.9`).
 permissions:
   contents: write
 
@@ -32,7 +32,7 @@ jobs:
           set -euo pipefail
 
           if [ "${GITHUB_REF_TYPE:-}" != "tag" ] || [[ ! "${GITHUB_REF_NAME:-}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
-            echo "::error::Run this publishing workflow from a v<semver> tag (for example v0.5.8)."
+            echo "::error::Run this publishing workflow from a v<semver> tag (for example v0.5.9)."
             exit 1
           fi
 
@@ -396,9 +396,9 @@ jobs:
         run: swift build
         working-directory: sdk/ios-sdk
 
-      # Swift Package Manager only resolves *bare* semantic version tags, so `v0.5.8`
+      # Swift Package Manager only resolves *bare* semantic version tags, so `v0.5.9`
       # (pushed by release.yml) is invisible to it — a bare semver tag is required for the
-      # `.package(url: ".../AdTogether.git", from: "0.5.8")` instructions we publish.
+      # `.package(url: ".../AdTogether.git", from: "0.5.9")` instructions we publish.
       - name: Tag this repository with the bare semver version for SwiftPM
         env:
           # persist-credentials is false, so supply the push token explicitly.

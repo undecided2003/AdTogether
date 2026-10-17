@@ -1,6 +1,6 @@
 # AdTogether REST API — LLM Integration Reference
 
-**Version:** 0.5.8
+**Version:** 0.5.9
 
 > **Integration Guide:** For custom environments without a dedicated SDK, you can directly interface with the AdTogether Ad Serving API.
 
@@ -60,6 +60,8 @@ JSON
 ```
 
 Build the request with the numeric values recorded by your runtime observer for that specific render.
+
+> **Web Browser Tip:** For custom browser-based integrations, sending `-H "Content-Type: text/plain"` (with JSON body text) qualifies as a CORS simple request, eliminating the browser's `OPTIONS` preflight request while the server parses the body identically.
 
 ### Track Click
 

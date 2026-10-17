@@ -1,6 +1,6 @@
 # AdTogether — LLM Integration Reference
 
-**Version:** 0.5.8
+**Version:** 0.5.9
 
 **"Show an ad, get an ad shown"**
 *The reciprocal ad exchange to increase conversions and grow your app's audience.*
@@ -91,6 +91,9 @@ The AdTogether hub incorporates several "working hacks" to overcome limitations 
     - **Client Trick:** The client converts base64 to a `File` object for consistency with the manual upload path:
       `const blob = await (await fetch('data:image/jpeg;base64,...')).blob();`
 5.  **Ad Screening:** Campaigns are screened via `/api/screen` (DeepSeek) during submission to ensure compliance with `AD_CONTENT_POLICY.md`.
+6.  **Static Client Route Convention:** Always use query parameters (e.g. `/edit-ad?id=...`) with `<Suspense>` rather than dynamic path parameters (`/edit-ad/[id]`) for authenticated client-only pages. This guarantees 100% static prerendering (`○`) on Firebase Hosting CDN, avoiding expensive Cloud Function SSR container wakeups.
+7.  **CORS Simple Requests:** Web SDK telemetry routes (`/api/ads/impression`, `/api/ads/click`) accept `Content-Type: text/plain` with `keepalive: true`. This bypasses browser `OPTIONS` preflight calls while `await request.text()` + `JSON.parse()` on the server seamlessly parses the payload.
+8.  **Cloud Run / Functions v2 Concurrency:** Always configure `concurrency: 80` in `firebase.json` under `frameworksBackend` to enable request multiplexing across warm containers and maximize in-memory cache hit rates.
 
 ---
 

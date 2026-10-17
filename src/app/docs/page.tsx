@@ -780,7 +780,7 @@ AdTogetherInterstitial.show(
               <CodeBlock title="Package.swift">
 {`.package(
   url: "https://github.com/undecided2003/AdTogether.git",
-  from: "0.5.8"
+  from: "0.5.9"
 )`}
               </CodeBlock>
 
@@ -788,7 +788,7 @@ AdTogetherInterstitial.show(
                 CocoaPods alternative
               </p>
               <CodeBlock language="ruby" title="Podfile">
-{`pod 'AdTogether', '~> 0.5.8'`}
+{`pod 'AdTogether', '~> 0.5.9'`}
               </CodeBlock>
 
               <p className="text-xs font-medium text-zinc-600 dark:text-zinc-500 uppercase tracking-wider mb-3 mt-6">
@@ -875,7 +875,7 @@ struct ContentView: View {
               </p>
               <CodeBlock title="build.gradle.kts">
 {`dependencies {
-    implementation("com.relaxsoftwareapps.adtogether:adtogether-sdk:0.5.8")
+    implementation("com.relaxsoftwareapps.adtogether:adtogether-sdk:0.5.9")
 }`}
               </CodeBlock>
 

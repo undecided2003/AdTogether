@@ -1,6 +1,6 @@
 # AdTogether Web SDK — LLM Integration Reference
 
-**Version:** 0.5.8
+**Version:** 0.5.9
 
 **Package:** `@adtogether/web-sdk`
 **Distribution:** NPM (for React/Next.js) or CDN script tag (for plain HTML)
@@ -99,6 +99,22 @@ export default function MyComponent() {
 | `theme` | `'dark' \| 'light' \| 'auto'` | `'auto'` | Color scheme |
 | `onAdLoaded` | `() => void` | — | Fires when ad is fetched |
 | `onAdFailedToLoad` | `(error: Error) => void` | — | Fires on fetch failure |
+
+### Pre-fetching & In-Memory Caching
+
+The Web SDK automatically caches fetched ads in memory with a **30-second TTL** and coalesces concurrent in-flight requests. When navigating between views or remounting components within 30 seconds, the SDK serves the cached creative instantly with 0 network calls.
+
+You can also pre-warm an ad ahead of time (e.g. before showing an interstitial):
+
+```typescript
+import { AdTogether } from '@adtogether/web-sdk';
+
+// Pre-warm a banner or interstitial before display
+await AdTogether.prefetchAd('my_placement', 'interstitial');
+
+// Clear pre-fetched ads from memory if needed
+AdTogether.clearAdCache();
+```
 
 ### Option B: CDN Script Tag (Plain HTML)
 
