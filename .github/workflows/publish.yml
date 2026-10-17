@@ -447,18 +447,30 @@ jobs:
 
           SPLIT="$(git subtree split --prefix=sdk/ios-sdk)"
           echo "Subtree split commit: $SPLIT"
+          SPLIT_TREE="$(git rev-parse "${SPLIT}^{tree}")"
 
-          git push ios-sdk "$SPLIT:refs/heads/main"
-          echo "✅ Pushed sdk/ios-sdk to adtogether-ios-sdk main"
+          # The split chain's commit SHAs depend on the committer identity of the
+          # run (bot here, the original author for older mirrored pushes), so a
+          # fast-forward against the mirror's existing main can never be assumed.
+          # This repo is a generated mirror of sdk/ios-sdk — compare content
+          # instead: identical tree means nothing to do, otherwise force-update.
+          git fetch ios-sdk main
+          REMOTE_TREE="$(git rev-parse "FETCH_HEAD^{tree}")"
+          if [ "$REMOTE_TREE" = "$SPLIT_TREE" ]; then
+            echo "::notice::adtogether-ios-sdk main already mirrors this release's content — nothing to do."
+          else
+            git push --force ios-sdk "$SPLIT:refs/heads/main"
+            echo "✅ Force-pushed sdk/ios-sdk to adtogether-ios-sdk main (mirror, content $SPLIT_TREE)"
+          fi
 
           if git ls-remote --tags ios-sdk "refs/tags/$VERSION" | grep -q "refs/tags/$VERSION"; then
             git fetch --depth=1 ios-sdk "refs/tags/$VERSION"
-            EXISTING_SPLIT="$(git rev-list -n 1 FETCH_HEAD)"
-            if [ "$EXISTING_SPLIT" != "$SPLIT" ]; then
-              echo "::error::iOS mirror tag $VERSION already points to $EXISTING_SPLIT, not this release subtree $SPLIT."
+            EXISTING_TREE="$(git rev-parse "FETCH_HEAD^{tree}")"
+            if [ "$EXISTING_TREE" != "$SPLIT_TREE" ]; then
+              echo "::error::iOS mirror tag $VERSION points at content $EXISTING_TREE, not this release's $SPLIT_TREE."
               exit 1
             fi
-            echo "::notice::Tag $VERSION already points to this release subtree — nothing to do."
+            echo "::notice::Tag $VERSION already points to this release's content — nothing to do."
           else
             git push ios-sdk "$SPLIT:refs/tags/$VERSION"
             echo "✅ Tagged adtogether-ios-sdk with $VERSION"
