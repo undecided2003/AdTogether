@@ -58,7 +58,7 @@ dependencies {
 }
 
 group = "com.relaxsoftwareapps.adtogether"
-version = "0.5.7"
+version = "0.5.8"
 
 mavenPublishing {
     // automaticRelease = true is required for CI: without it Gradle only uploads the

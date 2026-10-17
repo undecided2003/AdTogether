@@ -1,5 +1,8 @@
 ## Unreleased
 
+## 0.5.8
+* **Sync**: Align the release version with all AdTogether SDKs.
+
 ## 0.5.7
 * **Sync**: Align the release version with all AdTogether SDKs.
 

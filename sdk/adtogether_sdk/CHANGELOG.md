@@ -1,3 +1,6 @@
+## 0.5.8
+* **Sync**: Align the release version with all AdTogether SDKs.
+
 ## 0.5.7
 * **Fix**: Remove the unnecessary cast in banner visibility percentage calculation to pass static analysis.
 * **Sync**: Align the release version with all AdTogether SDKs.
