@@ -24,7 +24,7 @@ jobs:
     outputs:
       version: ${{ steps.versions.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Verify release tag and SDK version parity
         id: versions
         shell: bash
@@ -65,10 +65,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
       - name: Install dependencies
         run: npm install
@@ -98,10 +98,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
       - name: Install dependencies
         run: npm install
@@ -131,7 +131,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Makes the job safe to re-run: a version that is already on Maven Central cannot be
       # uploaded twice (Sonatype rejects duplicate deployments), so repeat runs only verify.
@@ -151,14 +151,14 @@ jobs:
 
       - name: Set up JDK 17
         if: steps.release-state.outputs.already_published != 'true'
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           java-version: '17'
           distribution: 'temurin'
       
       - name: Setup Gradle
         if: steps.release-state.outputs.already_published != 'true'
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v5
 
       - name: Import GPG key for keyserver upload
         if: steps.release-state.outputs.already_published != 'true'
@@ -314,7 +314,7 @@ jobs:
     env:
       PUB_DEV_CREDENTIALS: ${{ secrets.PUB_DEV_CREDENTIALS }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
@@ -380,7 +380,7 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # `git subtree split` needs the full history of sdk/ios-sdk.
           fetch-depth: 0
@@ -433,6 +433,13 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          # actions/checkout persists the workflow's GITHUB_TOKEN as an
+          # http.extraheader in the local git config. It is sent on every
+          # github.com request and overrides the PAT embedded in the ios-sdk
+          # remote URL, so pushes get "Permission denied to
+          # github-actions[bot]" even with a valid SDK_SYNC_TOKEN. Drop it —
+          # the PAT in the remote URL is the credential this step needs.
+          git config --local --unset-all http.https://github.com/.extraheader || true
           git remote add ios-sdk "https://x-access-token:${SDK_SYNC_TOKEN}@github.com/undecided2003/adtogether-ios-sdk.git"
 
           SPLIT="$(git subtree split --prefix=sdk/ios-sdk)"
