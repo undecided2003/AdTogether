@@ -84,7 +84,7 @@ The public challenge and registration endpoints use a shared Firestore rate limi
 
 ## Rollout
 
-1. Publish Android and iOS SDK 0.5.6 to their registries, including the matching bare Swift Package Manager tag and CocoaPods Trunk release.
+1. Publish Android and iOS SDK 0.5.7 to their registries, including the matching bare Swift Package Manager tag and CocoaPods Trunk release.
 2. Deploy the backend with `PLAY_INTEGRITY_CLOUD_PROJECT_NUMBER` and, when trusted geo is available, `TRUSTED_GEO_PROVIDER`.
 3. Deploy the Firestore rules and indexes, including TTL for `impressionGrants`, `appAttestChallenges`, `attestationRateLimits`, and `publicAdRateLimits`.
 4. Verify protected impressions in a staging App ID on real Android and iOS devices.

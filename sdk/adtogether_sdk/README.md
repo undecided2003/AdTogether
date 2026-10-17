@@ -73,7 +73,7 @@ Add the dependency to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  adtogether_sdk: ^0.5.6
+  adtogether_sdk: ^0.5.7
 ```
 
 Then run:

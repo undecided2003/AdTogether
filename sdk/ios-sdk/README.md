@@ -79,7 +79,7 @@ Use a fresh Firebase ID token from the signed-in account owner; App IDs cannot a
 ### CocoaPods
 
 ```ruby
-pod 'AdTogether', '~> 0.5.6'
+pod 'AdTogether', '~> 0.5.7'
 ```
 
 ### Initialize

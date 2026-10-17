@@ -18,8 +18,8 @@ import * as path from 'path';
 // registry. Source manifests may advance before their npm/Maven/pub/iOS
 // artifacts are public, so advertising the source version by default can send
 // an integrator to a package manager version that does not exist yet.
-const SDK_SOURCE_VERSION = "0.5.6";
-const LAST_PREVIOUS_SDK_RELEASE_VERSION = "0.5.0";
+const SDK_SOURCE_VERSION = "0.5.7";
+const LAST_PREVIOUS_SDK_RELEASE_VERSION = "0.5.6";
 const STABLE_SEMVER = /^(\d+)\.(\d+)\.(\d+)$/;
 
 function compareStableVersions(left: string, right: string): number {
@@ -54,7 +54,7 @@ function sdkReleasePendingNotice(): string | null {
   const publishedSdkVersion = getPublishedSdkVersion();
   if (publishedSdkVersion === SDK_SOURCE_VERSION) return null;
 
-  return `⚠️ SDK RELEASE PENDING\n\nSDK ${SDK_SOURCE_VERSION} contains the current security hardening, but it is not yet confirmed across the public SDK registries. The preceding release line is ${publishedSdkVersion}; it does not include the ${SDK_SOURCE_VERSION} changes. This MCP server will not provide source-version installation or integration instructions until the release is published.`;
+  return `⚠️ SDK RELEASE PENDING\n\nSDK ${SDK_SOURCE_VERSION} is not yet confirmed across the public SDK registries. The preceding release line is ${publishedSdkVersion}. This MCP server will not provide ${SDK_SOURCE_VERSION} source-version installation instructions until the release is published.`;
 }
 
 // Embedded fallback documentation in case filesystem is not accessible in serverless bundles
@@ -107,17 +107,17 @@ Components: \`<AdTogetherBanner adUnitId="..." />\`
 `,
   "sdk/android-sdk/README.md": `# AdTogether Android SDK
 Official Android Kotlin SDK with Jetpack Compose support.
-Dependency: \`implementation("com.relaxsoftwareapps.adtogether:adtogether-sdk:0.5.6")\`
+Dependency: \`implementation("com.relaxsoftwareapps.adtogether:adtogether-sdk:0.5.7")\`
 Play Integrity support requires the Admin-only native attestation setup record.
 `,
   "sdk/ios-sdk/README.md": `# AdTogether iOS SDK
 Official Swift / SwiftUI iOS SDK for AdTogether.
-SPM / CocoaPods: \`pod 'AdTogether', '~> 0.5.6'\`
+SPM / CocoaPods: \`pod 'AdTogether', '~> 0.5.7'\`
 Apple App Attest enforcement is supported on iOS only.
 `,
   "sdk/adtogether_sdk/README.md": `# adtogether_sdk (Flutter)
 Official Flutter / Dart SDK for AdTogether.
-Install: \`flutter pub add adtogether_sdk:^0.5.6\`
+Install: \`flutter pub add adtogether_sdk:^0.5.7\`
 `,
   "docs/NATIVE_APP_ATTESTATION.md": `# Native App Attestation
 
@@ -1463,29 +1463,29 @@ class InterstitialPlacement extends StatelessWidget {
 
         const latestVersions: Record<string, { version: string; changelog: string; upgradeCmd: string }> = {
           web: {
-            version: "0.5.6",
-            changelog: "0.5.6: Safely encodes ad-serve parameters, rejects mismatched ad types, removes client country reporting, and records one-second viewability telemetry.\n0.5.0: Current release.\n0.4.0: Standardized appId.",
+            version: "0.5.7",
+            changelog: "0.5.7: Synchronized the SDK release version across platforms.\n0.5.6: Safely encodes ad-serve parameters, rejects mismatched ad types, removes client country reporting, and records one-second viewability telemetry.\n0.5.0: Current release.\n0.4.0: Standardized appId.",
             upgradeCmd: "npm install @adtogether/web-sdk@latest",
           },
           "react-native": {
-            version: "0.5.6",
-            changelog: "0.5.6: Safely encodes ad-serve parameters, rejects mismatched ad types, removes client country reporting, and records one-second viewability telemetry.\n0.5.0: Parity update.\n0.4.0: Standardized appId.",
+            version: "0.5.7",
+            changelog: "0.5.7: Synchronized the SDK release version across platforms.\n0.5.6: Safely encodes ad-serve parameters, rejects mismatched ad types, removes client country reporting, and records one-second viewability telemetry.\n0.5.0: Parity update.\n0.4.0: Standardized appId.",
             upgradeCmd: "npm install @adtogether/react-native-sdk@latest",
           },
           android: {
-            version: "0.5.6",
-            changelog: "0.5.6: Safely encodes ad-serve parameters, rejects mismatched ad types, removes client country reporting, and records one-second viewability telemetry.\n0.5.5: Added Play Integrity grant verification with a warmed, reused provider.\n0.5.0: Renamed Maven artifact to com.relaxsoftwareapps.adtogether:adtogether-sdk.",
-            upgradeCmd: 'implementation("com.relaxsoftwareapps.adtogether:adtogether-sdk:0.5.6")',
+            version: "0.5.7",
+            changelog: "0.5.7: Synchronized the SDK release version across platforms.\n0.5.6: Safely encodes ad-serve parameters, rejects mismatched ad types, removes client country reporting, and records one-second viewability telemetry.\n0.5.5: Added Play Integrity grant verification with a warmed, reused provider.\n0.5.0: Renamed Maven artifact to com.relaxsoftwareapps.adtogether:adtogether-sdk.",
+            upgradeCmd: 'implementation("com.relaxsoftwareapps.adtogether:adtogether-sdk:0.5.7")',
           },
           flutter: {
-            version: "0.5.6",
-            changelog: "0.5.6: Safely encodes ad-serve parameters, rejects mismatched ad types, removes client country reporting, and records one-second viewability telemetry.\n0.5.4: Fixed ad image cropping (BoxFit.contain) with theme-aware letterboxing.\n0.5.0: Removed package_info_plus dependency.",
-            upgradeCmd: "flutter pub add adtogether_sdk:^0.5.6",
+            version: "0.5.7",
+            changelog: "0.5.7: Removed an unnecessary cast to pass static analysis.\n0.5.6: Safely encodes ad-serve parameters, rejects mismatched ad types, removes client country reporting, and records one-second viewability telemetry.\n0.5.4: Fixed ad image cropping (BoxFit.contain) with theme-aware letterboxing.\n0.5.0: Removed package_info_plus dependency.",
+            upgradeCmd: "flutter pub add adtogether_sdk:^0.5.7",
           },
           ios: {
-            version: "0.5.6",
-            changelog: "0.5.6: Safely encodes ad-serve parameters, rejects mismatched ad types, removes client country reporting, and records one-second viewability telemetry.\n0.5.5: Added App Attest grant assertions and resilient key registration.\n0.5.0: Added root Package.swift for Swift Package Manager.",
-            upgradeCmd: "pod 'AdTogether', '~> 0.5.6' (or SPM version 0.5.6)",
+            version: "0.5.7",
+            changelog: "0.5.7: Synchronized the SDK release version across platforms.\n0.5.6: Safely encodes ad-serve parameters, rejects mismatched ad types, removes client country reporting, and records one-second viewability telemetry.\n0.5.5: Added App Attest grant assertions and resilient key registration.\n0.5.0: Added root Package.swift for Swift Package Manager.",
+            upgradeCmd: "pod 'AdTogether', '~> 0.5.7' (or SPM version 0.5.7)",
           },
         };
 

@@ -1,3 +1,6 @@
+## 0.5.7
+* **Sync**: Align the release version with all AdTogether SDKs.
+
 ## 0.5.6
 * **Security**: Build ad-serve URLs with URLSearchParams, discard a response whose ad type differs from the requested type, and stop reporting client-derived country values.
 * **Viewability**: Built-in banner and interstitial components report an impression only after one continuous visible second while the app is active.

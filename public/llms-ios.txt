@@ -1,6 +1,6 @@
 # AdTogether Native iOS SDK — LLM Integration Reference
 
-**Version:** 0.5.6
+**Version:** 0.5.7
 
 **Package:** `AdTogether`
 **Distribution:** Swift Package Manager (SPM) or CocoaPods
@@ -20,7 +20,7 @@ https://github.com/undecided2003/AdTogether.git
 Or add directly to `Package.swift`:
 
 ```swift
-.package(url: "https://github.com/undecided2003/AdTogether.git", from: "0.5.6")
+.package(url: "https://github.com/undecided2003/AdTogether.git", from: "0.5.7")
 ```
 
 ### Install via CocoaPods
@@ -28,7 +28,7 @@ Or add directly to `Package.swift`:
 Add this to your `Podfile`, then run `pod install`:
 
 ```ruby
-pod 'AdTogether', '~> 0.5.6'
+pod 'AdTogether', '~> 0.5.7'
 ```
 
 ### Initialize
@@ -146,7 +146,7 @@ public init(
 
 ### Apple App Attest enforcement
 
-Version 0.5.6 registers an App Attest key with a one-time server challenge and sends a grant-bound assertion for protected impressions. Configure the Admin-only App ID record with the bundle ID, App ID prefix, and environment before enabling enforcement. The SDK stores the key in Keychain, retaining it across out-of-order counter arrivals and only requesting a new key if the server reports an unrecognized key. This path is supported on iOS only; do not enable it for the macOS target or an App ID shared with another SDK that lacks App Attest support.
+Version 0.5.7 includes App Attest key registration with a one-time server challenge and grant-bound assertions for protected impressions. Configure the Admin-only App ID record with the bundle ID, App ID prefix, and environment before enabling enforcement. The SDK stores the key in Keychain, retaining it across out-of-order counter arrivals and only requesting a new key if the server reports an unrecognized key. This path is supported on iOS only; do not enable it for the macOS target or an App ID shared with another SDK that lacks App Attest support.
 
 - Request **App Tracking Transparency (ATT)** permissions before initializing the SDK for personalized ad tracking.
 - Add `NSUserTrackingUsageDescription` to `Info.plist` with a human-readable explanation.

@@ -89,7 +89,7 @@ class _AdTogetherBannerState extends State<AdTogetherBanner>
   void _onVisibilityChanged(VisibilityInfo info) {
     if (_impressionTracked || _adData == null) return;
 
-    _visiblePercent = (info.visibleFraction * 100).round().clamp(0, 100) as int;
+    _visiblePercent = (info.visibleFraction * 100).round().clamp(0, 100);
     if (!_isAppActive || info.visibleFraction < 0.5) {
       _cancelPendingImpression();
       return;

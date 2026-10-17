@@ -1,3 +1,7 @@
+## 0.5.7
+* **Fix**: Remove the unnecessary cast in banner visibility percentage calculation to pass static analysis.
+* **Sync**: Align the release version with all AdTogether SDKs.
+
 ## 0.5.6
 * **Security**: Build ad-serve URLs with Uri query parameters, discard a response whose ad type differs from the requested type, and stop reporting client-derived country values.
 * **Viewability**: Built-in banner and interstitial widgets report an impression only after one continuous visible second while the app is active.
