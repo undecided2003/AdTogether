@@ -36,4 +36,7 @@ This skill documents specific production workarounds and best practices used acr
 - **Problem:** Default single-concurrency serverless deployments spin up a separate container instance for every concurrent request, leading to container bloat and cold start cascades.
 - **Workaround:** Configure `"concurrency": 80` in `firebase.json` under `hosting.frameworksBackend`. A single warm container instance can handle dozens of simultaneous requests while sharing in-memory caches (`getCachedActiveAds`, `findPublisherByAppId`, `getCachedApiSecret`), reducing container count and cold starts by over 80%.
 
+## 8. One-Step Deployment Script (`npm run deploy`)
+- **Workflow:** Running `npm run deploy` automatically builds `@adtogether/web-sdk` (`npm --prefix sdk/web-sdk run build`) so distribution files are always up-to-date, and then invokes `npx firebase deploy --only hosting` to build Next.js, prerender static pages, deploy edge CDN caching headers, and update the Cloud Run function.
+
 

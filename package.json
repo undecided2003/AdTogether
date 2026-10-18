@@ -9,7 +9,8 @@
     "dev": "cross-env IS_WEBPACK_TEST=true next dev --webpack",
     "build": "cross-env IS_WEBPACK_TEST=true next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "deploy": "npm --prefix sdk/web-sdk run build && npx firebase deploy --only hosting"
   },
   "dependencies": {
     "@adtogether/web-sdk": "file:sdk/web-sdk",
