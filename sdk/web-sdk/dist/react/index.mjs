@@ -1,6 +1,6 @@
 import {
   AdTogether
-} from "../chunk-NXWVGW5H.mjs";
+} from "../chunk-WYYADZFK.mjs";
 
 // src/react/AdTogetherBanner.tsx
 import { useEffect, useRef, useState } from "react";
@@ -45,7 +45,11 @@ var AdTogetherBanner = ({
       }
     }).catch((err) => {
       if (isMounted) {
-        console.error("AdTogether Failed to load ad:", err);
+        if (err?.message?.includes("Frequency cap exceeded")) {
+          console.info("AdTogether:", err.message);
+        } else {
+          console.error("AdTogether Failed to load ad:", err);
+        }
         setHasError(true);
         setIsLoading(false);
         onAdFailedToLoad?.(err);
@@ -280,7 +284,11 @@ var AdTogetherInterstitial = ({
       }
     }).catch((err) => {
       if (isMounted) {
-        console.error("AdTogether Failed to load interstitial:", err);
+        if (err?.message?.includes("Frequency cap exceeded")) {
+          console.info("AdTogether:", err.message);
+        } else {
+          console.error("AdTogether Failed to load interstitial:", err);
+        }
         setHasError(true);
         setIsLoading(false);
         onAdFailedToLoad?.(err);

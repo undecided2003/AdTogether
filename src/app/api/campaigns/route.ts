@@ -7,6 +7,7 @@ import { CREDIT_AUTO_PAUSE_REASON, MANUAL_PAUSE_FIELD } from '@/lib/credit-polic
 import { adminDb } from '@/lib/firebase-admin';
 import { authenticatedUid, ensureUserProfile } from '@/lib/request-auth';
 import { parseSafeHttpUrl } from '@/lib/safe-url-fetch';
+import { invalidateActiveAdsCache } from '@/lib/cached-active-ads';
 
 export const runtime = 'nodejs';
 
@@ -172,6 +173,7 @@ export async function POST(request: Request) {
       [MANUAL_PAUSE_FIELD]: false,
       createdAt: new Date().toISOString(),
     });
+    invalidateActiveAdsCache();
     return NextResponse.json({ success: true, id: campaign.id }, { status: 201 });
   } catch (error) {
     console.error('Campaign creation error:', error);
@@ -210,6 +212,7 @@ export async function PATCH(request: Request) {
         updated = true;
       });
       if (!updated) return NextResponse.json({ success: false, error: 'Campaign was not found' }, { status: 404 });
+      invalidateActiveAdsCache();
       return NextResponse.json({ success: true });
     }
 
@@ -277,6 +280,7 @@ export async function PATCH(request: Request) {
           { status: 409 },
         );
       }
+      invalidateActiveAdsCache();
       return NextResponse.json({ success: true });
     }
 
@@ -306,8 +310,9 @@ export async function PATCH(request: Request) {
         transaction.update(ref, { blockedOrigins: next });
         outcome = 'updated';
       });
-      if (outcome === 'missing') return NextResponse.json({ success: false, error: 'Campaign was not found' }, { status: 404 });
+      if (!outcome || outcome === 'missing') return NextResponse.json({ success: false, error: 'Campaign was not found' }, { status: 404 });
       if (outcome === 'limit') return NextResponse.json({ success: false, error: 'Origin blocklist is full' }, { status: 409 });
+      invalidateActiveAdsCache();
       return NextResponse.json({ success: true });
     }
   } catch (error) {
@@ -336,6 +341,7 @@ export async function DELETE(request: Request) {
       deleted = true;
     });
     if (!deleted) return NextResponse.json({ success: false, error: 'Campaign was not found' }, { status: 404 });
+    invalidateActiveAdsCache();
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Campaign deletion error:', error);

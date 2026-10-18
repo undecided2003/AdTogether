@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
 import { adminDb as db, FieldValue } from '@/lib/firebase-admin';
 import { authenticatedUid } from '@/lib/request-auth';
+import { invalidatePublisherCache } from '@/lib/publisher-app-id';
 
 export const runtime = 'nodejs';
 
@@ -82,6 +83,7 @@ export async function POST(request: Request) {
   });
 
   if (!created) return NextResponse.json({ error: 'User profile was not found' }, { status: 409 });
+  invalidatePublisherCache(appId);
   return NextResponse.json({ appId, label }, { status: 201 });
 }
 
@@ -124,6 +126,7 @@ export async function PATCH(request: Request) {
   });
 
   if (!updated) return NextResponse.json({ error: 'App ID was not found' }, { status: 404 });
+  invalidatePublisherCache(appId);
   return NextResponse.json({ appId, label });
 }
 
@@ -170,5 +173,6 @@ export async function DELETE(request: Request) {
   });
 
   if (!deleted) return NextResponse.json({ error: 'App ID was not found' }, { status: 404 });
+  invalidatePublisherCache(appId);
   return NextResponse.json({ success: true });
 }

@@ -1,21 +1,30 @@
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { adminDb as db } from '@/lib/firebase-admin';
-import { checkRateLimit } from '@/lib/rate-limit';
+import { checkRateLimit, checkRateLimitCount } from '@/lib/rate-limit';
 import { consumePublicAdRateLimit } from '@/lib/public-ad-rate-limit';
 import { pruneDailyMap, pruneDailyMapByApp } from '@/lib/prune-daily-map';
 import { verifyImpressionToken } from '@/lib/impression-token';
 import { getTrustedRequestCountry, getTrustedRequestIp } from '@/lib/request-country';
 import { findPublisherByAppId } from '@/lib/publisher-app-id';
+import { getCachedApiSecret } from '@/lib/cached-secrets';
+import { isBotTraffic } from '@/lib/bot-detection';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Max-Age': '86400',
 };
 
 export async function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      ...corsHeaders,
+      'Cache-Control': 'public, max-age=86400, s-maxage=86400',
+    },
+  });
 }
 
 export async function POST(request: Request) {
@@ -23,10 +32,19 @@ export async function POST(request: Request) {
     const reqHeaders = await headers();
     const trustedClientIp = getTrustedRequestIp(reqHeaders);
     
-    // Extract origin for web tracking
+    // Zero-overhead bot screening: automated crawlers/scrapers must never record clicks
+    if (isBotTraffic(reqHeaders.get('user-agent'), reqHeaders, trustedClientIp).isBot) {
+      return NextResponse.json({ error: 'bot_traffic' }, { status: 403, headers: corsHeaders });
+    }
     const originHeader = reqHeaders.get('origin') || reqHeaders.get('referer') || '';
     
-    const body = await request.json();
+    let body: any;
+    try {
+      const text = await request.text();
+      body = text ? JSON.parse(text) : null;
+    } catch {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400, headers: corsHeaders });
+    }
     if (!body || typeof body !== 'object' || Array.isArray(body)) {
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400, headers: corsHeaders });
     }
@@ -71,9 +89,7 @@ export async function POST(request: Request) {
     }
     const safeSourceId = (rawSource || 'unknown_origin').replace(/\./g, '_').replace(/\//g, '_').substring(0, 50);
 
-    const configSnap = await db.collection('config').doc('secrets').get();
-    const secretsData = configSnap.data() || {};
-    const API_SECRET_KEY = secretsData.API_SECRET || process.env.API_SECRET;
+    const API_SECRET_KEY = await getCachedApiSecret(db);
 
     if (!API_SECRET_KEY) {
       console.error('API_SECRET is not configured');
@@ -91,22 +107,27 @@ export async function POST(request: Request) {
     if (trustedClientIp) {
       // Match the durable bucket's scope so a shared client IP cannot make
       // one publisher's traffic throttle another publisher's application.
-      if (!checkRateLimit(`click:${effectiveAppId}:${trustedClientIp}`, 100, 60 * 1000)) {
+      const rateCheck = checkRateLimitCount(`click:${effectiveAppId}:${trustedClientIp}`, 100, 60 * 1000);
+      if (!rateCheck.allowed) {
         return NextResponse.json({ error: 'Too Many Requests' }, { status: 429, headers: corsHeaders });
       }
-      try {
-        if (!(await consumePublicAdRateLimit({
-          scope: 'click',
-          appId: effectiveAppId,
-          clientIp: trustedClientIp,
-          limit: 100,
-          windowMs: 60 * 1000,
-        }))) {
-          return NextResponse.json({ error: 'Too Many Requests' }, { status: 429, headers: corsHeaders });
+      // Normal users click occasionally. Escalate to the durable Firestore limiter
+      // only when repeated clicks from this IP are observed, saving rate-limit DB ops.
+      if (rateCheck.count > 2) {
+        try {
+          if (!(await consumePublicAdRateLimit({
+            scope: 'click',
+            appId: effectiveAppId,
+            clientIp: trustedClientIp,
+            limit: 100,
+            windowMs: 60 * 1000,
+          }))) {
+            return NextResponse.json({ error: 'Too Many Requests' }, { status: 429, headers: corsHeaders });
+          }
+        } catch (error) {
+          console.error('Public ad click rate-limit error:', error);
+          return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503, headers: corsHeaders });
         }
-      } catch (error) {
-        console.error('Public ad click rate-limit error:', error);
-        return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503, headers: corsHeaders });
       }
     } else if (!checkRateLimit(`click:${effectiveAppId}:${safeSourceId}`, 100, 60 * 1000)) {
       // This local fallback is a loop guard only. It never treats
@@ -173,6 +194,8 @@ export async function POST(request: Request) {
       const publisher = await findPublisherByAppId(db, effectiveAppId);
       if (publisher && publisher.id === impressionGrant.publisherUid) {
         const publisherRef = publisher.ref;
+        // Fetch a fresh snapshot for the update; findPublisherByAppId returns an in-memory
+        // cached snapshot whose stale earningsLog would overwrite real-time impressions.
         const pubDoc = await publisherRef.get();
         const pubData = pubDoc.data();
         if (pubData) {

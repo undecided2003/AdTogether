@@ -17,6 +17,15 @@ const nextConfig: NextConfig = {
     'firebase-admin/firestore',
     '@modelcontextprotocol/sdk',
   ],
+  async redirects() {
+    return [
+      {
+        source: '/edit-ad/:id',
+        destination: '/edit-ad?id=:id',
+        permanent: true,
+      },
+    ];
+  },
   // Proxy Firebase Auth handler so signInWithRedirect works on localhost.
   // In production (Firebase Hosting), /__/auth/* is served natively.
   async rewrites() {

@@ -165,7 +165,8 @@
 
         fetch(`${baseUrl}/api/ads/impression`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'text/plain' },
+          keepalive: true,
           body: JSON.stringify({
             adId,
             token,
@@ -271,7 +272,8 @@
         anchor.addEventListener('click', () => {
           fetch(`${baseUrl}/api/ads/click`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'text/plain' },
+            keepalive: true,
             body: JSON.stringify({ adId, token: safeText(ad.token), appId }),
           }).catch((e) => console.error('AdTogether click error:', e));
         });

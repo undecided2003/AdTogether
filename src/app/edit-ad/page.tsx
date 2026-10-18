@@ -1,17 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { auth, db, storage } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { ArrowLeft, UploadCloud, Link as LinkIcon, Type, MapPin, X, Wand2, Loader2, Layout, Maximize2 } from "lucide-react";
 import Link from "next/link";
 import { COUNTRIES } from "@/lib/countries";
-// Use API route instead of server action
 
-export default function EditAdPage() {
+function EditAdContent() {
   const [user, setUser] = useState<User | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -35,8 +34,8 @@ export default function EditAdPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
-  const params = useParams();
-  const id = params?.id as string;
+  const searchParams = useSearchParams();
+  const id = searchParams.get('id') || '';
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -46,37 +45,40 @@ export default function EditAdPage() {
       }
       setUser(currentUser);
       
-      if (id) {
-        try {
-          const adRef = doc(db, "ads", id);
-          const adSnap = await getDoc(adRef);
-          if (adSnap.exists()) {
-            const data = adSnap.data();
-            if (data.ownerUid !== currentUser.uid) {
-              router.push("/dashboard");
-              return;
-            }
-            setTitle(data.title || "");
-            setDescription(data.description || "");
-            setClickUrl(data.clickUrl || "https://");
-            
-            const prevCountries = data.targetCountries || (
-              data.targetCountry && data.targetCountry !== "global" 
-                ? [data.targetCountry] 
-                : COUNTRIES.map(c => c.code)
-            );
-            setTargetCountries(prevCountries);
-            
-            setAdType(data.adType || "banner");
-            setPreview(data.imageUrl || null);
-          } else {
+      if (!id) {
+        router.push("/dashboard");
+        return;
+      }
+
+      try {
+        const adRef = doc(db, "ads", id);
+        const adSnap = await getDoc(adRef);
+        if (adSnap.exists()) {
+          const data = adSnap.data();
+          if (data.ownerUid !== currentUser.uid) {
             router.push("/dashboard");
+            return;
           }
-        } catch (e) {
-          console.error("Error fetching ad", e);
-        } finally {
-          setFetching(false);
+          setTitle(data.title || "");
+          setDescription(data.description || "");
+          setClickUrl(data.clickUrl || "https://");
+          
+          const prevCountries = data.targetCountries || (
+            data.targetCountry && data.targetCountry !== "global" 
+              ? [data.targetCountry] 
+              : COUNTRIES.map(c => c.code)
+          );
+          setTargetCountries(prevCountries);
+          
+          setAdType(data.adType || "banner");
+          setPreview(data.imageUrl || null);
+        } else {
+          router.push("/dashboard");
         }
+      } catch (e) {
+        console.error("Error fetching ad", e);
+      } finally {
+        setFetching(false);
       }
     });
     return () => unsubscribe();
@@ -320,7 +322,7 @@ export default function EditAdPage() {
                       <span className="truncate">Global (All)</span>
                     </label>
                     {COUNTRIES.map(c => (
-                      <label key={c.code} className="flex items-center gap-2 cursor-pointer group text-sm text-zinc-800 dark:text-zinc-200 hover:text-amber-600 dark:hover:text-amber-400">
+                       <label key={c.code} className="flex items-center gap-2 cursor-pointer group text-sm text-zinc-800 dark:text-zinc-200 hover:text-amber-600 dark:hover:text-amber-400">
                         <input
                           type="checkbox"
                           checked={targetCountries.includes(c.code)}
@@ -503,5 +505,19 @@ export default function EditAdPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function EditAdPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex-grow flex items-center justify-center min-h-[50vh]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500"></div>
+        </div>
+      }
+    >
+      <EditAdContent />
+    </Suspense>
   );
 }

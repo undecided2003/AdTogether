@@ -24,11 +24,16 @@ function pruneExpired(now: number) {
   }
 }
 
+export interface RateLimitResult {
+  allowed: boolean;
+  count: number;
+}
+
 /**
- * A bounded local limiter used for inexpensive public API endpoints. Security
- * sensitive attestation endpoints additionally use a shared Firestore limiter.
+ * Check and increment a local rate limit bucket, returning both whether the request
+ * is permitted and the current in-process request count for this key.
  */
-export function checkRateLimit(key: string, limit: number, windowMs: number): boolean {
+export function checkRateLimitCount(key: string, limit: number, windowMs: number): RateLimitResult {
   const now = Date.now();
   if (++cleanupCounter % 128 === 0 || rateLimitMap.size >= MAX_ENTRIES) pruneExpired(now);
 
@@ -36,10 +41,18 @@ export function checkRateLimit(key: string, limit: number, windowMs: number): bo
   const entry = rateLimitMap.get(mapKey);
   if (!entry || entry.expiresAt <= now) {
     rateLimitMap.set(mapKey, { count: 1, expiresAt: now + windowMs });
-    return true;
+    return { allowed: true, count: 1 };
   }
 
-  if (entry.count >= limit) return false;
+  if (entry.count >= limit) return { allowed: false, count: entry.count };
   entry.count += 1;
-  return true;
+  return { allowed: true, count: entry.count };
+}
+
+/**
+ * A bounded local limiter used for inexpensive public API endpoints. Security
+ * sensitive attestation endpoints additionally use a shared Firestore limiter.
+ */
+export function checkRateLimit(key: string, limit: number, windowMs: number): boolean {
+  return checkRateLimitCount(key, limit, windowMs).allowed;
 }

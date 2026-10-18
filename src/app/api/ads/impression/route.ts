@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { adminDb as db } from '@/lib/firebase-admin';
-import { checkRateLimit } from '@/lib/rate-limit';
+import { checkRateLimit, checkRateLimitCount } from '@/lib/rate-limit';
 import { consumePublicAdRateLimit } from '@/lib/public-ad-rate-limit';
 import { getCountryTier, getTierMultiplier } from '@/lib/country-tiers';
 import { sendResendEmail } from '@/lib/resend';
@@ -15,6 +15,9 @@ import {
   verifyPlayIntegrityToken,
   type VerifiedAppAttestAssertion,
 } from '@/lib/native-attestation';
+import { getCachedApiSecret, getCachedSecrets } from '@/lib/cached-secrets';
+import { isBotTraffic } from '@/lib/bot-detection';
+import { invalidateActiveAdsCache } from '@/lib/cached-active-ads';
 
 export const runtime = 'nodejs';
 
@@ -22,6 +25,7 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Max-Age': '86400',
 };
 
 const MAX_AUTO_RESUMED_CAMPAIGNS_PER_IMPRESSION = 450;
@@ -58,18 +62,41 @@ function publisherHasAppId(userData: any, appId: string): boolean {
 }
 
 export async function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      ...corsHeaders,
+      'Cache-Control': 'public, max-age=86400, s-maxage=86400',
+    },
+  });
 }
 
 export async function POST(request: Request) {
   try {
     const reqHeaders = await headers();
     const trustedClientIp = getTrustedRequestIp(reqHeaders);
+
+    // Zero-overhead bot screening: bots get a benign, uncredited response
+    // before the body is parsed or any database work happens
+    // (0 DB operations for bot traffic).
+    if (isBotTraffic(reqHeaders.get('user-agent'), reqHeaders, trustedClientIp).isBot) {
+      return NextResponse.json(
+        { success: true, credited: false, reason: 'bot_traffic' },
+        { status: 200, headers: corsHeaders }
+      );
+    }
+
     // Extract origin for web tracking
     const originHeader = reqHeaders.get('origin') || reqHeaders.get('referer') || '';
     const refererHeader = reqHeaders.get('referer') || '';
     
-    const body = await request.json();
+    let body: any;
+    try {
+      const text = await request.text();
+      body = text ? JSON.parse(text) : null;
+    } catch {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400, headers: corsHeaders });
+    }
     if (!body || typeof body !== 'object' || Array.isArray(body)) {
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400, headers: corsHeaders });
     }
@@ -140,9 +167,7 @@ export async function POST(request: Request) {
     }
     const safeSourceId = (rawSource || 'unknown_origin').replace(/\./g, '_').replace(/\//g, '_').substring(0, 50);
 
-    const configSnap = await db.collection('config').doc('secrets').get();
-    const secretsData = configSnap.data() || {};
-    const API_SECRET_KEY = secretsData.API_SECRET || process.env.API_SECRET;
+    const API_SECRET_KEY = await getCachedApiSecret(db);
 
     if (!API_SECRET_KEY) {
       console.error('API_SECRET is not configured');
@@ -161,22 +186,27 @@ export async function POST(request: Request) {
       // Scope this in-process fast path to the endpoint and App ID as well
       // as the verified client IP. The Firestore limiter below is the
       // durable cross-instance control.
-      if (!checkRateLimit(`impression:${effectiveAppId}:${trustedClientIp}`, 200, 60 * 1000)) {
+      const rateCheck = checkRateLimitCount(`impression:${effectiveAppId}:${trustedClientIp}`, 200, 60 * 1000);
+      if (!rateCheck.allowed) {
         return NextResponse.json({ error: 'Too Many Requests' }, { status: 429, headers: corsHeaders });
       }
-      try {
-        if (!(await consumePublicAdRateLimit({
-          scope: 'impression',
-          appId: effectiveAppId,
-          clientIp: trustedClientIp,
-          limit: 200,
-          windowMs: 60 * 1000,
-        }))) {
-          return NextResponse.json({ error: 'Too Many Requests' }, { status: 429, headers: corsHeaders });
+      // Normal visitors make 1-3 impression requests/min. Escalate to the durable Firestore limiter
+      // only when repeated traffic from this IP is observed, saving ~95% of rate-limit DB ops.
+      if (rateCheck.count > 3) {
+        try {
+          if (!(await consumePublicAdRateLimit({
+            scope: 'impression',
+            appId: effectiveAppId,
+            clientIp: trustedClientIp,
+            limit: 200,
+            windowMs: 60 * 1000,
+          }))) {
+            return NextResponse.json({ error: 'Too Many Requests' }, { status: 429, headers: corsHeaders });
+          }
+        } catch (error) {
+          console.error('Public ad impression rate-limit error:', error);
+          return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503, headers: corsHeaders });
         }
-      } catch (error) {
-        console.error('Public ad impression rate-limit error:', error);
-        return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503, headers: corsHeaders });
       }
     } else if (!checkRateLimit(`impression:${effectiveAppId}:${safeSourceId}`, 200, 60 * 1000)) {
       // Keep a bounded local loop guard when an ingress identity is missing.
@@ -266,12 +296,14 @@ export async function POST(request: Request) {
     let sendCreditNotification = false;
     let creditNotificationType: 'low' | 'out_of_credits' | null = null;
     let creditNotificationEmail: string | null = null;
+    let didResumeCampaigns = false;
 
     // Use runTransaction to safely process impression and deduct/add credits
     await db.runTransaction(async (transaction: any) => {
       // Firestore may retry this callback after a conflict, so keep side-effect
       // decisions scoped to the transaction attempt that ultimately commits.
       outOfCredits = false;
+      didResumeCampaigns = false;
       duplicateImpression = false;
       consumedGrantData = null;
       isSelfImpressionResult = false;
@@ -392,7 +424,14 @@ export async function POST(request: Request) {
 
       let pSnap: any = null;
       if (publisherRef) {
-        pSnap = await transaction.get(publisherRef);
+        // Optimization A: When a publisher serves their own ad (self-ad),
+        // userRef and publisherRef point to the identical document (users/{ownerUid}).
+        // Reusing userSnap eliminates a redundant Firestore read within the transaction.
+        if (ownerUid && userRef && publisherRef.id === ownerUid && userSnap) {
+          pSnap = userSnap;
+        } else {
+          pSnap = await transaction.get(publisherRef);
+        }
       }
 
       if (!pSnap?.exists || !publisherHasAppId(pSnap.data(), effectiveAppId)) {
@@ -710,6 +749,9 @@ export async function POST(request: Request) {
                   [MANUAL_PAUSE_FIELD]: false,
                });
              }
+             if (campaignsToResume.length > 0) {
+               didResumeCampaigns = true;
+             }
           }
         }
       } else {
@@ -762,6 +804,10 @@ export async function POST(request: Request) {
         }
       }
     });
+
+    if (outOfCredits || didResumeCampaigns) {
+      invalidateActiveAdsCache();
+    }
 
     if (duplicateImpression) {
       return NextResponse.json(
@@ -823,6 +869,7 @@ export async function POST(request: Request) {
     }
 
     if (sendCreditNotification && creditNotificationType && creditNotificationEmail) {
+      const secretsData = await getCachedSecrets(db);
       const resendApiKey = secretsData.RESEND_API_KEY || process.env.RESEND_API_KEY;
       const subject = creditNotificationType === 'low'
         ? 'Your AdTogether credits are running low'

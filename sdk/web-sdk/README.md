@@ -173,6 +173,41 @@ function MyApp() {
 | `onAdLoaded`       | `() => void`            | —         | Called when the ad has been successfully fetched. |
 | `onAdFailedToLoad` | `(error: Error) => void`| —         | Called if the ad fails to load. The dialog is automatically dismissed on failure. |
 
+### Client-Side Frequency Capping
+
+To prevent ad fatigue and safeguard your application from excessive ad impressions or bot traffic, the SDK automatically includes client-side frequency capping. Views are tracked in rolling windows (per hour and per day) using `localStorage` with a transparent in-memory fallback.
+
+Defaults:
+- **3 views per hour** (rolling 60 minutes)
+- **12 views per day** (rolling 24 hours)
+
+When a cap is reached, `fetchAd()` short-circuits with a frequency cap error, skipping server network requests entirely and saving backend operations.
+
+You can customize or disable frequency capping during `AdTogether.initialize()`:
+
+```typescript
+AdTogether.initialize({
+  appId: 'YOUR_APP_ID',
+  // Configure frequency limits (set to 0 or Infinity to disable)
+  maxViewsPerHour: 3,
+  maxViewsPerDay: 12,
+  // Or disable completely:
+  // enableFrequencyCap: false,
+});
+```
+
+You can also inspect or reset the client-side cap programmatically:
+
+```typescript
+// Check current frequency cap status
+const status = AdTogether.getFrequencyCapStatus();
+console.log(status);
+// { hourlyViews: 1, dailyViews: 4, maxPerHour: 3, maxPerDay: 12, isCapped: false }
+
+// Reset counters (useful in development/testing)
+AdTogether.resetFrequencyCap();
+```
+
 ## How Credits Work
 
 1. **Earn credits** — Every time your app displays an ad from the AdTogether network and the impression is verified, you earn ad credits.

@@ -1821,7 +1821,7 @@ curl -X POST "https://www.ad-together.org/api/ads/impression" \\
                           {ad.active ? "Pause" : "Resume"}
                         </button>
                         <Link
-                          href={`/edit-ad/${ad.id}`}
+                          href={`/edit-ad?id=${ad.id}`}
                           className="text-xs px-3 py-1.5 rounded bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 transition flex items-center justify-center"
                         >
                           Edit

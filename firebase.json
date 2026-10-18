@@ -7,8 +7,34 @@
       "**/node_modules/**"
     ],
     "frameworksBackend": {
-      "region": "us-central1"
-    }
+      "region": "us-central1",
+      "memory": "512MiB",
+      "concurrency": 80,
+      "maxInstances": 10,
+      "minInstances": 0
+    },
+    "headers": [
+      {
+        "source": "/sdk.js",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800" },
+          { "key": "Access-Control-Allow-Origin", "value": "*" }
+        ]
+      },
+      {
+        "source": "/llms*.txt",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=86400, s-maxage=604800" },
+          { "key": "Access-Control-Allow-Origin", "value": "*" }
+        ]
+      },
+      {
+        "source": "**/*.@(jpg|jpeg|gif|png|webp|svg|ico)",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        ]
+      }
+    ]
   },
   "firestore": {
     "database": "(default)",

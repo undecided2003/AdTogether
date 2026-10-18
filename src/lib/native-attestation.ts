@@ -75,21 +75,93 @@ export function parseNativeAttestationAppConfig(candidate: unknown): NativeAttes
   };
 }
 
+interface CachedAttestationConfig {
+  config: NativeAttestationAppConfig | null;
+  appId: string;
+  publisherUid: string | null;
+  expiresAt: number;
+}
+
+const attestationConfigCache = new Map<string, CachedAttestationConfig>();
+const MAX_ATTESTATION_CACHE_ENTRIES = 5000;
+const ATTESTATION_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes for valid configurations
+const NEGATIVE_ATTESTATION_CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes for missing / disabled configs
+let attestationCleanupCounter = 0;
+
+function pruneAttestationCache(now: number) {
+  for (const [key, entry] of attestationConfigCache) {
+    if (entry.expiresAt <= now) attestationConfigCache.delete(key);
+  }
+  while (attestationConfigCache.size >= MAX_ATTESTATION_CACHE_ENTRIES) {
+    const oldestKey = attestationConfigCache.keys().next().value;
+    if (!oldestKey) break;
+    attestationConfigCache.delete(oldestKey);
+  }
+}
+
+export function invalidateNativeAttestationCache(appId?: string): void {
+  if (appId) {
+    const documentId = createHash('sha256').update(appId).digest('hex');
+    attestationConfigCache.delete(documentId);
+  } else {
+    attestationConfigCache.clear();
+  }
+}
+
 export async function getNativeAttestationAppConfig(
   db: FirestoreReadClient,
   appId: string,
   publisherUid: string,
 ): Promise<NativeAttestationAppConfig | null> {
   const documentId = createHash('sha256').update(appId).digest('hex');
+  const now = Date.now();
+  if (++attestationCleanupCounter % 128 === 0 || attestationConfigCache.size >= MAX_ATTESTATION_CACHE_ENTRIES) {
+    pruneAttestationCache(now);
+  }
+
+  const cached = attestationConfigCache.get(documentId);
+  if (cached && cached.expiresAt > now) {
+    if (cached.config && (cached.appId !== appId || cached.publisherUid !== publisherUid)) {
+      throw new Error('Native attestation configuration identity mismatch');
+    }
+    return cached.config;
+  }
+
   const configSnap = await db.collection('nativeAttestationApps').doc(documentId).get();
-  if (!configSnap.exists) return null;
+  if (!configSnap.exists) {
+    attestationConfigCache.set(documentId, {
+      config: null,
+      appId,
+      publisherUid: null,
+      expiresAt: now + NEGATIVE_ATTESTATION_CACHE_TTL_MS,
+    });
+    return null;
+  }
+
   const data = configSnap.data();
-  if (!isRecord(data) || data.enabled !== true) return null;
+  if (!isRecord(data) || data.enabled !== true) {
+    attestationConfigCache.set(documentId, {
+      config: null,
+      appId,
+      publisherUid: null,
+      expiresAt: now + NEGATIVE_ATTESTATION_CACHE_TTL_MS,
+    });
+    return null;
+  }
+
   if (data.appId !== appId || data.publisherUid !== publisherUid) {
     throw new Error('Native attestation configuration identity mismatch');
   }
   const config = parseNativeAttestationAppConfig(data);
   if (!config) throw new Error('Native attestation configuration is invalid');
+
+  attestationConfigCache.set(documentId, {
+    config,
+    appId,
+    publisherUid,
+    expiresAt: now + ATTESTATION_CACHE_TTL_MS,
+  });
+
   return config;
 }
 
