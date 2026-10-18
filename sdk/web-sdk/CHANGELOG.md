@@ -1,3 +1,7 @@
+## 0.6.1
+* **Viewability**: Banner viewability reports include `containerWidth` and `containerHeight`, and impression gating now verifies true visibility (viewport intersection, minimum 50x20 size, opacity >= 0.1, no hidden styles).
+* **Security**: Hardened crawler/bot user-agent screening (scanner/probe tokens, DevTools device-emulation presets, known scanner UAs).
+
 ## 0.6.0
 * **Sync**: Align the release version with all AdTogether SDKs.
 

@@ -6,7 +6,7 @@ on:
       version:
         description: 'Release version number'
         required: true
-        default: '0.6.0'
+        default: '0.6.1'
       tag_name:
         description: 'Git tag name to create (defaults to v<version>)'
         required: false
@@ -39,7 +39,7 @@ jobs:
           set -euo pipefail
 
           if [[ ! "$INPUT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
-            echo "::error::Version must use semver format, for example 0.6.0."
+            echo "::error::Version must use semver format, for example 0.6.1."
             exit 1
           fi
 
@@ -69,7 +69,7 @@ jobs:
           fi
 
           if [[ ! "$RELEASE_TAG_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
-            echo "::error::Tag must use v<semver> format, for example v0.6.0."
+            echo "::error::Tag must use v<semver> format, for example v0.6.1."
             exit 1
           fi
 

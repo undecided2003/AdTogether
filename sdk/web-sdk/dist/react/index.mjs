@@ -1,6 +1,6 @@
 import {
   AdTogether
-} from "../chunk-WYYADZFK.mjs";
+} from "../chunk-JSJG5FF7.mjs";
 
 // src/react/AdTogetherBanner.tsx
 import { useEffect, useRef, useState } from "react";
@@ -64,22 +64,48 @@ var AdTogetherBanner = ({
     let visibleTimer = null;
     let visibleSince = null;
     let latestVisibleRatio = 0;
+    const isElementTrulyVisible = (el) => {
+      if (!el || !el.isConnected) return false;
+      if (document.visibilityState !== "visible") return false;
+      const rect = el.getBoundingClientRect();
+      if (rect.width < 50 || rect.height < 20) return false;
+      const winWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+      const winHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+      if (winWidth <= 0 || winHeight <= 0) return false;
+      if (rect.bottom <= 0 || rect.top >= winHeight || rect.right <= 0 || rect.left >= winWidth) {
+        return false;
+      }
+      try {
+        const style2 = window.getComputedStyle(el);
+        if (style2.display === "none" || style2.visibility === "hidden") return false;
+        const opacity = parseFloat(style2.opacity);
+        if (!isNaN(opacity) && opacity < 0.1) return false;
+      } catch (_) {
+      }
+      return true;
+    };
     const clearVisibleTimer = () => {
       if (visibleTimer) clearTimeout(visibleTimer);
       visibleTimer = null;
       visibleSince = null;
     };
     const startVisibleTimer = () => {
-      if (visibleTimer || impressionTrackedRef.current || document.visibilityState !== "visible") return;
+      if (visibleTimer || impressionTrackedRef.current || document.visibilityState !== "visible" || !isElementTrulyVisible(container)) return;
       visibleSince = Date.now();
       visibleTimer = setTimeout(() => {
         const visibleDurationMs = visibleSince === null ? 0 : Date.now() - visibleSince;
         const visiblePercent = Math.round(latestVisibleRatio * 100);
         visibleTimer = null;
         visibleSince = null;
-        if (impressionTrackedRef.current || !isVisible || !container.isConnected || document.visibilityState !== "visible" || visiblePercent < 50 || visibleDurationMs < 1e3) return;
+        if (impressionTrackedRef.current || !isVisible || !container.isConnected || document.visibilityState !== "visible" || visiblePercent < 50 || visibleDurationMs < 1e3 || !isElementTrulyVisible(container)) return;
+        const rect = container.getBoundingClientRect();
         impressionTrackedRef.current = true;
-        AdTogether.trackImpression(adData.id, adData.token, { visiblePercent, visibleDurationMs });
+        AdTogether.trackImpression(adData.id, adData.token, {
+          visiblePercent,
+          visibleDurationMs,
+          containerWidth: Math.round(rect.width),
+          containerHeight: Math.round(rect.height)
+        });
         observer.disconnect();
       }, 1e3);
     };
@@ -88,7 +114,7 @@ var AdTogetherBanner = ({
         const entry = entries[0];
         if (!entry) return;
         latestVisibleRatio = entry.intersectionRatio;
-        if (entry.isIntersecting && entry.intersectionRatio >= 0.5 && document.visibilityState === "visible") {
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.5 && document.visibilityState === "visible" && isElementTrulyVisible(container)) {
           startVisibleTimer();
         } else {
           clearVisibleTimer();

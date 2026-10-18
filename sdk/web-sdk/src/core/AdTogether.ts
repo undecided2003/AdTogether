@@ -130,18 +130,27 @@ export class AdTogether {
 
     // 5. Crawler & automated scraper user agent tokens
     const ua = navigator.userAgent || '';
-    if (!ua.trim() || ua.length < 10) return true;
+    if (!ua.trim() || ua.length < 10 || /^(?:empty|null|undefined|none|test|dummy|-+)$/i.test(ua.trim())) return true;
 
     if (
       /\+https?:\/\//i.test(ua) ||
       /\bhttps?:\/\/[a-z0-9.-]+\.[a-z]{2,}/i.test(ua) ||
       /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i.test(ua) ||
       /(?<![a-z0-9]|cu|tal|ro)bots?(?![a-z0-9])/i.test(ua) ||
-      /(?<![a-z0-9])(?:spider|crawler|scraper|archiver|transcoder|fetcher|indexer)(?![a-z0-9])/i.test(ua) ||
-      /[a-z0-9_-]+(?:bot|spider|crawler|scraper)\/[0-9]/i.test(ua) ||
+      /(?<![a-z0-9])(?:spider|crawler|scraper|scanner|probe|archiver|transcoder|fetcher|indexer)(?![a-z0-9])/i.test(ua) ||
+      /[a-z0-9_-]+(?:bot|spider|crawler|scraper|scanner)\/[0-9]/i.test(ua) ||
       /[-_]bot\b/i.test(ua) ||
       /\bsearchbot\b/i.test(ua) ||
       /\bheadless\b/i.test(ua) ||
+      /(?:iPhone OS|CPU OS)\s*13_2_3\b/i.test(ua) ||
+      /\bVersion\/13\.0\.3(?:\.[0-9]+)?\s+Mobile\/[0-9a-z]+\s+Safari\/604\.1\b/i.test(ua) ||
+      /\bNexus 5X\b/i.test(ua) ||
+      /\bSM-G900P\b/i.test(ua) ||
+      /\bMoto G \([0-9]\)/i.test(ua) ||
+      /leakix/i.test(ua) ||
+      /l9scan/i.test(ua) ||
+      /wpscan/i.test(ua) ||
+      /\brust[_-]?sniffer\b/i.test(ua) ||
       /googlebot/i.test(ua) ||
       /google-read-aloud/i.test(ua) ||
       /mediapartners-google/i.test(ua) ||
@@ -184,6 +193,7 @@ export class AdTogether {
   private static adCache: Map<string, { ad: AdModel; expiresAt: number }> = new Map();
   private static inflightRequests: Map<string, Promise<AdModel>> = new Map();
   private static readonly AD_CACHE_TTL_MS = 30 * 1000; // 30 seconds
+  private static clickedTokens: Set<string> = new Set();
 
   private static getCacheKey(adUnitId: string, adType?: AdType): string {
     return `${adType || 'banner'}:${adUnitId}`;
@@ -245,9 +255,8 @@ export class AdTogether {
     const now = Date.now();
     const cached = AdTogether.adCache.get(cacheKey);
 
-    // Consume pre-fetched ad if fresh
+    // Return cached ad if fresh
     if (cached && cached.expiresAt > now) {
-      AdTogether.adCache.delete(cacheKey);
       AdTogether.shared.lastAdId = cached.ad.id;
       return cached.ad;
     }
@@ -274,6 +283,10 @@ export class AdTogether {
           if (adType && ad.adType !== adType) {
             throw new Error('Received an ad with a different type than requested: ' + (ad.adType ?? 'missing'));
           }
+          AdTogether.adCache.set(cacheKey, {
+            ad,
+            expiresAt: Date.now() + AdTogether.AD_CACHE_TTL_MS,
+          });
           sdk.lastAdId = ad.id;
           return ad;
         } else if (response.status === 401 || response.status === 403) {
@@ -339,6 +352,14 @@ export class AdTogether {
   }
 
   static trackClick(adId: string, token?: string) {
+    if (token) {
+      if (this.clickedTokens.has(token)) return;
+      this.clickedTokens.add(token);
+      if (this.clickedTokens.size > 200) {
+        const oldest = this.clickedTokens.values().next().value;
+        if (oldest) this.clickedTokens.delete(oldest);
+      }
+    }
     this.trackEvent('/api/ads/click', adId, token);
   }
 

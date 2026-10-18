@@ -108,33 +108,69 @@ export class AdTogether {
   }
 
   private lastAdId?: string;
+  private static adCache: Map<string, { ad: AdModel; expiresAt: number }> = new Map();
+  private static inflightRequests: Map<string, Promise<AdModel>> = new Map();
+  private static readonly AD_CACHE_TTL_MS = 15 * 1000; // 15 seconds
+  private static clickedTokens: Set<string> = new Set();
+
+  private static getCacheKey(adUnitId: string, adType?: AdType): string {
+    return `${adType || 'banner'}:${adUnitId}`;
+  }
+
+  static clearAdCache(): void {
+    AdTogether.adCache.clear();
+  }
 
   static async fetchAd(adUnitId: string = 'default', adType?: AdType): Promise<AdModel> {
     if (!AdTogether.shared.assertInitialized()) {
       throw new Error('AdTogether not initialized');
     }
 
-    try {
-      const sdk = AdTogether.shared;
-      const url = AdTogether.buildServeUrl(sdk, adUnitId, adType);
+    const cacheKey = AdTogether.getCacheKey(adUnitId, adType);
+    const now = Date.now();
+    const cached = AdTogether.adCache.get(cacheKey);
 
-      const response = await fetch(url);
-      if (response.ok) {
-        const ad = await response.json() as AdModel;
-        if (adType && ad.adType !== adType) {
-          throw new Error('Received an ad with a different type than requested: ' + (ad.adType ?? 'missing'));
-        }
-        sdk.lastAdId = ad.id;
-        return ad;
-      } else if (response.status === 401 || response.status === 403) {
-        console.error('AdTogether Error: Invalid App ID. Please check your dashboard.');
-        throw new Error(`AdTogether Error: Invalid App ID. Status: ${response.status}`);
-      }
-
-      throw new Error(`Failed to fetch ad. Status: ${response.status}`);
-    } catch (err) {
-      throw err;
+    if (cached && cached.expiresAt > now) {
+      AdTogether.shared.lastAdId = cached.ad.id;
+      return cached.ad;
     }
+    AdTogether.adCache.delete(cacheKey);
+
+    const inflight = AdTogether.inflightRequests.get(cacheKey);
+    if (inflight) {
+      return inflight;
+    }
+
+    const fetchPromise = (async () => {
+      try {
+        const sdk = AdTogether.shared;
+        const url = AdTogether.buildServeUrl(sdk, adUnitId, adType);
+
+        const response = await fetch(url);
+        if (response.ok) {
+          const ad = await response.json() as AdModel;
+          if (adType && ad.adType !== adType) {
+            throw new Error('Received an ad with a different type than requested: ' + (ad.adType ?? 'missing'));
+          }
+          AdTogether.adCache.set(cacheKey, {
+            ad,
+            expiresAt: Date.now() + AdTogether.AD_CACHE_TTL_MS,
+          });
+          sdk.lastAdId = ad.id;
+          return ad;
+        } else if (response.status === 401 || response.status === 403) {
+          console.error('AdTogether Error: Invalid App ID. Please check your dashboard.');
+          throw new Error(`AdTogether Error: Invalid App ID. Status: ${response.status}`);
+        }
+
+        throw new Error(`Failed to fetch ad. Status: ${response.status}`);
+      } finally {
+        AdTogether.inflightRequests.delete(cacheKey);
+      }
+    })();
+
+    AdTogether.inflightRequests.set(cacheKey, fetchPromise);
+    return fetchPromise;
   }
 
   private static buildServeUrl(sdk: AdTogether, adUnitId: string, adType?: AdType): string {
@@ -165,6 +201,14 @@ export class AdTogether {
   }
 
   static trackClick(adId: string, token?: string) {
+    if (token) {
+      if (this.clickedTokens.has(token)) return;
+      this.clickedTokens.add(token);
+      if (this.clickedTokens.size > 200) {
+        const oldest = this.clickedTokens.values().next().value;
+        if (oldest) this.clickedTokens.delete(oldest);
+      }
+    }
     this.trackEvent('/api/ads/click', adId, token);
   }
 

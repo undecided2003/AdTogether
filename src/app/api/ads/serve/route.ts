@@ -10,6 +10,8 @@ import { findPublisherByAppId } from '@/lib/publisher-app-id';
 import { getCachedActiveAds } from '@/lib/cached-active-ads';
 import { getCachedApiSecret } from '@/lib/cached-secrets';
 import { isBotTraffic } from '@/lib/bot-detection';
+import { getStickyAdCacheKey, getStickyServedAd, setStickyServedAd } from '@/lib/sticky-ad-cache';
+import { checkWebServeFrequencyLimit, recordWebServe } from '@/lib/web-frequency-limit';
 
 export const runtime = 'nodejs';
 
@@ -93,6 +95,25 @@ export async function GET(request: Request) {
 
     const effectiveAppId = appId;
     
+    // Zero-overhead Web Frequency Capping (Option B: In-Memory / Option C: Upstash Edge):
+    // If this web client IP has exceeded the hourly (3) or daily (12) quota, reject before database queries.
+    const isWeb = platform === 'web' || Boolean(reqHeaders.get('origin')) || (!bundleId && Boolean(reqHeaders.get('referer')));
+    if (isWeb && trustedClientIp) {
+      const webLimit = await checkWebServeFrequencyLimit(trustedClientIp);
+      if (!webLimit.allowed) {
+        return NextResponse.json(
+          { error: 'Too Many Requests', message: 'Web frequency limit exceeded (max 3/hour, 12/day)' },
+          {
+            status: 429,
+            headers: {
+              ...corsHeaders,
+              'Retry-After': String(webLimit.retryAfterSeconds || 3600),
+            },
+          }
+        );
+      }
+    }
+
     // Resolve current and legacy public App IDs. Ambiguous IDs are rejected.
     const userSnap = await findPublisherByAppId(db, effectiveAppId);
 
@@ -107,6 +128,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Invalid App ID' }, { status: 401, headers: corsHeaders });
     }
 
+    let rateCheckCount = 1;
     if (trustedClientIp) {
       // Keep the process-local fast path scoped exactly like the durable
       // bucket. A broad IP-only bucket would let traffic for one App ID
@@ -115,29 +137,46 @@ export async function GET(request: Request) {
       if (!rateCheck.allowed) {
         return NextResponse.json({ error: 'Too Many Requests' }, { status: 429, headers: corsHeaders });
       }
-      // Normal visitors make 1-3 requests/min. Escalate to the durable Firestore limiter
-      // only when repeated traffic from this IP is observed, saving ~95% of rate-limit DB ops.
-      if (rateCheck.count > 3) {
-        try {
-          if (!(await consumePublicAdRateLimit({
-            scope: 'serve',
-            appId: effectiveAppId,
-            clientIp: trustedClientIp,
-            limit: 60,
-            windowMs: 60 * 1000,
-          }))) {
-            return NextResponse.json({ error: 'Too Many Requests' }, { status: 429, headers: corsHeaders });
-          }
-        } catch (error) {
-          console.error('Public ad serve rate-limit error:', error);
-          return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503, headers: corsHeaders });
-        }
-      }
+      rateCheckCount = rateCheck.count;
     } else if (!checkRateLimit(`serve:${effectiveAppId}:${safeSourceId}`, 60, 60 * 1000)) {
       // This is only a local fallback for an unconfigured or unavailable
       // trusted ingress. Its caller-controlled source key is intentionally
       // never used as a fraud-control identity.
       return NextResponse.json({ error: 'Too Many Requests' }, { status: 429, headers: corsHeaders });
+    }
+
+    // Sticky Banner Serving: If this user/device recently requested a banner ad
+    // (within the 15-second minimum banner persistence window), return the active ad
+    // directly from memory. This completely stops high-frequency card-scanner/unmount loops
+    // from churning tokens, evicting advertiser budgets, or hammering Firestore with rate-limit writes,
+    // while ensuring real users are never blocked and see smooth, non-flickering ads.
+    const stickyKey = adType === 'banner'
+      ? getStickyAdCacheKey(effectiveAppId, trustedClientIp || safeSourceId, adUnitId, reqHeaders.get('user-agent'))
+      : null;
+
+    if (stickyKey) {
+      const cachedAd = getStickyServedAd(stickyKey);
+      if (cachedAd) {
+        return NextResponse.json(cachedAd, { status: 200, headers: corsHeaders });
+      }
+    }
+
+    // Escalate to durable Firestore limiter only for fresh ad generation when repeated traffic is observed
+    if (trustedClientIp && rateCheckCount > 3) {
+      try {
+        if (!(await consumePublicAdRateLimit({
+          scope: 'serve',
+          appId: effectiveAppId,
+          clientIp: trustedClientIp,
+          limit: 60,
+          windowMs: 60 * 1000,
+        }))) {
+          return NextResponse.json({ error: 'Too Many Requests' }, { status: 429, headers: corsHeaders });
+        }
+      } catch (error) {
+        console.error('Public ad serve rate-limit error:', error);
+        return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503, headers: corsHeaders });
+      }
     }
 
     let nativeAttestationConfig: NativeAttestationAppConfig | null;
@@ -275,22 +314,29 @@ export async function GET(request: Request) {
     }, API_SECRET_KEY);
 
     // 4. Return the selected ad
-    return NextResponse.json(
-      {
-        id: randomAd.id,
-        title: randomAd.title,
-        description: randomAd.description,
-        imageUrl: randomAd.imageUrl,
-        clickUrl: randomAd.clickUrl,
-        token,
-        adType: randomAd.adType || 'banner',
-        nativeAttestation: nativeAttestationConfig?.provider || null,
-        ...(nativeAttestationConfig?.provider === 'play-integrity'
-          ? { playIntegrityProjectNumber: nativeAttestationConfig.playIntegrityProjectNumber }
-          : {}),
-      },
-      { status: 200, headers: corsHeaders }
-    );
+    const responsePayload = {
+      id: randomAd.id,
+      title: randomAd.title,
+      description: randomAd.description,
+      imageUrl: randomAd.imageUrl,
+      clickUrl: randomAd.clickUrl,
+      token,
+      adType: randomAd.adType || 'banner',
+      nativeAttestation: nativeAttestationConfig?.provider || null,
+      ...(nativeAttestationConfig?.provider === 'play-integrity'
+        ? { playIntegrityProjectNumber: nativeAttestationConfig.playIntegrityProjectNumber }
+        : {}),
+    };
+
+    if (stickyKey && (randomAd.adType || 'banner') === 'banner') {
+      setStickyServedAd(stickyKey, responsePayload, token, 15_000);
+    }
+
+    if (isWeb && trustedClientIp) {
+      await recordWebServe(trustedClientIp);
+    }
+
+    return NextResponse.json(responsePayload, { status: 200, headers: corsHeaders });
   } catch (error: any) {
     console.error('Error serving ad:', error);
     return NextResponse.json(

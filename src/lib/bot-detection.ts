@@ -42,8 +42,8 @@ const KNOWN_BOT_PATTERNS = [
   /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i,
   // Generic bot tokens with strict negative lookbehinds (guarantees Cubot/Robot/Talbot are safe)
   /(?<![a-z0-9]|cu|tal|ro)bots?(?![a-z0-9])/i,
-  /(?<![a-z0-9])(?:spider|crawler|scraper|archiver|transcoder|fetcher|indexer)(?![a-z0-9])/i,
-  /[a-z0-9_-]+(?:bot|spider|crawler|scraper)\/[0-9]/i,
+  /(?<![a-z0-9])(?:spider|crawler|scraper|scanner|probe|archiver|transcoder|fetcher|indexer)(?![a-z0-9])/i,
+  /[a-z0-9_-]+(?:bot|spider|crawler|scraper|scanner)\/[0-9]/i,
   /[-_]bot\b/i,
   /\bsearchbot\b/i,
 
@@ -204,6 +204,12 @@ const KNOWN_BOT_PATTERNS = [
   /splash/i,
   /htmlunit/i,
   /zombie/i,
+  // DevTools / Puppeteer default device emulation presets (obsolete hardware/iOS strings)
+  /(?:iPhone OS|CPU OS)\s*13_2_3\b/i,
+  /\bVersion\/13\.0\.3(?:\.[0-9]+)?\s+Mobile\/[0-9a-z]+\s+Safari\/604\.1\b/i,
+  /\bNexus 5X\b/i,
+  /\bSM-G900P\b/i,
+  /\bMoto G \([0-9]\)/i,
 
   // --- Scripting HTTP Clients, Libraries, & Feed Aggregators ---
   /curl\//i,
@@ -260,6 +266,10 @@ const KNOWN_BOT_PATTERNS = [
   /netsparker/i,
   /openvas/i,
   /burpcollaborator/i,
+  /leakix/i,
+  /l9scan/i,
+  /wpscan/i,
+  /\brust[_-]?sniffer\b/i,
 ];
 
 export interface BotCheckResult {
@@ -339,9 +349,9 @@ export function isBotTraffic(
 
   const trimmedUa = userAgent.trim();
 
-  // Short/trivial fake user-agents
-  if (trimmedUa.length < 10) {
-    return { isBot: true, reason: 'invalid_user_agent_length' };
+  // Short, trivial, or placeholder fake user-agents
+  if (trimmedUa.length < 10 || /^(?:empty|null|undefined|none|test|dummy|-+)$/i.test(trimmedUa)) {
+    return { isBot: true, reason: 'invalid_user_agent_format' };
   }
 
   // 1. Check against known bot regex patterns

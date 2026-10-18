@@ -18,6 +18,77 @@
 
   const safeText = (value) => (typeof value === 'string' ? value : '');
 
+  const isAutomatedBrowser = () => {
+    try {
+      if (typeof window === 'undefined' || typeof navigator === 'undefined') return true;
+      if (navigator.webdriver === true) return true;
+      const nav = navigator;
+      if ('callPhantom' in window || '_phantom' in window || '__nightmare' in window) return true;
+      if ('__playwright' in window || '__puppeteer_evaluation_script__' in window) return true;
+      if ('Cypress' in window) return true;
+      if (window.outerWidth === 0 && window.outerHeight === 0) return true;
+      if (Array.isArray(nav.languages) && nav.languages.length === 0) return true;
+      const ua = nav.userAgent || '';
+      if (!ua.trim() || ua.length < 10 || /^(?:empty|null|undefined|none|test|dummy|-+)$/i.test(ua.trim())) return true;
+      if (
+        /\+https?:\/\//i.test(ua) ||
+        /\bhttps?:\/\/[a-z0-9.-]+\.[a-z]{2,}/i.test(ua) ||
+        /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i.test(ua) ||
+        /(?<![a-z0-9]|cu|tal|ro)bots?(?![a-z0-9])/i.test(ua) ||
+        /(?<![a-z0-9])(?:spider|crawler|scraper|scanner|probe|archiver|transcoder|fetcher|indexer)(?![a-z0-9])/i.test(ua) ||
+        /[a-z0-9_-]+(?:bot|spider|crawler|scraper|scanner)\/[0-9]/i.test(ua) ||
+        /[-_]bot\b/i.test(ua) ||
+        /\bsearchbot\b/i.test(ua) ||
+        /\bheadless\b/i.test(ua) ||
+        /(?:iPhone OS|CPU OS)\s*13_2_3\b/i.test(ua) ||
+        /\bVersion\/13\.0\.3(?:\.[0-9]+)?\s+Mobile\/[0-9a-z]+\s+Safari\/604\.1\b/i.test(ua) ||
+        /\bNexus 5X\b/i.test(ua) ||
+        /\bSM-G900P\b/i.test(ua) ||
+        /\bMoto G \([0-9]\)/i.test(ua) ||
+        /leakix/i.test(ua) ||
+        /l9scan/i.test(ua) ||
+        /wpscan/i.test(ua) ||
+        /\brust[_-]?sniffer\b/i.test(ua) ||
+        /googlebot/i.test(ua) ||
+        /google-read-aloud/i.test(ua) ||
+        /mediapartners-google/i.test(ua) ||
+        /meta-webindexer/i.test(ua) ||
+        /meta-externalagent/i.test(ua) ||
+        /meta-externalfetcher/i.test(ua) ||
+        /facebookexternalhit/i.test(ua) ||
+        /facebookbot/i.test(ua) ||
+        /bingbot/i.test(ua) ||
+        /baiduspider/i.test(ua) ||
+        /yandex(bot|images|render)?/i.test(ua) ||
+        /daumoa/i.test(ua) ||
+        /yeti/i.test(ua) ||
+        /bytespider/i.test(ua) ||
+        /petalbot/i.test(ua) ||
+        /applebot/i.test(ua) ||
+        /gptbot/i.test(ua) ||
+        /chatgpt-user/i.test(ua) ||
+        /oai-searchbot/i.test(ua) ||
+        /claude-web/i.test(ua) ||
+        /claudebot/i.test(ua) ||
+        /anthropic-ai/i.test(ua) ||
+        /perplexitybot/i.test(ua) ||
+        /deepseek/i.test(ua) ||
+        /semrush/i.test(ua) ||
+        /ahrefs/i.test(ua) ||
+        /screaming frog/i.test(ua) ||
+        /lighthouse/i.test(ua) ||
+        /pagespeed/i.test(ua) ||
+        /chrome-lighthouse/i.test(ua) ||
+        /Chrome\/99\.0\.4844\.51/i.test(ua)
+      ) {
+        return true;
+      }
+      return false;
+    } catch (_) {
+      return false;
+    }
+  };
+
   const renderAd = (container, ad, isDarkMode, textColor, descColor) => {
     const anchor = document.createElement('a');
     const clickUrl = safeHttpUrl(ad.clickUrl);
@@ -113,6 +184,33 @@
     return anchor;
   };
 
+  const isElementTrulyVisible = (container) => {
+    if (!container || !container.isConnected) return false;
+    if (document.visibilityState !== 'visible') return false;
+
+    // 1. Physical dimensions: real banner ads must have visible human-readable dimensions
+    const rect = container.getBoundingClientRect();
+    if (rect.width < 50 || rect.height < 20) return false;
+
+    // 2. Viewport coordinates: must actually be located inside the visible viewport
+    const winWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+    const winHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+    if (winWidth <= 0 || winHeight <= 0) return false;
+    if (rect.bottom <= 0 || rect.top >= winHeight || rect.right <= 0 || rect.left >= winWidth) {
+      return false;
+    }
+
+    // 3. Computed style: cannot be hidden by zero opacity, visibility: hidden, or display: none
+    try {
+      const style = window.getComputedStyle(container);
+      if (style.display === 'none' || style.visibility === 'hidden') return false;
+      const opacity = parseFloat(style.opacity);
+      if (!isNaN(opacity) && opacity < 0.1) return false;
+    } catch (_) {}
+
+    return true;
+  };
+
   const clearViewabilityTimer = (container) => {
     const state = viewabilityTimers.get(container);
     if (state) clearTimeout(state.timer);
@@ -125,7 +223,8 @@
       const isViewable =
         document.visibilityState === 'visible' &&
         entry.isIntersecting &&
-        entry.intersectionRatio >= 0.5;
+        entry.intersectionRatio >= 0.5 &&
+        isElementTrulyVisible(container);
 
       if (!isViewable) {
         clearViewabilityTimer(container);
@@ -155,7 +254,8 @@
           document.visibilityState !== 'visible' ||
           !container.isConnected ||
           state.visiblePercent < 50 ||
-          visibleDurationMs < 1000
+          visibleDurationMs < 1000 ||
+          !isElementTrulyVisible(container)
         ) return;
 
         const adId = container.getAttribute('data-served-ad-id');
@@ -163,6 +263,7 @@
         const appId = container.getAttribute('data-served-app-id');
         if (!adId || !token || !appId) return;
 
+        const rect = container.getBoundingClientRect();
         fetch(`${baseUrl}/api/ads/impression`, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain' },
@@ -174,6 +275,8 @@
             platform: 'web',
             visiblePercent: state.visiblePercent,
             visibleDurationMs,
+            containerWidth: Math.round(rect.width),
+            containerHeight: Math.round(rect.height),
             pagePath: window.location.pathname,
           }),
         }).catch((e) => console.error('AdTogether impression error:', e));
@@ -196,6 +299,9 @@
   });
 
   const init = async () => {
+    // Automated browser guard: never fetch ads for headless scrapers, Google WRS, or social indexers
+    if (isAutomatedBrowser()) return;
+
     // Find all uninitialized ad containers
     const adContainers = document.querySelectorAll('[data-ad-unit]:not([data-ad-loaded])');
     if (adContainers.length === 0) return;
@@ -268,7 +374,7 @@
 
         const anchor = renderAd(container, ad, isDarkMode, textColor, descColor);
 
-        // 4. Track Clicks
+        // 4. Track Clicks (record at most once per ad load to prevent duplicate click events)
         anchor.addEventListener('click', () => {
           fetch(`${baseUrl}/api/ads/click`, {
             method: 'POST',
@@ -276,7 +382,7 @@
             keepalive: true,
             body: JSON.stringify({ adId, token: safeText(ad.token), appId }),
           }).catch((e) => console.error('AdTogether click error:', e));
-        });
+        }, { once: true });
 
         // Start observing for impressions
         observedAdContainers.add(container);

@@ -241,13 +241,12 @@ var _AdTogether = class _AdTogether {
       return true;
     }
     const ua = navigator.userAgent || "";
-    if (!ua.trim() || ua.length < 10) return true;
-    if (/\+https?:\/\//i.test(ua) || /\bhttps?:\/\/[a-z0-9.-]+\.[a-z]{2,}/i.test(ua) || /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i.test(ua) || /(?<![a-z0-9]|cu|tal|ro)bots?(?![a-z0-9])/i.test(ua) || /(?<![a-z0-9])(?:spider|crawler|scraper|archiver|transcoder|fetcher|indexer)(?![a-z0-9])/i.test(ua) || /[a-z0-9_-]+(?:bot|spider|crawler|scraper)\/[0-9]/i.test(ua) || /[-_]bot\b/i.test(ua) || /\bsearchbot\b/i.test(ua) || /\bheadless\b/i.test(ua) || /googlebot/i.test(ua) || /google-read-aloud/i.test(ua) || /mediapartners-google/i.test(ua) || /meta-webindexer/i.test(ua) || /meta-externalagent/i.test(ua) || /meta-externalfetcher/i.test(ua) || /facebookexternalhit/i.test(ua) || /facebookbot/i.test(ua) || /bingbot/i.test(ua) || /baiduspider/i.test(ua) || /yandex(bot|images|render)?/i.test(ua) || /daumoa/i.test(ua) || /yeti/i.test(ua) || /bytespider/i.test(ua) || /petalbot/i.test(ua) || /applebot/i.test(ua) || /gptbot/i.test(ua) || /chatgpt-user/i.test(ua) || /oai-searchbot/i.test(ua) || /claude-web/i.test(ua) || /claudebot/i.test(ua) || /anthropic-ai/i.test(ua) || /perplexitybot/i.test(ua) || /deepseek/i.test(ua) || /semrush/i.test(ua) || /ahrefs/i.test(ua) || /screaming frog/i.test(ua) || /lighthouse/i.test(ua) || /pagespeed/i.test(ua) || /chrome-lighthouse/i.test(ua) || /Chrome\/99\.0\.4844\.51/i.test(ua)) {
+    if (!ua.trim() || ua.length < 10 || /^(?:empty|null|undefined|none|test|dummy|-+)$/i.test(ua.trim())) return true;
+    if (/\+https?:\/\//i.test(ua) || /\bhttps?:\/\/[a-z0-9.-]+\.[a-z]{2,}/i.test(ua) || /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i.test(ua) || /(?<![a-z0-9]|cu|tal|ro)bots?(?![a-z0-9])/i.test(ua) || /(?<![a-z0-9])(?:spider|crawler|scraper|scanner|probe|archiver|transcoder|fetcher|indexer)(?![a-z0-9])/i.test(ua) || /[a-z0-9_-]+(?:bot|spider|crawler|scraper|scanner)\/[0-9]/i.test(ua) || /[-_]bot\b/i.test(ua) || /\bsearchbot\b/i.test(ua) || /\bheadless\b/i.test(ua) || /(?:iPhone OS|CPU OS)\s*13_2_3\b/i.test(ua) || /\bVersion\/13\.0\.3(?:\.[0-9]+)?\s+Mobile\/[0-9a-z]+\s+Safari\/604\.1\b/i.test(ua) || /\bNexus 5X\b/i.test(ua) || /\bSM-G900P\b/i.test(ua) || /\bMoto G \([0-9]\)/i.test(ua) || /leakix/i.test(ua) || /l9scan/i.test(ua) || /wpscan/i.test(ua) || /\brust[_-]?sniffer\b/i.test(ua) || /googlebot/i.test(ua) || /google-read-aloud/i.test(ua) || /mediapartners-google/i.test(ua) || /meta-webindexer/i.test(ua) || /meta-externalagent/i.test(ua) || /meta-externalfetcher/i.test(ua) || /facebookexternalhit/i.test(ua) || /facebookbot/i.test(ua) || /bingbot/i.test(ua) || /baiduspider/i.test(ua) || /yandex(bot|images|render)?/i.test(ua) || /daumoa/i.test(ua) || /yeti/i.test(ua) || /bytespider/i.test(ua) || /petalbot/i.test(ua) || /applebot/i.test(ua) || /gptbot/i.test(ua) || /chatgpt-user/i.test(ua) || /oai-searchbot/i.test(ua) || /claude-web/i.test(ua) || /claudebot/i.test(ua) || /anthropic-ai/i.test(ua) || /perplexitybot/i.test(ua) || /deepseek/i.test(ua) || /semrush/i.test(ua) || /ahrefs/i.test(ua) || /screaming frog/i.test(ua) || /lighthouse/i.test(ua) || /pagespeed/i.test(ua) || /chrome-lighthouse/i.test(ua) || /Chrome\/99\.0\.4844\.51/i.test(ua)) {
       return true;
     }
     return false;
   }
-  // 30 seconds
   static getCacheKey(adUnitId, adType) {
     return `${adType || "banner"}:${adUnitId}`;
   }
@@ -296,7 +295,6 @@ var _AdTogether = class _AdTogether {
     const now = Date.now();
     const cached = _AdTogether.adCache.get(cacheKey);
     if (cached && cached.expiresAt > now) {
-      _AdTogether.adCache.delete(cacheKey);
       _AdTogether.shared.lastAdId = cached.ad.id;
       return cached.ad;
     }
@@ -318,6 +316,10 @@ var _AdTogether = class _AdTogether {
           if (adType && ad.adType !== adType) {
             throw new Error("Received an ad with a different type than requested: " + (ad.adType ?? "missing"));
           }
+          _AdTogether.adCache.set(cacheKey, {
+            ad,
+            expiresAt: Date.now() + _AdTogether.AD_CACHE_TTL_MS
+          });
           sdk.lastAdId = ad.id;
           return ad;
         } else if (response.status === 401 || response.status === 403) {
@@ -369,6 +371,14 @@ var _AdTogether = class _AdTogether {
     this.trackEvent("/api/ads/impression", adId, token, viewability);
   }
   static trackClick(adId, token) {
+    if (token) {
+      if (this.clickedTokens.has(token)) return;
+      this.clickedTokens.add(token);
+      if (this.clickedTokens.size > 200) {
+        const oldest = this.clickedTokens.values().next().value;
+        if (oldest) this.clickedTokens.delete(oldest);
+      }
+    }
     this.trackEvent("/api/ads/click", adId, token);
   }
   /**
@@ -409,6 +419,8 @@ var _AdTogether = class _AdTogether {
 _AdTogether.adCache = /* @__PURE__ */ new Map();
 _AdTogether.inflightRequests = /* @__PURE__ */ new Map();
 _AdTogether.AD_CACHE_TTL_MS = 30 * 1e3;
+// 30 seconds
+_AdTogether.clickedTokens = /* @__PURE__ */ new Set();
 var AdTogether = _AdTogether;
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {

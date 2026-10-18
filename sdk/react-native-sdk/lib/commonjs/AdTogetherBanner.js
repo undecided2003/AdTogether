@@ -69,9 +69,14 @@ const AdTogetherBanner = ({
         if (cancelled || appStateRef.current !== 'active' || impressionTrackedRef.current) return;
         const window = _reactNative.Dimensions.get('window');
         const totalArea = width * height;
+        // Offscreen and micro-container guard: real mobile banners must have readable dimensions
+        if (width < 50 || height < 20 || totalArea <= 0) {
+          visibleSince = null;
+          return;
+        }
         const visibleWidth = Math.max(0, Math.min(x + width, window.width) - Math.max(x, 0));
         const visibleHeight = Math.max(0, Math.min(y + height, window.height) - Math.max(y, 0));
-        const visiblePercent = totalArea > 0 ? Math.round(visibleWidth * visibleHeight / totalArea * 100) : 0;
+        const visiblePercent = Math.round(visibleWidth * visibleHeight / totalArea * 100);
         if (visiblePercent < 50) {
           visibleSince = null;
           return;
@@ -83,7 +88,9 @@ const AdTogetherBanner = ({
           impressionTrackedRef.current = true;
           _AdTogether.AdTogether.trackImpression(adData.id, adData.token, {
             visiblePercent,
-            visibleDurationMs
+            visibleDurationMs,
+            containerWidth: Math.round(width),
+            containerHeight: Math.round(height)
           });
         }
       });

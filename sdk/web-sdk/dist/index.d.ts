@@ -2,6 +2,8 @@ type AdType = 'banner' | 'interstitial';
 interface ViewabilityMetrics {
     visiblePercent: number;
     visibleDurationMs: number;
+    containerWidth?: number;
+    containerHeight?: number;
 }
 interface AdModel {
     id: string;
@@ -127,6 +129,7 @@ declare class AdTogether {
     private static adCache;
     private static inflightRequests;
     private static readonly AD_CACHE_TTL_MS;
+    private static clickedTokens;
     private static getCacheKey;
     /**
      * Pre-fetch an ad into the memory cache with a 30-second TTL.

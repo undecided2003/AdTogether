@@ -13,6 +13,8 @@ export interface AdModel {
 export interface ViewabilityMetrics {
   visiblePercent: number;
   visibleDurationMs: number;
+  containerWidth?: number;
+  containerHeight?: number;
 }
 
 export interface AdTogetherOptions {

@@ -18,6 +18,12 @@ export declare class AdTogether {
     static initialize(options: AdTogetherOptions): void;
     assertInitialized(): boolean;
     private lastAdId?;
+    private static adCache;
+    private static inflightRequests;
+    private static readonly AD_CACHE_TTL_MS;
+    private static clickedTokens;
+    private static getCacheKey;
+    static clearAdCache(): void;
     static fetchAd(adUnitId?: string, adType?: AdType): Promise<AdModel>;
     private static buildServeUrl;
     static trackImpression(adId: string, token?: string, viewability?: ViewabilityMetrics): void;

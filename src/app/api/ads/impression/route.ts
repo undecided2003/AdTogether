@@ -18,6 +18,8 @@ import {
 import { getCachedApiSecret, getCachedSecrets } from '@/lib/cached-secrets';
 import { isBotTraffic } from '@/lib/bot-detection';
 import { invalidateActiveAdsCache } from '@/lib/cached-active-ads';
+import { invalidateStickyAdByToken } from '@/lib/sticky-ad-cache';
+import { checkWebImpressionFrequencyLimit, recordWebImpression } from '@/lib/web-frequency-limit';
 
 export const runtime = 'nodejs';
 
@@ -182,32 +184,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid auth token' }, { status: 403, headers: corsHeaders });
     }
 
+    let rateCheckCount = 1;
     if (trustedClientIp) {
       // Scope this in-process fast path to the endpoint and App ID as well
-      // as the verified client IP. The Firestore limiter below is the
-      // durable cross-instance control.
+      // as the verified client IP. The Firestore limiter is deferred until
+      // after viewability and dwell-time checks pass to avoid DB operations for failed traffic.
       const rateCheck = checkRateLimitCount(`impression:${effectiveAppId}:${trustedClientIp}`, 200, 60 * 1000);
       if (!rateCheck.allowed) {
         return NextResponse.json({ error: 'Too Many Requests' }, { status: 429, headers: corsHeaders });
       }
-      // Normal visitors make 1-3 impression requests/min. Escalate to the durable Firestore limiter
-      // only when repeated traffic from this IP is observed, saving ~95% of rate-limit DB ops.
-      if (rateCheck.count > 3) {
-        try {
-          if (!(await consumePublicAdRateLimit({
-            scope: 'impression',
-            appId: effectiveAppId,
-            clientIp: trustedClientIp,
-            limit: 200,
-            windowMs: 60 * 1000,
-          }))) {
-            return NextResponse.json({ error: 'Too Many Requests' }, { status: 429, headers: corsHeaders });
-          }
-        } catch (error) {
-          console.error('Public ad impression rate-limit error:', error);
-          return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503, headers: corsHeaders });
-        }
-      }
+      rateCheckCount = rateCheck.count;
     } else if (!checkRateLimit(`impression:${effectiveAppId}:${safeSourceId}`, 200, 60 * 1000)) {
       // Keep a bounded local loop guard when an ingress identity is missing.
       // The source is caller-reported, so it is not a security boundary.
@@ -265,14 +251,79 @@ export async function POST(request: Request) {
     const tierMultiplier = getTierMultiplier(tier);
 
     // Client telemetry can screen out impossible reports, but it cannot prove DOM visibility.
-    const isViewabilityViolation =
+    const rawContainerWidth = (body as any)?.containerWidth ?? (body as any)?.width;
+    const rawContainerHeight = (body as any)?.containerHeight ?? (body as any)?.height;
+    const containerWidth = typeof rawContainerWidth === 'number' ? rawContainerWidth : (typeof rawContainerWidth === 'string' && rawContainerWidth ? Number(rawContainerWidth) : null);
+    const containerHeight = typeof rawContainerHeight === 'number' ? rawContainerHeight : (typeof rawContainerHeight === 'string' && rawContainerHeight ? Number(rawContainerHeight) : null);
+
+    // Micro-container / invisible placement guard: ads smaller than 30px x 15px are physically unreadable
+    const isDimensionViolation =
       isWebImpression &&
-      (!Number.isFinite(visiblePercent) ||
-        visiblePercent < MIN_WEB_VIEWABLE_PERCENT ||
-        visiblePercent > 100 ||
-        !Number.isFinite(visibleDurationMs) ||
-        visibleDurationMs < MIN_WEB_VIEWABLE_DURATION_MS ||
-        visibleDurationMs > serverMeasuredAgeMs + CLIENT_DURATION_CLOCK_TOLERANCE_MS);
+      ((containerWidth !== null && Number.isFinite(containerWidth) && containerWidth < 30) ||
+       (containerHeight !== null && Number.isFinite(containerHeight) && containerHeight < 15));
+
+    const isViewabilityViolation =
+      isDimensionViolation ||
+      (isWebImpression &&
+        (!Number.isFinite(visiblePercent) ||
+          visiblePercent < MIN_WEB_VIEWABLE_PERCENT ||
+          visiblePercent > 100 ||
+          !Number.isFinite(visibleDurationMs) ||
+          visibleDurationMs < MIN_WEB_VIEWABLE_DURATION_MS ||
+          visibleDurationMs > serverMeasuredAgeMs + CLIENT_DURATION_CLOCK_TOLERANCE_MS));
+
+    // Zero-overhead guard: Sub-second dwell time or invalid viewability reports
+    // are rejected immediately in-memory without initiating a costly Firestore transaction
+    // or writing an uncredited grant. This prevents high-frequency scanner/unmount loops
+    // from consuming database operations while keeping genuine 1s+ views creditable.
+    if (isDwellTimeViolation) {
+      return NextResponse.json(
+        { success: true, credited: false, reason: 'server_minimum_view_time_not_met' },
+        { status: 200, headers: corsHeaders }
+      );
+    }
+
+    if (isViewabilityViolation) {
+      return NextResponse.json(
+        {
+          success: true,
+          credited: false,
+          reason: isDimensionViolation ? 'invalid_container_dimensions' : 'viewability_threshold_not_met',
+        },
+        { status: 200, headers: corsHeaders }
+      );
+    }
+
+    // Zero-overhead Web Frequency Capping (Option B: In-Memory / Option C: Upstash Edge):
+    // Reject excessive views per IP (3/hour, 12/day) before initiating the Firestore transaction (0 DB reads).
+    if (isWebImpression && trustedClientIp) {
+      const webLimit = await checkWebImpressionFrequencyLimit(trustedClientIp);
+      if (!webLimit.allowed) {
+        return NextResponse.json(
+          { success: true, credited: false, reason: webLimit.reason },
+          { status: 200, headers: corsHeaders }
+        );
+      }
+    }
+
+    // Normal visitors make 1-3 impression requests/min. Escalate to the durable Firestore limiter
+    // only when verified, viewable impressions are observed, saving ~95% of rate-limit DB ops.
+    if (trustedClientIp && rateCheckCount > 3) {
+      try {
+        if (!(await consumePublicAdRateLimit({
+          scope: 'impression',
+          appId: effectiveAppId,
+          clientIp: trustedClientIp,
+          limit: 200,
+          windowMs: 60 * 1000,
+        }))) {
+          return NextResponse.json({ error: 'Too Many Requests' }, { status: 429, headers: corsHeaders });
+        }
+      } catch (error) {
+        console.error('Public ad impression rate-limit error:', error);
+        return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503, headers: corsHeaders });
+      }
+    }
 
     const publisherRef = db.collection('users').doc(impressionGrant.publisherUid);
 
@@ -291,8 +342,6 @@ export async function POST(request: Request) {
     let invalidNativeAttestation = false;
     let appAttestKeyMissing = false;
     let appAttestOutOfOrder = false;
-    let dwellTimeNotMet = false;
-    let viewabilityNotMet = false;
     let sendCreditNotification = false;
     let creditNotificationType: 'low' | 'out_of_credits' | null = null;
     let creditNotificationEmail: string | null = null;
@@ -313,8 +362,6 @@ export async function POST(request: Request) {
       invalidNativeAttestation = false;
       appAttestKeyMissing = false;
       appAttestOutOfOrder = false;
-      dwellTimeNotMet = false;
-      viewabilityNotMet = false;
       sendCreditNotification = false;
       creditNotificationType = null;
       creditNotificationEmail = null;
@@ -324,38 +371,6 @@ export async function POST(request: Request) {
       if (consumedGrantSnap.exists) {
         duplicateImpression = true;
         consumedGrantData = consumedGrantSnap.data() || null;
-        return;
-      }
-
-      if (isDwellTimeViolation) {
-        transaction.set(impressionGrantRef, {
-          adId,
-          appId: effectiveAppId,
-          publisherUid: impressionGrant.publisherUid,
-          adType: impressionGrant.adType,
-          consumedAt: new Date(),
-          expiresAt: new Date(impressionGrant.expiresAtMs),
-          credited: false,
-          isSelfImpression: false,
-          reason: 'server_minimum_view_time_not_met',
-        });
-        dwellTimeNotMet = true;
-        return;
-      }
-
-      if (isViewabilityViolation) {
-        transaction.set(impressionGrantRef, {
-          adId,
-          appId: effectiveAppId,
-          publisherUid: impressionGrant.publisherUid,
-          adType: impressionGrant.adType,
-          consumedAt: new Date(),
-          expiresAt: new Date(impressionGrant.expiresAtMs),
-          credited: false,
-          isSelfImpression: false,
-          reason: 'viewability_threshold_not_met',
-        });
-        viewabilityNotMet = true;
         return;
       }
 
@@ -821,20 +836,6 @@ export async function POST(request: Request) {
       );
     }
 
-    if (dwellTimeNotMet) {
-      return NextResponse.json(
-        { success: true, credited: false, reason: 'server_minimum_view_time_not_met' },
-        { status: 200, headers: corsHeaders }
-      );
-    }
-
-    if (viewabilityNotMet) {
-      return NextResponse.json(
-        { success: true, credited: false, reason: 'viewability_threshold_not_met' },
-        { status: 200, headers: corsHeaders }
-      );
-    }
-
     if (appAttestOutOfOrder) {
       return NextResponse.json(
         { error: 'Native app integrity verification failed', reason: 'out_of_order_assertion' },
@@ -896,6 +897,14 @@ export async function POST(request: Request) {
         { error: 'Ad owner has insufficient credits' },
         { status: 402, headers: corsHeaders }
       );
+    }
+
+    if (typeof token === 'string') {
+      invalidateStickyAdByToken(token);
+    }
+
+    if (isWebImpression && trustedClientIp && !isSelfImpressionResult) {
+      await recordWebImpression(trustedClientIp);
     }
 
     return NextResponse.json(

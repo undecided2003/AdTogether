@@ -93,6 +93,30 @@ export const AdTogetherBanner: React.FC<AdTogetherBannerProps> = ({
     let visibleSince: number | null = null;
     let latestVisibleRatio = 0;
 
+    const isElementTrulyVisible = (el: HTMLElement): boolean => {
+      if (!el || !el.isConnected) return false;
+      if (document.visibilityState !== 'visible') return false;
+
+      const rect = el.getBoundingClientRect();
+      if (rect.width < 50 || rect.height < 20) return false;
+
+      const winWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+      const winHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+      if (winWidth <= 0 || winHeight <= 0) return false;
+      if (rect.bottom <= 0 || rect.top >= winHeight || rect.right <= 0 || rect.left >= winWidth) {
+        return false;
+      }
+
+      try {
+        const style = window.getComputedStyle(el);
+        if (style.display === 'none' || style.visibility === 'hidden') return false;
+        const opacity = parseFloat(style.opacity);
+        if (!isNaN(opacity) && opacity < 0.1) return false;
+      } catch (_) {}
+
+      return true;
+    };
+
     const clearVisibleTimer = () => {
       if (visibleTimer) clearTimeout(visibleTimer);
       visibleTimer = null;
@@ -100,7 +124,7 @@ export const AdTogetherBanner: React.FC<AdTogetherBannerProps> = ({
     };
 
     const startVisibleTimer = () => {
-      if (visibleTimer || impressionTrackedRef.current || document.visibilityState !== 'visible') return;
+      if (visibleTimer || impressionTrackedRef.current || document.visibilityState !== 'visible' || !isElementTrulyVisible(container)) return;
 
       visibleSince = Date.now();
       visibleTimer = setTimeout(() => {
@@ -115,11 +139,18 @@ export const AdTogetherBanner: React.FC<AdTogetherBannerProps> = ({
           !container.isConnected ||
           document.visibilityState !== 'visible' ||
           visiblePercent < 50 ||
-          visibleDurationMs < 1000
+          visibleDurationMs < 1000 ||
+          !isElementTrulyVisible(container)
         ) return;
 
+        const rect = container.getBoundingClientRect();
         impressionTrackedRef.current = true;
-        AdTogether.trackImpression(adData.id, adData.token, { visiblePercent, visibleDurationMs });
+        AdTogether.trackImpression(adData.id, adData.token, {
+          visiblePercent,
+          visibleDurationMs,
+          containerWidth: Math.round(rect.width),
+          containerHeight: Math.round(rect.height),
+        });
         observer.disconnect();
       }, 1000);
     };
@@ -130,7 +161,7 @@ export const AdTogetherBanner: React.FC<AdTogetherBannerProps> = ({
         if (!entry) return;
 
         latestVisibleRatio = entry.intersectionRatio;
-        if (entry.isIntersecting && entry.intersectionRatio >= 0.5 && document.visibilityState === 'visible') {
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.5 && document.visibilityState === 'visible' && isElementTrulyVisible(container)) {
           startVisibleTimer();
         } else {
           clearVisibleTimer();

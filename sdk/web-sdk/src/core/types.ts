@@ -3,6 +3,8 @@ export type AdType = 'banner' | 'interstitial';
 export interface ViewabilityMetrics {
   visiblePercent: number;
   visibleDurationMs: number;
+  containerWidth?: number;
+  containerHeight?: number;
 }
 
 export interface AdModel {

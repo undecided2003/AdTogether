@@ -4,11 +4,12 @@ import { adminDb as db } from '@/lib/firebase-admin';
 import { checkRateLimit, checkRateLimitCount } from '@/lib/rate-limit';
 import { consumePublicAdRateLimit } from '@/lib/public-ad-rate-limit';
 import { pruneDailyMap, pruneDailyMapByApp } from '@/lib/prune-daily-map';
-import { verifyImpressionToken } from '@/lib/impression-token';
+import { verifyImpressionToken, IMPRESSION_TOKEN_TTL_MS } from '@/lib/impression-token';
 import { getTrustedRequestCountry, getTrustedRequestIp } from '@/lib/request-country';
 import { findPublisherByAppId } from '@/lib/publisher-app-id';
 import { getCachedApiSecret } from '@/lib/cached-secrets';
 import { isBotTraffic } from '@/lib/bot-detection';
+import { checkCtrCircuitBreaker, isCircuitBreakerCachedTripped } from '@/lib/ctr-circuit-breaker';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -104,6 +105,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid auth token' }, { status: 403, headers: corsHeaders });
     }
 
+    // Zero-overhead click deduplication: an impression token can only record a single click.
+    // Duplicate click events (e.g. rapid double-clicks or repeated API calls) return 200 OK
+    // with duplicate: true so legitimate user interactions are never disrupted or errored,
+    // while preventing duplicate database transactions and inflated CTR metrics.
+    if (!checkRateLimit(`click_nonce:${impressionGrant.nonce}`, 1, IMPRESSION_TOKEN_TTL_MS)) {
+      return NextResponse.json({ success: true, duplicate: true }, { status: 200, headers: corsHeaders });
+    }
+
     if (trustedClientIp) {
       // Match the durable bucket's scope so a shared client IP cannot make
       // one publisher's traffic throttle another publisher's application.
@@ -138,6 +147,34 @@ export async function POST(request: Request) {
     // signed grant rather than a body field or an arbitrary request header.
     const finalCountry = impressionGrant.country;
     const clickRequestCountry = getTrustedRequestCountry(reqHeaders);
+    // Abnormal CTR Circuit Breaker:
+    // If a placement or app exhibits an abnormal CTR (>35% banner / >50% interstitial over 20+ impressions),
+    // the circuit breaker activates. We acknowledge the click with HTTP 200 { success: true, circuitBreaker: true }
+    // so real users are never interrupted, but we bypass the Firestore write transaction and prevent
+    // artificial CTR inflation.
+    if (isCircuitBreakerCachedTripped(effectiveAppId, adId)) {
+      return NextResponse.json({ success: true, circuitBreaker: true }, { status: 200, headers: corsHeaders });
+    }
+
+    const publisher = effectiveAppId ? await findPublisherByAppId(db, effectiveAppId) : null;
+    const pubData = publisher?.data();
+    if (pubData) {
+      const circuitCheck = checkCtrCircuitBreaker({
+        appId: effectiveAppId,
+        adId,
+        adType: impressionGrant.adType,
+        earningsLog: pubData.earningsLog,
+        dailyImpressionsByApp: pubData.dailyImpressionsByApp,
+        dailyClicksByApp: pubData.dailyClicksByApp,
+      });
+
+      if (circuitCheck.tripped) {
+        return NextResponse.json(
+          { success: true, circuitBreaker: true, reason: circuitCheck.reason },
+          { status: 200, headers: corsHeaders }
+        );
+      }
+    }
 
     const adRef = db.collection('ads').doc(adId);
     await db.runTransaction(async (transaction: any) => {
@@ -190,10 +227,8 @@ export async function POST(request: Request) {
     });
 
     // Update publisher's earnings log with click count
-    if (effectiveAppId) {
-      const publisher = await findPublisherByAppId(db, effectiveAppId);
-      if (publisher && publisher.id === impressionGrant.publisherUid) {
-        const publisherRef = publisher.ref;
+    if (effectiveAppId && publisher && publisher.id === impressionGrant.publisherUid) {
+      const publisherRef = publisher.ref;
         // Fetch a fresh snapshot for the update; findPublisherByAppId returns an in-memory
         // cached snapshot whose stale earningsLog would overwrite real-time impressions.
         const pubDoc = await publisherRef.get();
@@ -230,7 +265,6 @@ export async function POST(request: Request) {
           }
         }
       }
-    }
 
     return NextResponse.json({ success: true }, { status: 200, headers: corsHeaders });
   } catch (error: any) {
