@@ -19,7 +19,8 @@ import { getCachedApiSecret, getCachedSecrets } from '@/lib/cached-secrets';
 import { isBotTraffic } from '@/lib/bot-detection';
 import { invalidateActiveAdsCache } from '@/lib/cached-active-ads';
 import { invalidateStickyAdByToken } from '@/lib/sticky-ad-cache';
-import { checkWebImpressionFrequencyLimit, recordWebImpression } from '@/lib/web-frequency-limit';
+import { checkWebImpressionFrequencyLimit, recordWebImpression, webFrequencySubject } from '@/lib/web-frequency-limit';
+import { INTEGRATION_BLOCKED_RESPONSE, isIntegrationBlocked } from '@/lib/integration-blocklist';
 
 export const runtime = 'nodejs';
 
@@ -124,6 +125,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Conflicting App ID parameters' }, { status: 400, headers: corsHeaders });
     }
     const effectiveAppId = explicitAppId || legacyAppId;
+    // Temporary integration blocklist (in-flight impressions from a blocked
+    // integration must not credit; see src/lib/integration-blocklist.ts).
+    if (isIntegrationBlocked(effectiveAppId)) {
+      return NextResponse.json(INTEGRATION_BLOCKED_RESPONSE.body, {
+        status: INTEGRATION_BLOCKED_RESPONSE.status,
+        headers: corsHeaders,
+      });
+    }
+    // View-frequency subject (App ID + IP + UA fingerprint): each device behind
+    // a shared carrier-grade NAT keeps its own 3/hr, 12/day quota. The durable
+    // IP-keyed fraud limiters below are unchanged by this subject.
+    const freqSubject = webFrequencySubject(trustedClientIp, effectiveAppId, reqHeaders.get('user-agent'));
     const normalizedBundleId = typeof bundleId === 'string' && bundleId.length <= 255 ? bundleId : '';
     const normalizedPlatform = typeof platform === 'string' && platform.length <= 64 ? platform : '';
     const normalizedAppName = typeof appName === 'string' && appName.length <= 255 ? appName : '';
@@ -297,7 +310,7 @@ export async function POST(request: Request) {
     // Zero-overhead Web Frequency Capping (Option B: In-Memory / Option C: Upstash Edge):
     // Reject excessive views per IP (3/hour, 12/day) before initiating the Firestore transaction (0 DB reads).
     if (isWebImpression && trustedClientIp) {
-      const webLimit = await checkWebImpressionFrequencyLimit(trustedClientIp);
+      const webLimit = await checkWebImpressionFrequencyLimit(freqSubject);
       if (!webLimit.allowed) {
         return NextResponse.json(
           { success: true, credited: false, reason: webLimit.reason },
@@ -904,7 +917,7 @@ export async function POST(request: Request) {
     }
 
     if (isWebImpression && trustedClientIp && !isSelfImpressionResult) {
-      await recordWebImpression(trustedClientIp);
+      await recordWebImpression(freqSubject);
     }
 
     return NextResponse.json(

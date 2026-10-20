@@ -1,3 +1,6 @@
+## 0.6.2
+* **Sync**: Align the release version with all AdTogether SDKs.
+
 ## 0.6.1
 * **Performance**: `AdTogether.fetchAd` now serves ads from a 15-second in-memory cache, coalesces concurrent in-flight requests per placement, and exposes `AdTogether.clearAdCache()`.
 * **Viewability**: `ViewabilityMetrics` includes `containerWidth` and `containerHeight`.

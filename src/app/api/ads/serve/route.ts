@@ -11,7 +11,8 @@ import { getCachedActiveAds } from '@/lib/cached-active-ads';
 import { getCachedApiSecret } from '@/lib/cached-secrets';
 import { isBotTraffic } from '@/lib/bot-detection';
 import { getStickyAdCacheKey, getStickyServedAd, setStickyServedAd } from '@/lib/sticky-ad-cache';
-import { checkWebServeFrequencyLimit, recordWebServe } from '@/lib/web-frequency-limit';
+import { checkWebServeFrequencyLimit, recordWebServe, webFrequencySubject } from '@/lib/web-frequency-limit';
+import { INTEGRATION_BLOCKED_RESPONSE, isIntegrationBlocked } from '@/lib/integration-blocklist';
 
 export const runtime = 'nodejs';
 
@@ -93,13 +94,26 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Invalid ad type' }, { status: 400, headers: corsHeaders });
     }
 
+    // Temporary integration blocklist: refuse legacy/broken SDK integrations
+    // before any database work (see src/lib/integration-blocklist.ts).
+    if (isIntegrationBlocked(appId)) {
+      return NextResponse.json(INTEGRATION_BLOCKED_RESPONSE.body, {
+        status: INTEGRATION_BLOCKED_RESPONSE.status,
+        headers: corsHeaders,
+      });
+    }
+
     const effectiveAppId = appId;
-    
+    // View-frequency subject (App ID + IP + UA fingerprint): each device behind
+    // a shared carrier-grade NAT keeps its own 3/hr, 12/day quota. The hard
+    // IP-keyed fraud limiters below are unchanged by this subject.
+    const freqSubject = webFrequencySubject(trustedClientIp, effectiveAppId, reqHeaders.get('user-agent'));
+
     // Zero-overhead Web Frequency Capping (Option B: In-Memory / Option C: Upstash Edge):
     // If this web client IP has exceeded the hourly (3) or daily (12) quota, reject before database queries.
     const isWeb = platform === 'web' || Boolean(reqHeaders.get('origin')) || (!bundleId && Boolean(reqHeaders.get('referer')));
     if (isWeb && trustedClientIp) {
-      const webLimit = await checkWebServeFrequencyLimit(trustedClientIp);
+      const webLimit = await checkWebServeFrequencyLimit(freqSubject);
       if (!webLimit.allowed) {
         return NextResponse.json(
           { error: 'Too Many Requests', message: 'Web frequency limit exceeded (max 3/hour, 12/day)' },
@@ -333,7 +347,7 @@ export async function GET(request: Request) {
     }
 
     if (isWeb && trustedClientIp) {
-      await recordWebServe(trustedClientIp);
+      await recordWebServe(freqSubject);
     }
 
     return NextResponse.json(responsePayload, { status: 200, headers: corsHeaders });

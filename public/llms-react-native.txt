@@ -1,6 +1,6 @@
 # AdTogether React Native SDK — LLM Integration Reference
 
-**Version:** 0.6.1
+**Version:** 0.6.2
 
 **Package:** `@adtogether/react-native-sdk`
 **Distribution:** NPM

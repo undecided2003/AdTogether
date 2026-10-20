@@ -103,9 +103,9 @@ Detailed instructions are provided in each SDK's local `README.md`.
 
 - **Web integration:** `npm install @adtogether/web-sdk`
 - **React Native integration:** `npm install @adtogether/react-native-sdk`
-- **Android integration:** Implement `com.relaxsoftwareapps.adtogether:adtogether-sdk:0.6.1` inside your `build.gradle.kts`.
-- **iOS integration:** Add the Swift Package from `https://github.com/undecided2003/AdTogether.git`, or use `pod 'AdTogether', '~> 0.6.1'`.
-- **Flutter integration:** Run `flutter pub add adtogether_sdk:^0.6.1`.
+- **Android integration:** Implement `com.relaxsoftwareapps.adtogether:adtogether-sdk:0.6.2` inside your `build.gradle.kts`.
+- **iOS integration:** Add the Swift Package from `https://github.com/undecided2003/AdTogether.git`, or use `pod 'AdTogether', '~> 0.6.2'`.
+- **Flutter integration:** Run `flutter pub add adtogether_sdk:^0.6.2`.
 - **CMS / HTML:** Paste `<script src="https://www.ad-together.org/sdk.js" data-app-id="YOUR_APP_ID" defer></script>` and `<div data-ad-unit="YOUR_AD_UNIT_ID"></div>`.
 
 ---

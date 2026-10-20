@@ -1,6 +1,6 @@
 # AdTogether — LLM Integration Reference
 
-**Version:** 0.6.1
+**Version:** 0.6.2
 
 **"Show an ad, get an ad shown"**
 *The reciprocal ad exchange to increase conversions and grow your app's audience.*

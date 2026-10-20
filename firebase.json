@@ -8,7 +8,7 @@
     ],
     "frameworksBackend": {
       "region": "us-central1",
-      "memory": "512MiB",
+      "memory": "1GiB",
       "concurrency": 80,
       "maxInstances": 10,
       "minInstances": 0
@@ -34,6 +34,39 @@
           { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
         ]
       }
+    ],
+    "redirects": [
+      { "source": "/wp-admin**", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/wp-login.php", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/wp-content**", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/xmlrpc.php", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/.env**", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/.git**", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/.svn**", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/.aws**", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/phpmyadmin**", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/adminer**", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/vendor/phpunit**", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/cgi-bin**", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/manager/html**", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/server-status**", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/actuator**", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/*.php", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/wp-admin/**", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/wp-content/**", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/.env/**", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/.git/**", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/.svn/**", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/.aws/**", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/.hg/**", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/phpmyadmin/**", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/adminer/**", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/vendor/phpunit/**", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/cgi-bin/**", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/manager/html/**", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/server-status/**", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/actuator/**", "type": 301, "destination": "https://www.ad-together.org/" },
+      { "source": "/**/*.php", "type": 301, "destination": "https://www.ad-together.org/" }
     ]
   },
   "firestore": {

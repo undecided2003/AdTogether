@@ -7,7 +7,7 @@
  * credits, pollute metrics, or trigger billable Firestore reads and writes.
  */
 
-import { isIP } from 'node:net';
+import { BlockList, isIP } from 'node:net';
 
 type HeaderReader = Pick<Headers, 'get'>;
 
@@ -28,6 +28,42 @@ const CRAWLER_IP_PREFIXES = [
   '157.55.',
   '207.46.',
 ];
+
+// Exact Google crawler/fetcher networks observed in production. These are
+// intentionally CIDR-scoped rather than broad 66.249.* or 66.102.* prefixes:
+// Google publishes specific CIDRs rather than either aggregate. Each network
+// was verified against Google's published crawler/fetcher ranges and reverse
+// plus forward DNS before being added. Keep this list small and evidence-based;
+// update it from https://developers.google.com/crawling/ipranges/ when new
+// automated sources appear in production logs.
+const GOOGLE_AUTOMATED_FETCHER_CIDRS: ReadonlyArray<readonly [string, number]> = [
+  // Google common crawler (observed Chrome-shaped renderer)
+  ['66.249.73.192', 27],
+  // Google user-triggered fetchers/proxies. They are automated fetches, not
+  // evidence that a person viewed an ad, even when they use a browser-like UA.
+  ['66.249.82.0', 24],
+  // Observed serving in production alongside 82/84/93 (66.249.74.x).
+  ['66.249.74.0', 24],
+  ['66.249.84.0', 24],
+  ['66.249.93.0', 24],
+  ['66.102.6.0', 24],
+  ['66.102.8.0', 24],
+];
+
+const googleAutomatedFetcherIps = new BlockList();
+for (const [network, prefix] of GOOGLE_AUTOMATED_FETCHER_CIDRS) {
+  googleAutomatedFetcherIps.addSubnet(network, prefix, 'ipv4');
+}
+
+// Client-IP carrier headers (CDN / reverse-proxy conventions), checked in
+// this order when resolving the singular client IP.
+const DIRECT_CLIENT_IP_HEADERS = [
+  'cf-connecting-ip',
+  'fastly-client-ip',
+  'true-client-ip',
+  'x-real-ip',
+  'x-appengine-user-ip',
+] as const;
 
 // Known crawler, spider, and automated indexer user-agent tokens (case-insensitive)
 const KNOWN_BOT_PATTERNS = [
@@ -313,8 +349,7 @@ export function getClientIp(
   }
 
   // Cloud CDN / reverse proxy client IP headers (take single client IP, never proxy chain)
-  const directHeaders = ['cf-connecting-ip', 'fastly-client-ip', 'true-client-ip', 'x-real-ip', 'x-appengine-user-ip'];
-  for (const h of directHeaders) {
+  for (const h of DIRECT_CLIENT_IP_HEADERS) {
     const val = reqHeaders.get(h);
     if (val) {
       const norm = normalizeClientIp(val);
@@ -335,8 +370,47 @@ export function getClientIp(
 }
 
 /**
+ * Collect every candidate client IP carried by the request: the explicitly
+ * provided validated IP, all CDN client-IP headers, and every entry of the
+ * x-forwarded-for chain (capped).
+ *
+ * Used by the bot screen only. Firebase Hosting / CDN proxy hops can reorder
+ * x-forwarded-for, so the true client (e.g. Googlebot) is not always entry 0
+ * as seen by the app — a crawler IP appearing ANYWHERE in the chain is
+ * conclusive. A caller can only spoof itself into this screen (self-DoS,
+ * no ads served), never affect other users; the fraud-control rate limiters
+ * keep using the single ingress-supplied IP per SDK_SECURITY_INVARIANTS.md.
+ */
+export function collectCandidateIps(
+  reqHeaders?: HeaderReader | null,
+  directIp?: string | null
+): string[] {
+  const candidates = new Set<string>();
+  const add = (raw: string | null | undefined) => {
+    const norm = normalizeClientIp(raw);
+    if (norm) candidates.add(norm);
+  };
+
+  add(directIp);
+
+  if (reqHeaders && typeof reqHeaders.get === 'function') {
+    for (const h of DIRECT_CLIENT_IP_HEADERS) {
+      add(reqHeaders.get(h));
+    }
+    const xff = reqHeaders.get('x-forwarded-for');
+    if (xff) {
+      for (const part of xff.split(',').slice(0, 8)) {
+        add(part);
+      }
+    }
+  }
+
+  return [...candidates];
+}
+
+/**
  * Check if an incoming request originates from a known bot, search crawler, or headless browser.
- * Checks the User-Agent string and the validated client IP against dedicated crawler infrastructure.
+ * Checks the User-Agent string and the crawler IP subnets across the full forwarded chain.
  */
 export function isBotTraffic(
   userAgent: string | null | undefined,
@@ -361,13 +435,16 @@ export function isBotTraffic(
     }
   }
 
-  // 2. Resolve validated client IP (STRICTLY the client, NEVER proxy chain)
-  const resolvedIp = getClientIp(reqHeaders, clientIp);
+  // 2. Crawler & Spider IP Subnet Matching across the FULL forwarded chain
+  //    (direct IP + CDN client-IP headers + every x-forwarded-for entry —
+  //    see collectCandidateIps for why entry 0 alone is insufficient).
+  for (const ip of collectCandidateIps(reqHeaders, clientIp)) {
+    if (isIP(ip) === 4 && googleAutomatedFetcherIps.check(ip, 'ipv4')) {
+      return { isBot: true, reason: 'verified_google_crawler_or_fetcher_cidr' };
+    }
 
-  // 3. Crawler & Spider IP Subnet Matching on validated client IP only
-  if (resolvedIp) {
     for (const prefix of CRAWLER_IP_PREFIXES) {
-      if (resolvedIp.startsWith(prefix)) {
+      if (ip.startsWith(prefix)) {
         return { isBot: true, reason: `crawler_ip_subnet: ${prefix}` };
       }
     }

@@ -1,3 +1,6 @@
+## 0.6.2
+* **Sync**: Align the release version with all AdTogether SDKs.
+
 ## 0.6.1
 * **Sync**: Align the release version with all AdTogether SDKs.
 

@@ -192,15 +192,23 @@ export class AdTogether {
   private lastAdId?: string;
   private static adCache: Map<string, { ad: AdModel; expiresAt: number }> = new Map();
   private static inflightRequests: Map<string, Promise<AdModel>> = new Map();
-  private static readonly AD_CACHE_TTL_MS = 30 * 1000; // 30 seconds
+  private static readonly AD_CACHE_TTL_MS = 60 * 1000; // 60 seconds
   private static clickedTokens: Set<string> = new Set();
+
+  // Server-enforced rate-limit backoff (HTTP 429 from /api/ads/serve). While
+  // the backoff window is active, the SDK answers from cache only and never
+  // hits the network, so frequency-capped or throttled clients stop issuing
+  // guaranteed-429 requests that waste server invocations.
+  private static rateLimitedUntilMs: number = 0;
+  private static readonly RATE_LIMIT_STORAGE_KEY = 'adtogether_rl_until';
+  private static readonly DEFAULT_RATE_LIMIT_BACKOFF_MS = 60 * 1000;
 
   private static getCacheKey(adUnitId: string, adType?: AdType): string {
     return `${adType || 'banner'}:${adUnitId}`;
   }
 
   /**
-   * Pre-fetch an ad into the memory cache with a 30-second TTL.
+   * Pre-fetch an ad into the memory cache with a 60-second TTL.
    * If an unexpired cached ad already exists, this is a no-op.
    */
   static async prefetchAd(adUnitId: string = 'default', adType: AdType = 'banner'): Promise<void> {
@@ -268,6 +276,13 @@ export class AdTogether {
       return inflight;
     }
 
+    // Honor an active server rate-limit backoff: never re-hit the network
+    // while the server has told us to wait. Fresh cached ads were already
+    // returned above, so real users keep seeing their last creative for free.
+    if (AdTogether.isServerRateLimited()) {
+      throw new Error('AdTogether: server rate limit active; ad fetch skipped until the backoff window resets.');
+    }
+
     const fetchPromise = (async () => {
       try {
         const sdk = AdTogether.shared;
@@ -292,6 +307,13 @@ export class AdTogether {
         } else if (response.status === 401 || response.status === 403) {
           console.error('AdTogether Error: Invalid App ID. Please check your dashboard.');
           throw new Error(`AdTogether Error: Invalid App ID. Status: ${response.status}`);
+        } else if (response.status === 429) {
+          // The server told us to slow down. Record the backoff window
+          // (persisted across reloads) so this client stops calling the
+          // serve endpoint for the remainder of the rate-limit window.
+          AdTogether.noteServerRateLimit(response);
+          console.warn('AdTogether: server rate limit reached (429). Backing off.');
+          throw new Error('AdTogether: Server rate limit reached (429). Backing off until the limit window resets.');
         }
 
         throw new Error(`Failed to fetch ad. Status: ${response.status}`);
@@ -302,6 +324,62 @@ export class AdTogether {
 
     AdTogether.inflightRequests.set(cacheKey, fetchPromise);
     return fetchPromise;
+  }
+
+  /**
+   * Whether a server-issued rate-limit backoff window is currently active.
+   * The window is rehydrated from sessionStorage so a page reload or a new
+   * tab never resets an in-progress backoff.
+   */
+  private static isServerRateLimited(): boolean {
+    if (AdTogether.rateLimitedUntilMs > Date.now()) return true;
+
+    let persisted = 0;
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = window.sessionStorage?.getItem(AdTogether.RATE_LIMIT_STORAGE_KEY);
+        const parsed = raw ? Number.parseInt(raw, 10) : 0;
+        persisted = Number.isFinite(parsed) && parsed > Date.now() ? parsed : 0;
+      } catch {
+        persisted = 0;
+      }
+    }
+
+    AdTogether.rateLimitedUntilMs = persisted;
+    return persisted > 0;
+  }
+
+  /**
+   * Record a server rate-limit backoff window from a 429 response.
+   * Honors the `Retry-After` header (delta-seconds or HTTP date) and clamps
+   * the window to [1s, 24h], defaulting to 60s when the header is missing.
+   */
+  private static noteServerRateLimit(response?: Response): void {
+    let backoffSeconds = AdTogether.DEFAULT_RATE_LIMIT_BACKOFF_MS / 1000;
+
+    const header = response?.headers?.get('retry-after');
+    if (header) {
+      const asSeconds = Number.parseInt(header, 10);
+      if (Number.isFinite(asSeconds) && asSeconds > 0) {
+        backoffSeconds = asSeconds;
+      } else {
+        const asDate = Date.parse(header);
+        if (!Number.isNaN(asDate)) {
+          backoffSeconds = Math.max(1, Math.ceil((asDate - Date.now()) / 1000));
+        }
+      }
+    }
+
+    const until = Date.now() + Math.min(backoffSeconds, 86400) * 1000;
+    AdTogether.rateLimitedUntilMs = until;
+
+    if (typeof window !== 'undefined') {
+      try {
+        window.sessionStorage?.setItem(AdTogether.RATE_LIMIT_STORAGE_KEY, String(until));
+      } catch {
+        // Storage unavailable (private mode/SSR); in-memory backoff still applies.
+      }
+    }
   }
 
   private static buildServeUrl(sdk: AdTogether, adUnitId: string, adType?: AdType): string {

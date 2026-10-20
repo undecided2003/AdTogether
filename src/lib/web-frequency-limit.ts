@@ -1,9 +1,17 @@
 /**
  * Web-Only Frequency Limiter (Option B: In-Memory Server-Side & Option C: Upstash Edge Redis)
  *
- * Enforces rolling hourly (default: 3) and daily (default: 12) view limits per client IP
- * for web traffic with zero Firestore read/write overhead.
+ * Enforces rolling hourly (default: 3) and daily (default: 12) view limits per
+ * frequency subject for web traffic with zero Firestore read/write overhead.
+ *
+ * The subject is built by `webFrequencySubject()` (App ID + client IP + a
+ * stable User-Agent fingerprint) so real users behind carrier-grade NAT each
+ * keep an independent quota. This is a SOFT view-frequency control only — the
+ * hard fraud ceilings (durable `publicAdRateLimits` and the process-local
+ * 60/min bucket) remain keyed by endpoint + App ID + ingress client IP alone
+ * per SDK_SECURITY_INVARIANTS.md §2 and can never be bypassed with it.
  */
+import { createHash } from 'node:crypto';
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
@@ -262,11 +270,39 @@ async function recordUpstash(
 // ----------------------------------------------------------------------------
 
 /**
- * Check whether a web client IP is allowed to view/record an impression.
+ * Build the frequency-capping subject for a public web request: client IP +
+ * App ID + a stable User-Agent fingerprint (hashed, raw UA never stored).
+ *
+ * Why not IP alone: hundreds of real users can share one carrier-grade NAT
+ * address (common on Korean mobile networks), so a per-IP 3/hr quota makes
+ * most of them see no ads at all — the fingerprint lets each device keep its
+ * own allowance while identical clients behind one IP still share a bucket.
+ *
+ * SECURITY: this subject is used ONLY for the soft view-frequency cap. The
+ * hard fraud ceilings — the durable `publicAdRateLimits` fixed window and the
+ * process-local 60/min serve bucket — remain keyed by endpoint + App ID +
+ * ingress client IP alone (SDK_SECURITY_INVARIANTS.md §2), so rotating a
+ * User-Agent can never raise the abuse ceiling for a single IP.
+ */
+export function webFrequencySubject(
+  clientIp: string | null | undefined,
+  appId: string | null | undefined,
+  userAgent: string | null | undefined,
+): string {
+  if (!clientIp) return '';
+  const uaHash = createHash('sha256')
+    .update((userAgent || '').trim().slice(0, 512))
+    .digest('hex')
+    .slice(0, 16);
+  return `${clientIp}|${(appId || '').slice(0, 100)}|${uaHash}`;
+}
+
+/**
+ * Check whether a web frequency subject is allowed to view/record an impression.
  * Evaluates Upstash Redis (Option C) if configured, with in-memory fallback (Option B).
  */
 export async function checkWebImpressionFrequencyLimit(
-  clientIp: string,
+  subject: string,
   now: number = Date.now()
 ): Promise<WebFrequencyLimitResult> {
   const { enabled, maxPerHour, maxPerDay } = getConfiguredLimits();
@@ -275,22 +311,22 @@ export async function checkWebImpressionFrequencyLimit(
   }
 
   // 1. Try Upstash Distributed Edge Limiter (Option C)
-  const upstashResult = await checkUpstashLimit('impression', clientIp, maxPerHour, maxPerDay, now);
+  const upstashResult = await checkUpstashLimit('impression', subject, maxPerHour, maxPerDay, now);
   if (upstashResult) {
     return upstashResult;
   }
 
   // 2. In-Memory Process-Local Limiter (Option B)
-  return checkInMemoryLimit(impressionTimestampsByIp, clientIp, maxPerHour, maxPerDay, now);
+  return checkInMemoryLimit(impressionTimestampsByIp, subject, maxPerHour, maxPerDay, now);
 }
 
 /**
- * Check whether a web client IP is allowed to request/serve a new ad.
+ * Check whether a web frequency subject is allowed to request/serve a new ad.
  * Allows a small buffer above impression limits (maxPerHour + 1, maxPerDay + 2)
  * to handle render lifecycles while blocking automated ad-scraping burst loops.
  */
 export async function checkWebServeFrequencyLimit(
-  clientIp: string,
+  subject: string,
   now: number = Date.now()
 ): Promise<WebFrequencyLimitResult> {
   const { enabled, maxPerHour, maxPerDay } = getConfiguredLimits();
@@ -299,7 +335,7 @@ export async function checkWebServeFrequencyLimit(
   }
 
   // Also check if impression limit is already maxed out
-  const impressionCheck = await checkWebImpressionFrequencyLimit(clientIp, now);
+  const impressionCheck = await checkWebImpressionFrequencyLimit(subject, now);
   if (!impressionCheck.allowed) {
     return impressionCheck;
   }
@@ -308,35 +344,35 @@ export async function checkWebServeFrequencyLimit(
   const maxServePerDay = maxPerDay + 2;
 
   // 1. Try Upstash (Option C)
-  const upstashResult = await checkUpstashLimit('serve', clientIp, maxServePerHour, maxServePerDay, now);
+  const upstashResult = await checkUpstashLimit('serve', subject, maxServePerHour, maxServePerDay, now);
   if (upstashResult) {
     return upstashResult;
   }
 
   // 2. In-Memory Process-Local Limiter (Option B)
-  return checkInMemoryLimit(serveTimestampsByIp, clientIp, maxServePerHour, maxServePerDay, now);
+  return checkInMemoryLimit(serveTimestampsByIp, subject, maxServePerHour, maxServePerDay, now);
 }
 
 /**
- * Record a verified web impression.
+ * Record a verified web impression for a frequency subject.
  */
-export async function recordWebImpression(clientIp: string, now: number = Date.now()): Promise<void> {
+export async function recordWebImpression(subject: string, now: number = Date.now()): Promise<void> {
   const { enabled } = getConfiguredLimits();
   if (!enabled) return;
 
-  recordInMemory(impressionTimestampsByIp, clientIp, now);
-  await recordUpstash('impression', clientIp, now);
+  recordInMemory(impressionTimestampsByIp, subject, now);
+  await recordUpstash('impression', subject, now);
 }
 
 /**
- * Record a served web ad creative.
+ * Record a served web ad creative for a frequency subject.
  */
-export async function recordWebServe(clientIp: string, now: number = Date.now()): Promise<void> {
+export async function recordWebServe(subject: string, now: number = Date.now()): Promise<void> {
   const { enabled } = getConfiguredLimits();
   if (!enabled) return;
 
-  recordInMemory(serveTimestampsByIp, clientIp, now);
-  await recordUpstash('serve', clientIp, now);
+  recordInMemory(serveTimestampsByIp, subject, now);
+  await recordUpstash('serve', subject, now);
 }
 
 /**

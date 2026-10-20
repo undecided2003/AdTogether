@@ -130,9 +130,12 @@ declare class AdTogether {
     private static inflightRequests;
     private static readonly AD_CACHE_TTL_MS;
     private static clickedTokens;
+    private static rateLimitedUntilMs;
+    private static readonly RATE_LIMIT_STORAGE_KEY;
+    private static readonly DEFAULT_RATE_LIMIT_BACKOFF_MS;
     private static getCacheKey;
     /**
-     * Pre-fetch an ad into the memory cache with a 30-second TTL.
+     * Pre-fetch an ad into the memory cache with a 60-second TTL.
      * If an unexpired cached ad already exists, this is a no-op.
      */
     static prefetchAd(adUnitId?: string, adType?: AdType): Promise<void>;
@@ -141,6 +144,18 @@ declare class AdTogether {
      */
     static clearAdCache(): void;
     static fetchAd(adUnitId?: string, adType?: AdType): Promise<AdModel>;
+    /**
+     * Whether a server-issued rate-limit backoff window is currently active.
+     * The window is rehydrated from sessionStorage so a page reload or a new
+     * tab never resets an in-progress backoff.
+     */
+    private static isServerRateLimited;
+    /**
+     * Record a server rate-limit backoff window from a 429 response.
+     * Honors the `Retry-After` header (delta-seconds or HTTP date) and clamps
+     * the window to [1s, 24h], defaulting to 60s when the header is missing.
+     */
+    private static noteServerRateLimit;
     private static buildServeUrl;
     static trackImpression(adId: string, token?: string, viewability?: ViewabilityMetrics): void;
     static trackClick(adId: string, token?: string): void;

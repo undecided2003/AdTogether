@@ -1,3 +1,7 @@
+## 0.6.2
+* **Performance**: Increased the in-memory ad cache TTL from 30 to 60 seconds.
+* **Reliability**: Honors HTTP 429 responses by backing off per the `Retry-After` header (persisted across reloads) instead of re-hitting the serve endpoint.
+
 ## 0.6.1
 * **Viewability**: Banner viewability reports include `containerWidth` and `containerHeight`, and impression gating now verifies true visibility (viewport intersection, minimum 50x20 size, opacity >= 0.1, no hidden styles).
 * **Security**: Hardened crawler/bot user-agent screening (scanner/probe tokens, DevTools device-emulation presets, known scanner UAs).

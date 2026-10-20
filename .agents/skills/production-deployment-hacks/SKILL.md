@@ -39,4 +39,9 @@ This skill documents specific production workarounds and best practices used acr
 ## 8. One-Step Deployment Script (`npm run deploy`)
 - **Workflow:** Running `npm run deploy` automatically builds `@adtogether/web-sdk` (`npm --prefix sdk/web-sdk run build`) so distribution files are always up-to-date, and then invokes `npx firebase deploy --only hosting` to build Next.js, prerender static pages, deploy edge CDN caching headers, and update the Cloud Run function.
 
+## 9. Direct-to-`run.app` Request Rejection
+- **Problem:** The SSR Cloud Run service URL (`ssradtogether15453-*.run.app`) is public and receives constant internet scanner traffic that bypasses Firebase Hosting. Each hit still pays full Next.js routing/rendering cost (memory pressure, cold starts) even though it does zero database work.
+- **Header invariant (verified empirically):** Hosting-forwarded requests carry `X-Forwarded-Host` (the original hosting domain); direct Cloud Run requests do not. The `Host` header is the `*.run.app` service URL in **both** cases, so it must never be used alone to discriminate — blocking on `Host` would 100% break real traffic.
+- **Workaround:** [src/proxy.ts](file:///c:/Users/kevin/Next/AdTogether/src/proxy.ts) (Next.js 16 proxy convention) returns a bare 404 before any routing when `X-Forwarded-Host` is absent AND `Host` ends with `.run.app`. The check is fail-open: Hosting-forwarded requests (custom domain, `*.web.app`, preview channels) always carry the header and are never blocked. Invocation counts are unaffected; this is memory/latency relief and scanner hardening.
+
 

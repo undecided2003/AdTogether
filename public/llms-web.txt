@@ -1,6 +1,6 @@
 # AdTogether Web SDK — LLM Integration Reference
 
-**Version:** 0.6.1
+**Version:** 0.6.2
 
 **Package:** `@adtogether/web-sdk`
 **Distribution:** NPM (for React/Next.js) or CDN script tag (for plain HTML)
@@ -102,7 +102,7 @@ export default function MyComponent() {
 
 ### Pre-fetching & In-Memory Caching
 
-The Web SDK automatically caches fetched ads in memory with a **30-second TTL** and coalesces concurrent in-flight requests. When navigating between views or remounting components within 30 seconds, the SDK serves the cached creative instantly with 0 network calls.
+The Web SDK automatically caches fetched ads in memory with a **60-second TTL** and coalesces concurrent in-flight requests. When navigating between views or remounting components within 60 seconds, the SDK serves the cached creative instantly with 0 network calls. If the server responds with HTTP 429, the SDK honors the `Retry-After` header and backs off (persisted across reloads) instead of re-hitting the serve endpoint.
 
 You can also pre-warm an ad ahead of time (e.g. before showing an interstitial):
 
